@@ -1,0 +1,44 @@
+:root {
+    --color-error: darkred;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[color-mode="user"] {
+    --color-bg: #222; /* darker background for better readability */
+    --color-error: red
+  }
+}
+
+button[type="reset"] {
+  background-color: var(--color-accent); /* rgb(110, 152, 178);*/
+  /*color: var(--color-text-secondary);*/
+}
+
+button {
+  padding: 0.6rem 1.5rem;
+}
+
+input {
+  min-width: 91%; /* this might be extreme and mess up certain inputs */
+}
+
+main {
+  padding-top: 0.5rem;
+}
+
+nav {
+  margin-bottom: 2rem;
+}
+
+form header {
+  margin: 0;
+  padding: -80px;
+}
+
+/*
+This didn't fix the weird Safari selection behavior when
+the validation errors are hidden and unselectable
+
+form {
+  user-select: 'none',}
+*/

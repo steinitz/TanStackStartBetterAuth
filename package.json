@@ -1,27 +1,30 @@
 {
-  "name": "tanstackstartexportbug",
-  "version": "1.0.0",
-  "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
+    "dev": "vinxi dev --port 3000",
     "build": "vinxi build",
     "start": "vinxi start"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@tanstack/react-router": "^1.104.1",
-    "@tanstack/start": "^1.104.2",
+    "@tanstack/router": "^0.0.1-beta.53",
+    "@tanstack/start": "^1.99.3",
+    "@tanstack/start-api-routes": "^1.99.3",
+    "better-auth": "^1.1.13",
+    "better-sqlite3": "^11.8.0",
+    "nodemailer": "^6.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "vinxi": "^0.5.3"
+    "valibot": "^1.0.0-beta.15",
+    "vinxi": "^0.5.1"
   },
   "devDependencies": {
-    "@types/react": "^19.0.8",
+    "@tanstack/router-devtools": "^1.99.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }

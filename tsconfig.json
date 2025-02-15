@@ -6,6 +6,11 @@
     "target": "ES2022",
     "skipLibCheck": true,
     "strictNullChecks": true,
+		// absolute file paths from the app directory e.g. ~/routes
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["app/*"]
+		}
   },
 }
 

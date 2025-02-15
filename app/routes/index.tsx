@@ -1,6 +1,6 @@
 // app/routes/index.tsx
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import {getCount, updateCount } from '../lib/count'
+import {getCount, updateCount } from '~/lib/count'
 
 export const Route = createFileRoute('/')({
   component: Home,

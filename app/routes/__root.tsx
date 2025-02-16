@@ -17,7 +17,21 @@ export const Route = createRootRoute({
         title: 'TanStack Start Starter',
       },
     ],
-  }),
+    links: [
+      {
+        rel: 'stylesheet',
+        href: 'https://unpkg.com/mvp.css',
+      },
+      {
+        rel: 'stylesheet',
+        href: '/mvp-css-override.css',
+      },
+      {
+        rel: 'stylesheet',
+        href: '/styles.css',
+      },
+    ]
+   }),
   component: RootComponent,
 })
 

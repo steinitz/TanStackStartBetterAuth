@@ -30,6 +30,12 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: '/styles.css',
       },
+      // fonts from https://fontawesome.com/
+      {
+        rel: 'stylesheet',
+        type: 'text/css',
+        href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+      }
     ]
    }),
   component: RootComponent,

@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
 import {useNavigate} from '@tanstack/react-router'
-import {signIn} from '~/lib/auth-client'
+import {signIn, forgetPassword} from '~/lib/auth-client'
 import {Spacer} from '~/components/Spacer'
 import {PasswordInput} from "~/components/InputFields";
 import {FormFieldError} from "~/components/FormFieldError";
@@ -125,6 +125,22 @@ export const SignIn = () => {
           }}
         >
           Sign Up
+        </button>
+      </section>
+      <Spacer />
+      <section>
+        <h3>Forgot Password?</h3>
+        <Spacer orientation='horizontal' />
+        <button
+          type={"submit"}
+          onClick={async () => {
+            const { data, error } = await forgetPassword({
+              email: "f@stzdev.com",
+              redirectTo: "/auth/passwordReset",
+            });
+          }}
+        >
+          Reset Password
         </button>
       </section>
     </>

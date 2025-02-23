@@ -7,17 +7,11 @@ import {resetPassword} from '~/lib/auth-client';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
-  // email: string;
   password: string;
 };
 
 // Valibot
 const PasswordResetSchema = v.object({
-  // email: v.pipe(
-  //   v.string('email must be a string'),
-  //   v.nonEmpty('email address required'),
-  //   v.email('invalid email'),
-  // ),
   password: v.pipe(v.string(), v.nonEmpty('password required')),
 });
 
@@ -47,23 +41,17 @@ export const SetNewPassword = () => {
   const handleSetNewPassword = async (
     event: SyntheticEvent<HTMLFormElement>
   ) =>{
-    // prevent default form submission behavior
     const fields = sharedFormSubmission(event);
     const newPassword = fields.password as string
-    console.log( 'handleSetNewPassword', {newPassword})
 
     const isValid = validateFormFields(fields as PasswordResetData)
-    console.log( 'handleSetNewPassword', {isValid})
 
     if (isValid) {
       const token = new URLSearchParams(window.location.search).get('token') || undefined
-      console.log('handleSetNewPassword', {token})
       await resetPassword({
         newPassword,
         token
       })
-
-      await router.invalidate({sync: true})
       router.navigate({to: '/auth/signin'})
     }
   }
@@ -83,10 +71,6 @@ export const SetNewPassword = () => {
       </section>
       <button
         type={'submit'}
-        // onClick={async () => {
-        //   await router.invalidate({sync: true})
-        //   router.navigate({to: '/auth/signin'})
-        //}}
       >
         Index - for troubleshooting, remove
       </button>

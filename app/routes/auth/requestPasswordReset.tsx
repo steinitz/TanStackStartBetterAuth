@@ -17,7 +17,6 @@ const PasswordResetSchema = v.object({
     v.nonEmpty('email address required'),
     v.email('invalid email'),
   ),
-  // password: v.pipe(v.string(), v.nonEmpty('password required')),
 })
 
 export const SetNewPassword = () => {
@@ -29,8 +28,8 @@ export const SetNewPassword = () => {
       const valibotResult = v.parse(
         PasswordResetSchema,
         fields,
-        {abortPipeEarly: true}, // ensures each key, e.g. email, has only one error message
-      )
+         // ensure each key, e.g. password, has only one error message
+        {abortPipeEarly: true},       )
       console.log('validating email\n', {valibotResult})
     } catch (error: any) {
       /*: ValiError<typeof SignupSchema>*/
@@ -56,7 +55,7 @@ export const SetNewPassword = () => {
     console.log('handlePasswordReset', {isValid})
 
     if (isValid) {
-      /*const {data, error} = */await forgetPassword({
+      /*const {data, error} = */ await forgetPassword({
         email,
         redirectTo: "/auth/setNewPassword",
       });
@@ -80,10 +79,6 @@ export const SetNewPassword = () => {
       </section>
       <button
         type={'submit'}
-        // onClick={async () => {
-        //   await router.invalidate({sync: true})
-        //   router.navigate({to: '/auth/signin'})
-        //}}
       >
         Index - for troubleshooting, remove
       </button>

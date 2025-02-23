@@ -5,7 +5,7 @@ import {signIn, forgetPassword} from '~/lib/auth-client'
 import {Spacer} from '~/components/Spacer'
 import {PasswordInput} from "~/components/InputFields";
 import {FormFieldError} from "~/components/FormFieldError";
-import {fieldsFromFormData} from "~/lib/form";
+import {fieldsFromFormData, sharedFormSubmission} from "~/lib/form";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type SignInData = {
@@ -35,7 +35,8 @@ export const SignIn = () => {
       const valibotResult = v.parse(
         SignupSchema,
         fields,
-        {abortPipeEarly: true} // ensures each key, e.g. email, has only one error message
+         // ensure each key, e.g. email, has only one error message
+        {abortPipeEarly: true}
       )
       console.log('signup call to signUp.email()\n', {valibotResult})
     } catch (error: any) {/*: ValiError<typeof SignupSchema>*/
@@ -81,18 +82,14 @@ export const SignIn = () => {
     console.log({data, error})
   }
 
-  const handleSignIn = (event: SyntheticEvent<HTMLFormElement>) => {
-    // prevent default form submission behavior
-    event.preventDefault();
-    event.stopPropagation();
-    const formData = new FormData(event.currentTarget);
-    const fields = fieldsFromFormData(formData) as SignInData
-
-    console.log( 'handleSignIn', {fields})
+  const handleSignIn = async (event: SyntheticEvent<HTMLFormElement>) => {
+    const fields = sharedFormSubmission(event);
     const isValid = validateFormFields(fields)
-    // console.log( 'handleSignUp', {isValid})
 
-    if (isValid) doSignIn(fields)
+    if (isValid) {
+      await doSignIn(fields)
+      navigate({to: '/auth/requestPasswordReset'})
+    }
   }
 
   return (
@@ -133,13 +130,6 @@ export const SignIn = () => {
         <Spacer orientation='horizontal' />
         <button
           type={"submit"}
-          onClick={async () => {
-            navigate({to: '/auth/requestPasswordReset'})
-            // const {data, error} = await forgetPassword({
-            //   email: "f@stzdev.com",
-            //   redirectTo: "/auth/passwordReset",
-            //});
-          }}
         >
           Reset Password
         </button>

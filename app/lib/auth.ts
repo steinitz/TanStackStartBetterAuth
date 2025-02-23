@@ -25,7 +25,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({user, url, token}, request) => {
       console.log('sendVerificationEmail', {user, url, token, request})
       const mailSender = nodemailer.createTransport(transportOptions as Transport)
       await mailSender.sendMail({
@@ -43,6 +43,6 @@ export const auth = betterAuth({
   //     clientId: process.env.GITHUB_CLIENT_ID!,
   //     clientSecret: process.env.GITHUB_CLIENT_SECRET!,
   //    }
-  // },
+  //},
 })
 

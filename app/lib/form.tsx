@@ -8,3 +8,12 @@ export const fieldsFromFormData = (formData: FormData) => {
     Object.fromEntries(formData.entries())
   )
 }
+
+export const sharedFormSubmission = (event: React.SyntheticEvent<HTMLFormElement>)=> {
+  event.preventDefault();
+  event.stopPropagation();
+  const formData = new FormData(event.currentTarget);
+  const fields = fieldsFromFormData(formData)
+  console.log('handleSetNewPassword', {fields})
+  return fields;
+}

@@ -1,5 +1,5 @@
 import nodemailer, {type Transport} from "nodemailer";
-import { transportOptions } from "./mailSender";
+import {transportOptions} from "./mailSender";
 import {createServerFn} from "@tanstack/start";
 
 // must be called from the server or process.env... will be undefined
@@ -67,7 +67,7 @@ export const testMail = createServerFn({method: 'POST'})
   //       // console.log("mailSender.sendEmail - sent message", {info});
   //     }
   //   })
-  // }
+  //}
 
       // from: import.meta.env.VITE_EMAIL_FROM_ADDRESS,
       // to: import.meta.env.VITE_EMAIL_TEST_MESSAGE_RECIPIENT,

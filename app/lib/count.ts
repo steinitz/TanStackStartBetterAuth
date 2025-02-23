@@ -1,4 +1,4 @@
-import { createServerFn } from '@tanstack/start'
+import {createServerFn} from '@tanstack/start'
 import * as fs from 'node:fs'
 
 const filePath = 'count.txt'
@@ -15,9 +15,9 @@ export const getCount = createServerFn({
   return readCount()
 })
 
-export const updateCount = createServerFn({ method: 'POST' })
+export const updateCount = createServerFn({method: 'POST'})
   .validator((d: number) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({data}) => {
     const count = await readCount()
     await fs.promises.writeFile(filePath, `${count + data}`)
   })

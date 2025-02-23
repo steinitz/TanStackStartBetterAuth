@@ -42,7 +42,7 @@ export default function SignUp() {
         {abortPipeEarly: true} // ensures each key, e.g. email, has only one error message
       )
       console.log('signup call to signUp.email()\n', {valibotResult})
-    } catch (error: any) { /*: ValiError<typeof SignupSchema>*/
+    } catch (error: any) {/*: ValiError<typeof SignupSchema>*/
       const flattenedIssues = v.flatten<typeof SignupSchema>(error.issues)
       setValidationIssues(flattenedIssues?.nested ?? {})
       isValid = false

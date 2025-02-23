@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import {createFileRoute, useRouter} from '@tanstack/react-router'
 
 export const Profile = () => {
   const router = useRouter()
@@ -11,8 +11,8 @@ export const Profile = () => {
       <button
         type={'submit'}
         onClick={async () => {
-          await router.invalidate({ sync: true })
-          router.navigate({ to: '/' })
+          await router.invalidate({sync: true})
+          router.navigate({to: '/'})
         }}
       >
         Index

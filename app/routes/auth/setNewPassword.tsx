@@ -1,10 +1,9 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
-import {FormFieldError} from "~/components/FormFieldError";
+import {createFileRoute, useRouter} from '@tanstack/react-router'
 import {PasswordInput} from "~/components/InputFields";
 import {SyntheticEvent, useState} from "react";
-import {fieldsFromFormData} from "~/lib/form";
+import {sharedFormSubmission} from "~/lib/form";
 import * as v from "valibot";
-import { resetPassword } from '~/lib/auth-client';
+import {resetPassword} from '~/lib/auth-client';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
@@ -22,7 +21,7 @@ const PasswordResetSchema = v.object({
   password: v.pipe(v.string(), v.nonEmpty('password required')),
 });
 
-export const PasswordReset = () => {
+export const SetNewPassword = () => {
   const router = useRouter()
 
   const [validationIssues, setValidationIssues] = useState<any>({})
@@ -36,7 +35,7 @@ export const PasswordReset = () => {
         {abortPipeEarly: true} // ensures each key, e.g. email, has only one error message
       )
       console.log('validating password\n', {valibotResult})
-    } catch (error: any) { /*: ValiError<typeof SignupSchema>*/
+    } catch (error: any) {/*: ValiError<typeof SignupSchema>*/
       const flattenedIssues = v.flatten<typeof PasswordResetSchema>(error.issues)
       setValidationIssues(flattenedIssues?.nested ?? {})
       isValid = false
@@ -45,60 +44,49 @@ export const PasswordReset = () => {
     return isValid
   }
 
-  // const doResetPassword = async (
-  //   fields: PasswordResetData
-  // ) => {
-  //   await resetPassword{
-  //     password,
-  //     token
-  //   }
-  //
-  // }
-
-  const handlePasswordReset = async (
+  const handleSetNewPassword = async (
     event: SyntheticEvent<HTMLFormElement>
   ) =>{
     // prevent default form submission behavior
-    event.preventDefault();
-    event.stopPropagation();
-    const formData = new FormData(event.currentTarget);
-    const fields = fieldsFromFormData(formData)
-    console.log( 'handlePasswordReset', {fields})
+    const fields = sharedFormSubmission(event);
     const newPassword = fields.password as string
-    console.log( 'handlePasswordReset', {newPassword})
+    console.log( 'handleSetNewPassword', {newPassword})
 
     const isValid = validateFormFields(fields as PasswordResetData)
-    console.log( 'handlePasswordReset', {isValid})
+    console.log( 'handleSetNewPassword', {isValid})
 
     if (isValid) {
       const token = new URLSearchParams(window.location.search).get('token') || undefined
-      console.log('handlePasswordReset', {token})
-      resetPassword({
+      console.log('handleSetNewPassword', {token})
+      await resetPassword({
         newPassword,
         token
       })
+
+      await router.invalidate({sync: true})
+      router.navigate({to: '/auth/signin'})
     }
   }
 
   return (
     <>
       <div>
-        <h1>Reset Password</h1>
+        <h1>Set New Password</h1>
       </div>
       <section>
-        <form onSubmit={handlePasswordReset}>
-           <PasswordInput
+        <form onSubmit={handleSetNewPassword}>
+          <PasswordInput
             validationIssue={validationIssues?.password}
           />
-          <button type="submit">Reset Password</button>
+          <button type="submit">Set New Password</button>
         </form>
       </section>
       <button
         type={'submit'}
-        onClick={async () => {
-          await router.invalidate({ sync: true })
-          router.navigate({ to: '/auth/signin' })
-        }}
+        // onClick={async () => {
+        //   await router.invalidate({sync: true})
+        //   router.navigate({to: '/auth/signin'})
+        //}}
       >
         Index - for troubleshooting, remove
       </button>
@@ -106,7 +94,7 @@ export const PasswordReset = () => {
   )
 }
 
-export const Route = createFileRoute('/auth/passwordReset')({
-  component: PasswordReset,
+export const Route = createFileRoute('/auth/setNewPassword')({
+  component: SetNewPassword,
   // loader: async () => await getCount(),
 })

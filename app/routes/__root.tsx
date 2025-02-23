@@ -1,7 +1,7 @@
 // app/routes/__root.tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { Meta, Scripts } from '@tanstack/start'
-import type { ReactNode } from 'react'
+import {Outlet, createRootRoute} from '@tanstack/react-router'
+import {Meta, Scripts} from '@tanstack/start'
+import type {ReactNode} from 'react'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -49,7 +49,7 @@ function RootComponent() {
   )
 }
 
-function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+function RootDocument({children}: Readonly<{children: ReactNode}>) {
   return (
     <html>
       <head>

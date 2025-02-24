@@ -19,8 +19,9 @@ export function UserBlock() {
     <div
       style={{
         display: 'flex',
-        // justifyContent: 'stretch',
-        margin: '0 1.5rem'
+        // justifyContent: 'center',
+        margin: 'inherited 1.5rem',
+        // margin: 'auto'
       }}
     >
       {session?.user ? <>

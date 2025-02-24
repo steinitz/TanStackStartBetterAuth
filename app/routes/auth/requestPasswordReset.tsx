@@ -1,9 +1,9 @@
-import {createFileRoute} from '@tanstack/react-router'
-import {FormFieldError} from '~/components/FormFieldError'
-import {SyntheticEvent, useState} from 'react'
-import {sharedFormSubmission} from '~/lib/form'
+import { createFileRoute } from '@tanstack/react-router'
+import { FormFieldError } from '~/components/FormFieldError'
+import { SyntheticEvent, useState } from 'react'
+import { sharedFormSubmission } from '~/lib/form'
 import * as v from 'valibot'
-import {forgetPassword} from '~/lib/auth-client'
+import { forgetPassword } from '~/lib/auth-client'
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
@@ -28,9 +28,10 @@ export const SetNewPassword = () => {
       const valibotResult = v.parse(
         PasswordResetSchema,
         fields,
-         // ensure each key, e.g. password, has only one error message
-        {abortPipeEarly: true},       )
-      console.log('validating email\n', {valibotResult})
+        // ensure each key, e.g. password, has only one error message
+        { abortPipeEarly: true },
+      )
+      console.log('validating email\n', { valibotResult })
     } catch (error: any) {
       /*: ValiError<typeof SignupSchema>*/
       const flattenedIssues = v.flatten<typeof PasswordResetSchema>(
@@ -46,19 +47,18 @@ export const SetNewPassword = () => {
   const handlePasswordReset = async (
     event: SyntheticEvent<HTMLFormElement>,
   ) => {
-    // prevent default form submission behavior
-    const fields = sharedFormSubmission(event);
+    const fields = sharedFormSubmission(event)
     const email = fields.email as string
-    console.log('handlePasswordReset', {email})
+    console.log('handlePasswordReset', { email })
 
     const isValid = validateFormFields(fields as PasswordResetData)
-    console.log('handlePasswordReset', {isValid})
+    console.log('handlePasswordReset', { isValid })
 
     if (isValid) {
       /*const {data, error} = */ await forgetPassword({
         email,
-        redirectTo: "/auth/setNewPassword",
-      });
+        redirectTo: '/auth/setNewPassword',
+      })
     }
   }
 
@@ -77,11 +77,7 @@ export const SetNewPassword = () => {
           <button type="submit">Reset Password</button>
         </form>
       </section>
-      <button
-        type={'submit'}
-      >
-        Index - for troubleshooting, remove
-      </button>
+      <button type={'submit'}>Index - for troubleshooting, remove</button>
     </>
   )
 }

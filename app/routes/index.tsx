@@ -5,6 +5,7 @@ import {sendEmail, testMessage} from '~/lib/mailUtilities'
 import {useSession} from '~/lib/auth-client'
 import {SignIn} from '~/components/SignIn'
 import {getCount, updateCount} from '~/lib/count'
+import {Spacer} from '~/components/Spacer'
 
 
 export const Route = createFileRoute('/')({
@@ -26,32 +27,35 @@ function Home() {
   const email = session?.user?.email
 
   return (
-    <>
-    <button
-      type="button"
-      onClick={() => {
-        updateCount({data: 1}).then(() => {
-          router.invalidate()
-        })
-      }}
-    >
-      Add 1 to {loaderData.theCount}?
-    </button>
-     <UserBlock />
+    <main>
+      <UserBlock />
       {
         ! email && <SignIn />
       }
-      <button
-        type="button"
-        onClick={async () => {
-          await sendEmail({data: loaderData.theTestMessage}).then(() => {
-            console.log('sendEmail callback running')
-          })
-          alert ('Email sent')
-        }}
-      >
-        Send Test Email
-      </button>
-    </>
+      <div style={{position: 'relative', top: '21rem', left: '0rem'}}>
+        <button
+          type="button"
+          onClick={async () => {
+            await sendEmail({data: loaderData.theTestMessage}).then(() => {
+              console.log('sendEmail callback running')
+            })
+            alert ('Email sent')
+          }}
+        >
+          Send Test Email
+        </button>
+        <Spacer />
+        <button
+          type="button"
+          onClick={() => {
+            updateCount({data: 1}).then(() => {
+              router.invalidate()
+            })
+          }}
+        >
+          Add 1 to {loaderData.theCount}
+        </button>
+      </div>
+    </main>
   )
 }

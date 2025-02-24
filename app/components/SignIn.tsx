@@ -1,11 +1,11 @@
 import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
 import {useNavigate} from '@tanstack/react-router'
-import {signIn, forgetPassword} from '~/lib/auth-client'
+import {signIn} from '~/lib/auth-client'
 import {Spacer} from '~/components/Spacer'
 import {PasswordInput} from "~/components/InputFields";
 import {FormFieldError} from "~/components/FormFieldError";
-import {fieldsFromFormData, sharedFormSubmission} from "~/lib/form";
+import {sharedFormSubmission} from "~/lib/form";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type SignInData = {
@@ -48,7 +48,9 @@ export const SignIn = () => {
     return isValid
   }
 
-  const doSignIn = async ({email, password}: SignInData) => {
+  const doSignIn = async (
+    {email, password}: SignInData
+  ) => {
     console.log('doSignin call to signIn.email()\n', {email, password})
 
     const {
@@ -130,6 +132,9 @@ export const SignIn = () => {
         <Spacer orientation='horizontal' />
         <button
           type={"submit"}
+          onClick={() =>
+            navigate({to: '/auth/requestPasswordReset'})
+          }
         >
           Reset Password
         </button>

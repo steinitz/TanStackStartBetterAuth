@@ -38,6 +38,23 @@ form header {
 }
 
 /*
+These don't fix the not-centered headers
+header {
+    text-align: center;
+}
+
+header a b,
+header a em,
+header a i,
+header a strong {
+  text-align: center;
+  margin: auto;
+}
+*/
+
+
+
+/*
 This didn't fix the weird Safari selection behavior when
 the validation errors are hidden and unselectable
 

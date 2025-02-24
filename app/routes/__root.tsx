@@ -51,7 +51,7 @@ function RootComponent() {
 
 function RootDocument({children}: Readonly<{children: ReactNode}>) {
   return (
-    <html>
+    <html color-mode="user">
       <head>
         <Meta />
       </head>

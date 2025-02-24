@@ -4,6 +4,7 @@ import * as v from "valibot";
 import {sharedFormSubmission} from "~/lib/form";
 import {changeEmail} from "~/lib/auth-client";
 import {FormFieldError} from "~/components/FormFieldError";
+import { Spacer } from "~/components/Spacer";
 
 type NewEmailData = {
   email: string
@@ -20,6 +21,9 @@ const NewEmailSchema = v.object({
 
 export const Profile = () => {
   const [validationIssues, setValidationIssues] = useState<any>({})
+  const [emailChangeError, setEmailChangeError] = useState<any>()
+  const [emailChangeDidSucceed, setEmailChangeDidSucceed] = useState(false)
+  const [newEmailAddress, setNewEmailAddress] = useState('')
   const validateFormFields = (fields: NewEmailData) => {
     let isValid = true
 
@@ -53,26 +57,55 @@ export const Profile = () => {
     console.log('handleNewEmailRequest', { isValid })
 
     if (isValid) {
-      await changeEmail({
+      setNewEmailAddress((newEmail))
+      const { data, error } = await changeEmail({
         newEmail,
-        callbackURL: '/',
+        // callbackURL: '/',
       })
+      console.log('handleNewEmailRequest', { data, error })
+      if (error) {
+        console.log('handleNewEmailRequest', { error })
+        setEmailChangeError(error.message as string)
+      }
+      else {
+        setEmailChangeDidSucceed(true)
+      }
     }
   }
 
   return (
     <>
-      <div>
-        <h1>Profile</h1>
-      </div>
       <section>
-        <form onSubmit={handleNewEmailRequest}>
-          <label>
-            Change Email Address
-            <input name="email" type="email" defaultValue={''} />
-            <FormFieldError message={validationIssues?.email} />
-          </label>
-          <button type="submit">Set New Email Address</button>
+        <h1>Profile</h1>
+        <Spacer />
+        <form
+          onSubmit={handleNewEmailRequest}
+          style={{maxWidth: '350px'}}
+        >
+          {
+            emailChangeDidSucceed ?
+            <>
+              <h4
+                style={{textAlign: 'center'}}
+              >
+                {`Check your email inbox for a link to verify your new email address`}
+              </h4>
+              <p
+                style={{textAlign: 'center'}}
+              >
+                {`${newEmailAddress}`}
+              </p>
+            </>
+              :
+            <>
+            <label>
+              Change Email Address
+              <input name="email" type="email" defaultValue={''}/>
+              <FormFieldError message={validationIssues?.email || emailChangeError}/>
+            </label>
+            <button type="submit">Set New Email Address</button>
+            </>
+          }
         </form>
       </section>
       <button type={'submit'}>Index - for troubleshooting, remove</button>

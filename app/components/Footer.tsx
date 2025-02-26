@@ -17,11 +17,11 @@ export const Footer = () => {
     >
       <div
         style={{
-          width: '100%',
+          width: '75%', // why need this to keep the link on screen?
           display: 'flex',
           justifyContent: 'space-between',
           flexDirection: 'row',
-          margin: 'auto'
+          // margin: 'auto'
         }}
       >
         <p
@@ -33,12 +33,11 @@ export const Footer = () => {
         >
           Built with React, TanStack Start, Better-Auth, Valibot,NodeMailer and MVP.css
         </p>
-        {/* Why do I need the space?  Why doesnt slex work? */}
         <Spacer orientation="horizontal" space={1} />
         <a
           style={{
             fontSize: '0.8rem',
-            textAlign: 'right',
+            // textAlign: 'right',
             // minWidth: '250px',
             textWrap: 'nowrap',
           }}
@@ -47,16 +46,16 @@ export const Footer = () => {
         >
           Landscape icon by Nuricon - Flaticon
         </a>
-         <Spacer orientation="horizontal" space={1} />
-        <p
-          style={{
-            fontSize: '0.8rem',
-            margin: '0',
-            flexGrow: '1'
-          }}
-        >
-         test
-        </p>
+         {/*<Spacer orientation="horizontal" space={1} />*/}
+        {/*<p*/}
+        {/*  style={{*/}
+        {/*    fontSize: '0.8rem',*/}
+        {/*    margin: '0',*/}
+        {/*    flexGrow: '1'*/}
+        {/*  }}*/}
+        {/*>*/}
+        {/* test*/}
+        {/*</p>*/}
       </div>
     </section>
   )

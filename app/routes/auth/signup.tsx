@@ -5,6 +5,7 @@ import {signUp} from '~/lib/auth-client'
 import {FormFieldError} from '~/components/FormFieldError';
 import {PasswordInput} from '~/components/InputFields';
 import {fieldsFromFormData} from "~/lib/form";
+import {routeStrings} from '~/constants';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type SignupData = {
@@ -72,7 +73,7 @@ export default function SignUp() {
         onSuccess: (ctx) => {
           console.log('signup.email - onSuccess', {ctx})
 
-          window.location.href = '/auth/signin'
+          window.location.href = routeStrings.signin
         },
         onError: (ctx) => {
           console.log('signup.email - onError', {ctxError: ctx.error.message})

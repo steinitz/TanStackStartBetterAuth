@@ -21,5 +21,5 @@ export const errorRowNotFound = "Row not found";
 
 // route strings
 export const routeStrings = {
-  login: '/login',
+  signin: '/auth/signin',
 }

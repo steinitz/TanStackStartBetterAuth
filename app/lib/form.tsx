@@ -1,3 +1,5 @@
+import * as v from "valibot";
+
 export const fieldsFromFormData = (formData: FormData) => {
   return (
     // this version puts each values in an array to support, say, multiple "name" fields
@@ -19,7 +21,18 @@ export const sharedFormSubmission = (
   // maybe should return FormData too
   const formData = new FormData(event.currentTarget);
   const fields = fieldsFromFormData(formData)
-  console.log('handleSetNewPassword', {fields})
+  // console.log('sharedFormSubmission', {fields})
 
   return fields;
 }
+
+export const niceValidationIssues = (valibotResult: { issues: [v.BaseIssue<unknown>, ...v.BaseIssue<unknown>[]]; }) => {
+  const flattenedIssues = v.flatten (valibotResult.issues)
+  return flattenedIssues?.nested ?? {}
+}
+
+export const emailValidation = v.pipe(
+    v.string('email must be a string'),
+    v.nonEmpty('email address required'),
+    v.email('invalid email'),
+  )

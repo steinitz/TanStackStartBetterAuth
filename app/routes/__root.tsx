@@ -1,8 +1,24 @@
 // app/routes/__root.tsx
-import {Outlet, createRootRoute} from '@tanstack/react-router'
+import {Outlet, createRootRoute, useRouterState} from '@tanstack/react-router'
+// import {TanStackRouterDevtools} from '@tanstack/router-devtools'
 import {Meta, Scripts} from '@tanstack/start'
 import type {ReactNode} from 'react'
-import { MainLayout } from '~/components/MainLayout'
+import React, {Suspense} from 'react'
+import {MainLayout} from '~/components/MainLayout'
+
+/*
+const TanStackRouterDevtools =
+  process.env.NODE_ENV === 'production'
+    ? () => null // Render nothing in production
+    : React.lazy(() =>
+        // Lazy load in development
+        import('@tanstack/router-devtools').then((res) => ({
+          default: res.TanStackRouterDevtools,
+          // For Embedded Mode - requires isOpen and setIsOpen attributes
+          // default: res.TanStackRouterDevtoolsPanel
+        })),
+      )
+*/
 
 export const Route = createRootRoute({
   head: () => ({
@@ -40,18 +56,33 @@ export const Route = createRootRoute({
     ]
    }),
   component: RootComponent,
+  notFoundComponent: NotFoundComponent,
 })
 
 function RootComponent() {
   return (
     <RootDocument>
-      <Outlet />
+      {/*<div*/}
+      {/*  style={{*/}
+      {/*    display: 'flex',*/}
+      {/*    width: '100%',*/}
+      {/*    flexDirection: 'row',*/}
+      {/*    justifyContent: 'space-between',*/}
+      {/*    alignItems: 'flex-start',*/}
+      {/*  }}*/}
+      {/*>*/}
+        <Outlet />
+        {/*<Suspense fallback={null}>*/}
+        {/*  <TanStackRouterDevtools  initialIsOpen={false}/>*/}
+        {/*</Suspense>*/}
+      {/*</div>*/}
     </RootDocument>
   )
 }
 
 function RootDocument({children}: Readonly<{children: ReactNode}>) {
   return (
+    <>
     <html color-mode="user">
       <head>
         <Meta />
@@ -61,5 +92,25 @@ function RootDocument({children}: Readonly<{children: ReactNode}>) {
         <Scripts />
       </body>
     </html>
+    {/*<TanStackRouterDevtools initialIsOpen={false} />*/}
+    </>
+  )
+}
+
+function NotFoundComponent() {
+  // as at 3 Feb 25 useLoaderData is not valid here
+
+  // These are valid
+  // const params = Route.useParams()
+  // const search = Route.useSearch()
+
+  // useful hook and note the useful, maybe over-engineered,
+  // syntax to extract the location path string
+  const location = useRouterState({select: (location) => location.location.pathname})
+
+  return (
+    <section>
+      <h3>Path <span style={{color: 'var(--color-link)', textDecoration: 'underline'}}>{location}</span> not found</h3>
+    </section>
   )
 }

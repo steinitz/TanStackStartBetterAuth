@@ -3,6 +3,7 @@ import {ReactNode, useNavigate, useRouter} from '@tanstack/react-router'
 import {UserBlock} from '~/components/userBlock'
 import {useSession} from '~/lib/auth-client'
 import {Footer} from "~/components/Footer";
+import {Header} from './Header';
 
 
 export const MainLayout = ({children}: Readonly<{children: ReactNode}>)=> {
@@ -14,7 +15,7 @@ export const MainLayout = ({children}: Readonly<{children: ReactNode}>)=> {
 
   return (
     <main>
-      <UserBlock />
+      <Header />
       {children}
       <Footer />
     </main>

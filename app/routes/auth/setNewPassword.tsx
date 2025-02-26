@@ -52,7 +52,7 @@ export const SetNewPassword = () => {
         newPassword,
         token
       })
-      router.navigate({to: '/auth/signin'})
+      router.navigate({to: routeStrings.signin})
     }
   }
 

@@ -5,9 +5,9 @@ import {signIn} from '~/lib/auth-client'
 import {Spacer} from '~/components/Spacer'
 import {PasswordInput} from "~/components/InputFields";
 import {FormFieldError} from "~/components/FormFieldError";
-import {sharedFormSubmission} from "~/lib/form";
+import {niceValidationIssues, sharedFormSubmission} from "~/lib/form";
 
-// TypeScript - sugggested by Valibot docs, and comes in handy later
+// TypeScript - sugggested by Valibot docs and comes in handy later
 type SignInData = {
   email: string;
   password: string;
@@ -27,25 +27,16 @@ export const SignIn = () => {
   const navigate = useNavigate()
 
   const [validationIssues, setValidationIssues] = useState<any>({})
-
   const validateFormFields = (fields: SignInData) => {
-    let isValid = true;
-
-    try {
-      const valibotResult = v.parse(
-        SignupSchema,
-        fields,
-         // ensure each key, e.g. email, has only one error message
-        {abortPipeEarly: true}
-      )
-      console.log('signup call to signUp.email()\n', {valibotResult})
-    } catch (error: any) {/*: ValiError<typeof SignupSchema>*/
-      const flattenedIssues = v.flatten<typeof SignupSchema>(error.issues)
-      setValidationIssues(flattenedIssues?.nested ?? {})
-      isValid = false
+    const valibotResult = v.safeParse(
+    SignupSchema,
+    fields,
+    {abortPipeEarly: true} // max one issue per key
+    )
+    if (!valibotResult.success) {
+      setValidationIssues(niceValidationIssues(valibotResult))
     }
-
-    return isValid
+    return valibotResult.success
   }
 
   const doSignIn = async (
@@ -116,14 +107,13 @@ export const SignIn = () => {
           <button type="submit">Sign In</button>
         </div>
         <details>
-          <summary>Can't log in?</summary>
-          <p>Don't yet have an account? <Link to="/auth/signup">Register</Link></p>
-          <p>Forgot Password?&nbsp;
+          <summary>Can't sign in?</summary>
+          <p>Create an account <Link to="/auth/signup">Sign Up</Link></p>
+          <p>Forgot password?&nbsp;
             <Link to={`/auth/requestPasswordReset`}>
               Reset Password
             </Link>
           </p>
-          <p>Get Help <Link to="/contact">Contact Support</Link></p>
         </details>
       </form>
     </section>

@@ -12,8 +12,9 @@ export const Spacer = (props: propTypes) => {
         height: `${space}rem`,
         color: 'transparent',
         backgroundColor: 'transparent',
-        margin: '0px'
+        margin: '0',
+        // flexGrow: '1'
       }}
     /> :
-    <div style={{width: `${space}rem`}} />
+    <div style={{minWidth: `${space}rem`, flexGrow: '1'}} />
 }

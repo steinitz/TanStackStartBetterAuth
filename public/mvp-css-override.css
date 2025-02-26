@@ -24,8 +24,8 @@ input {
 
 main {
   padding-top: 0.5rem;
-  max-width: 900px;
-  margin: /*0*/ auto;
+  max-width: 1000px;
+  /*margin: !*0*! auto;*/
 }
 
 nav {

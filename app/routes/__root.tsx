@@ -2,6 +2,7 @@
 import {Outlet, createRootRoute} from '@tanstack/react-router'
 import {Meta, Scripts} from '@tanstack/start'
 import type {ReactNode} from 'react'
+import { MainLayout } from '~/components/MainLayout'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -56,7 +57,7 @@ function RootDocument({children}: Readonly<{children: ReactNode}>) {
         <Meta />
       </head>
       <body>
-        {children}
+        <MainLayout>{children}</MainLayout>
         <Scripts />
       </body>
     </html>

@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
-import {useNavigate} from '@tanstack/react-router'
+import {Link, useNavigate} from '@tanstack/react-router'
 import {signIn} from '~/lib/auth-client'
 import {Spacer} from '~/components/Spacer'
 import {PasswordInput} from "~/components/InputFields";
@@ -95,51 +95,38 @@ export const SignIn = () => {
   }
 
   return (
-     <>
-      <section>
-        <form onSubmit={handleSignIn}>
-          <h1>Sign In</h1>
-          <label>Email
-            <input
-              name="email"
-              type="email"
-              defaultValue={""}
-            />
-            <FormFieldError message={validationIssues?.email}/>
-          </label>
-          <PasswordInput
-            validationIssue={validationIssues?.password}
+    <section>
+      <form onSubmit={handleSignIn}>
+        <h1>Sign In</h1>
+        <label>Email
+          <input
+            name="email"
+            type="email"
+            defaultValue={""}
           />
+          <FormFieldError message={validationIssues?.email}/>
+        </label>
+        <PasswordInput
+          validationIssue={validationIssues?.password}
+        />
+         <div style={{display: "flex", flexDirection: "row", justifyContent: "space-between"}}>
+          <p style={{maxWidth: '180px', lineHeight: 1.2, color: 'var(--color-error)'}}>
+            {/*loginError ?? */' '}
+          </p>
           <button type="submit">Sign In</button>
-        </form>
-      </section>
-      <Spacer />
-      <section>
-        <h3>No Account?</h3>
-        <Spacer orientation='horizontal' />
-        <button
-          type={"submit"}
-          onClick={() => {
-            navigate({to: '/auth/signup'})
-          }}
-        >
-          Sign Up
-        </button>
-      </section>
-      <Spacer />
-      <section>
-        <h3>Forgot Password?</h3>
-        <Spacer orientation='horizontal' />
-        <button
-          type={"submit"}
-          onClick={() =>
-            navigate({to: '/auth/requestPasswordReset'})
-          }
-        >
-          Reset Password
-        </button>
-      </section>
-    </>
+        </div>
+        <details>
+          <summary>Can't log in?</summary>
+          <p>Don't yet have an account? <Link to="/auth/signup">Register</Link></p>
+          <p>Forgot Password?&nbsp;
+            <Link to={`/auth/requestPasswordReset`}>
+              Reset Password
+            </Link>
+          </p>
+          <p>Get Help <Link to="/contact">Contact Support</Link></p>
+        </details>
+      </form>
+    </section>
   )
 }
 

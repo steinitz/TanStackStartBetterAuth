@@ -101,30 +101,28 @@ export default function SignUp() {
   }
 
   return (
-    <main>
-      <section>
-        <form onSubmit={handleSignUp}>
-          <label>Email
-            <input
-              name="email"
-              type="email"
-              defaultValue={''}
-            />
-            <FormFieldError message={validationIssues?.email}/>
-          </label>
-          <label>Name
-            <input
-              name="name"
-              type="name"
-              defaultValue={''}
-            />
-          </label>
-          <PasswordInput
-            validationIssue={validationIssues?.password}
+    <section>
+      <form onSubmit={handleSignUp}>
+        <label>Email
+          <input
+            name="email"
+            type="email"
+            defaultValue={''}
           />
-          <button type="submit">Sign Up</button>
-        </form>
-      </section>
-    </main>
+          <FormFieldError message={validationIssues?.email}/>
+        </label>
+        <label>Name
+          <input
+            name="name"
+            type="name"
+            defaultValue={''}
+          />
+        </label>
+        <PasswordInput
+          validationIssue={validationIssues?.password}
+        />
+        <button type="submit">Sign Up</button>
+      </form>
+    </section>
   )
 }

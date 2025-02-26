@@ -9,7 +9,7 @@ export const Route = createFileRoute('/auth/signin')({
 function signin() {
   const navigate = useNavigate()
   return (
-    <main>
+    <>
       <section>
         <button
           type={'submit'}
@@ -24,6 +24,6 @@ function signin() {
       <section>
       <SignIn />
       </section>
-    </main>
+    </>
   )
 }

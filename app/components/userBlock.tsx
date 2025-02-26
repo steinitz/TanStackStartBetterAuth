@@ -20,10 +20,26 @@ export function UserBlock() {
       style={{
         display: 'flex',
         // justifyContent: 'center',
-        margin: 'inherited 1.5rem',
-        // margin: 'auto'
+        // margin: '0',
+        margin: 'auto'
       }}
     >
+      <Link
+        style={{
+          // ...adjustVerticalLocationStyle,
+          marginRight: '21px',
+        }}
+        to="/"
+      >
+        <img
+          style={{
+            width: '55px',
+            height: '55px',
+         }}
+          src="/logo.png"
+          alt="logo"
+        />
+      </Link>
       {session?.user ? <>
         <p>
           {session?.user.email}
@@ -70,7 +86,7 @@ export function UserBlock() {
             style={{
               ...adjustVerticalLocationStyle,
             }}
-            to="/auth/signup"
+            to="/contact"
           >
             Support
           </Link>

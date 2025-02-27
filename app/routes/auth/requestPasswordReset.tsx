@@ -71,7 +71,12 @@ export const SetNewPassword = () => {
         <form onSubmit={handlePasswordReset}>
           <label>
             Email
-            <input name="email" type="email" defaultValue={''} />
+            <input
+              name="email"
+              type="email"
+              defaultValue={''}
+              autoComplete="on"
+            />
             <FormFieldError message={validationIssues?.email} />
           </label>
           <button type="submit">Reset Password</button>

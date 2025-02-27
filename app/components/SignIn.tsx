@@ -94,6 +94,7 @@ export const SignIn = () => {
             name="email"
             type="email"
             defaultValue={""}
+            autoComplete="on"
           />
           <FormFieldError message={validationIssues?.email}/>
         </label>

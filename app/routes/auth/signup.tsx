@@ -109,6 +109,7 @@ export default function SignUp() {
             name="email"
             type="email"
             defaultValue={''}
+            autoComplete="on"
           />
           <FormFieldError message={validationIssues?.email}/>
         </label>
@@ -117,6 +118,7 @@ export default function SignUp() {
             name="name"
             type="name"
             defaultValue={''}
+            autoComplete="on"
           />
         </label>
         <PasswordInput

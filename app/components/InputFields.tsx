@@ -22,7 +22,9 @@ export function PasswordInput({validationIssue}) {
         style={{
           width: 'calc(100% - 1.6rem)', // why do I need to repeat this from mvp.css?
         }}
-        type={shouldShowPassword ? 'text' : 'password'} name="password"
+        type={shouldShowPassword ? 'text' : 'password'}
+        name="password"
+        autoComplete="on"
       />
       <FormFieldError message={validationIssue} />
     </label>

@@ -100,7 +100,12 @@ export const Profile = () => {
             <>
             <label>
               Change Email Address
-              <input name="email" type="email" defaultValue={''}/>
+              <input
+                name="email"
+                type="email"
+                defaultValue={''}
+                autoComplete="on"
+              />
               <FormFieldError message={validationIssues?.email || emailChangeError}/>
             </label>
             <button type="submit">Set New Email Address</button>

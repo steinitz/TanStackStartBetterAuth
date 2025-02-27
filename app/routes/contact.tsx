@@ -73,6 +73,7 @@ const contact = ()=> {
             name="name"
             type="name"
             defaultValue={''}
+            autoComplete="on"
           />
           <FormFieldError message={validationIssues?.name}/>
         </label>
@@ -81,6 +82,7 @@ const contact = ()=> {
             name="email"
             type="email"
             defaultValue={session?.user?.email ?? ''}
+            autoComplete="on"
           />
           <FormFieldError message={validationIssues?.email}/>
         </label>

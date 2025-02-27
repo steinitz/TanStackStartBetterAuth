@@ -4,6 +4,7 @@ import {SyntheticEvent, useState} from "react";
 import {sharedFormSubmission} from "~/lib/form";
 import * as v from "valibot";
 import {resetPassword} from '~/lib/auth-client';
+import { routeStrings } from '~/constants';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {

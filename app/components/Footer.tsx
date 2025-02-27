@@ -1,62 +1,50 @@
-import { Spacer } from "./Spacer"
 
 export const Footer = () => {
-  return(
-    <section
+  return (
+    <div
       style={{
-        // display: 'flex',
+        position: 'fixed',
+        bottom: '0rem',
+        left: '0',
         width: '100%',
         height: '3rem',
-        justifyContent: 'space-between',
-        flexDirection: 'row',
-        position: 'fixed',
-        bottom: '0',
-        backgroundColor: 'var(--color-bg)',
-        // margin: 'auto',
       }}
     >
-      <div
-        style={{
-          width: '75%', // why need this to keep the link on screen?
-          display: 'flex',
-          justifyContent: 'space-between',
-          flexDirection: 'row',
-          // margin: 'auto'
-        }}
-      >
-        <p
+      <main>
+        <section
           style={{
-            fontSize: '0.8rem',
-            margin: '0',
-            flexGrow: '1'
+            display: 'flex',
+            backgroundColor: 'var(--color-bg)', // make it opaque
+            justifyContent: 'space-between',
+            alignContent: 'center',
           }}
         >
-          Built with React, TanStack Start, Better-Auth, Valibot,NodeMailer and MVP.css
-        </p>
-        <Spacer orientation="horizontal" space={1} />
-        <a
-          style={{
-            fontSize: '0.8rem',
-            // textAlign: 'right',
-            // minWidth: '250px',
-            textWrap: 'nowrap',
-          }}
-          href="https://www.flaticon.com/free-icons/landscape"
-          title="landscape icons"
-        >
-          Landscape icon by Nuricon - Flaticon
-        </a>
-         {/*<Spacer orientation="horizontal" space={1} />*/}
-        {/*<p*/}
-        {/*  style={{*/}
-        {/*    fontSize: '0.8rem',*/}
-        {/*    margin: '0',*/}
-        {/*    flexGrow: '1'*/}
-        {/*  }}*/}
-        {/*>*/}
-        {/* test*/}
-        {/*</p>*/}
-      </div>
-    </section>
+          <div>
+            <p
+              style={{
+                fontSize: '0.8rem',
+                marginTop: '4px', // why needed to align with the link?
+              }}
+            >
+              Built with React, TanStack Start, Better-Auth, Valibot, NodeMailer and MVP.css
+            </p>
+          </div>
+          <div>
+            <a
+              style={{
+                fontSize: '0.8rem',
+                textWrap: 'nowrap',
+                fontWeight: '400',
+                textDecoration: 'none',
+              }}
+              href="https://www.flaticon.com/free-icons/ecology"
+              title="landscape icons"
+            >
+              Ecology icon by Maan Icons - Flaticon
+            </a>
+          </div>
+         </section>
+      </main>
+    </div>
   )
 }

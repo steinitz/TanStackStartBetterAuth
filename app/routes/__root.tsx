@@ -1,9 +1,13 @@
 // app/routes/__root.tsx
-import {Outlet, createRootRoute, useRouterState} from '@tanstack/react-router'
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+  useRouterState
+} from '@tanstack/react-router'
 // import {TanStackRouterDevtools} from '@tanstack/router-devtools'
-import {Meta, Scripts} from '@tanstack/start'
 import type {ReactNode} from 'react'
-import React, {Suspense} from 'react'
 import {MainLayout} from '~/components/MainLayout'
 
 /*
@@ -85,7 +89,7 @@ function RootDocument({children}: Readonly<{children: ReactNode}>) {
     <>
     <html color-mode="user">
       <head>
-        <Meta />
+        <HeadContent />
       </head>
       <body>
         <MainLayout>{children}</MainLayout>

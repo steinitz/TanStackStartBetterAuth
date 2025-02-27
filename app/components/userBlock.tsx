@@ -76,16 +76,6 @@ export function UserBlock() {
           Sign In
         </Link>
       }
-      <div>
-        <Link
-          style={{
-            ...adjustVerticalLocationStyle,
-          }}
-          to="/contact"
-        >
-          Support
-        </Link>
-      </div>
-    </div>
+     </div>
   )
 }

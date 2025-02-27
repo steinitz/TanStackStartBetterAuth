@@ -25,7 +25,7 @@ export const auth = betterAuth({
           from,
           subject: 'Approve email address change',
           text: `${changeEmailText} ${newEmail} ${url}`,
-          html: `<p>${changeEmailText} ${newEmail} ${url}<p>`,
+          html: `<p>${changeEmailText} ${newEmail} ${url}</p>`,
         })
       }
     }
@@ -41,7 +41,7 @@ export const auth = betterAuth({
         from,
         subject: 'Reset your password',
         text: `${passwordResetLinkText} ${url}`,
-        html: `<p>${passwordResetLinkText} ${url}<p>`,
+        html: `<p>${passwordResetLinkText} ${url}</p>`,
       })
     },
   },
@@ -55,7 +55,7 @@ export const auth = betterAuth({
         from,
         subject: 'Verify your email address',
         text: `${verificationLinkText} ${user.email} ${url}`,
-        html: `<p>${verificationLinkText} ${user.email} ${url}<p>`,
+        html: `<p>${verificationLinkText} ${user.email} ${url}</p>`,
       })
     }
   },

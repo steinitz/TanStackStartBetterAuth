@@ -52,7 +52,7 @@ const contact = () => {
   }
 
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
-    console.log('contact sendMessage', {from, companyName})
+    // console.log('contact sendMessage', {from, companyName})
     const fields = sharedFormSubmission(event);
     const isValid = validateFormFields(fields)
     if (isValid) {
@@ -61,7 +61,15 @@ const contact = () => {
         if  (isHTML) {
           lineBreak = '<br>'
         }
-        return `contact form message from${lineBreak}${fields.name}${lineBreak}${fields.email}:${lineBreak}${fields.message}`
+        return `Contact-form support message from:
+        ${lineBreak}
+        ${fields.name}
+        ${lineBreak}
+        ${fields.email}
+        ${lineBreak}${lineBreak}
+        Message:
+        ${lineBreak}
+        ${fields.message}`
     }
       const result = await sendEmail({
           data: {
@@ -72,7 +80,7 @@ const contact = () => {
             html: `<p>${message(true)}</p>`,
           }
         })
-      console.log('contact sendMessage', {result})
+      // console.log('contact sendMessage', {result})
       if (result) {
         navigation({
           to: '/contact-sent',
@@ -83,7 +91,7 @@ const contact = () => {
         })
       }
       else {
-        alert(`Message failed to send`)
+        alert(`Message failed to send.`)
       }
     }
     else {

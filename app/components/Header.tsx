@@ -1,6 +1,6 @@
 import {Link, useRouterState} from "@tanstack/react-router";
 import {adjustVerticalLocationStyle, UserBlock} from "~/components/userBlock";
-import { Spacer } from "./Spacer";
+import {Spacer} from "./Spacer";
 import {routeStrings} from "~/constants";
 
 export const Header = () => {
@@ -17,6 +17,7 @@ export const Header = () => {
         backgroundColor: 'var(--color-bg)',
         justifyContent: 'space-between',
         flexDirection: 'row',
+        marginBottom: '-13px',
       }}
     >
       {/*<div*/}
@@ -45,7 +46,7 @@ export const Header = () => {
         </Link>
         <Spacer orientation={'horizontal'} space={1} />
         <UserBlock />
-        {isContactFormRoute &&
+        {!isContactFormRoute &&
           <Link
             style={{
               ...adjustVerticalLocationStyle,

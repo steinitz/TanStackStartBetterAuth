@@ -1,4 +1,4 @@
-import {createFileRoute, useLoaderData} from '@tanstack/react-router'
+import {createFileRoute, useLoaderData, useNavigate} from '@tanstack/react-router'
 import {FormFieldError} from "~/components/FormFieldError";
 import * as v from "valibot";
 import {emailValidation, niceValidationIssues, sharedFormSubmission} from "~/lib/form";
@@ -6,8 +6,10 @@ import {type SyntheticEvent, useState} from "react";
 
 // import {transportOptions} from "~/lib/mailSender";
 
+const thisPath = '/contact'
+
 import {useSession} from "~/lib/auth-client";
-import {sendEmail} from "~/lib/mailUtilities";
+import {getEmailEnvironmentVars, sendEmail} from "~/lib/mailUtilities";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type ContactData = {
@@ -23,8 +25,19 @@ const ContactSchema = v.object({
   message: v.pipe(v.string(), v.nonEmpty('please type a message')),
 });
 
-const contact = ()=> {
+const contact = () => {
+  const navigation = useNavigate();
+    const {from, companyName} = useLoaderData({from: thisPath})
+
   const {data: session} = useSession()
+  // const {from, companyName} = await getEmailEnvironmentVars()
+
+  // contact-sent can set the email param if the user selects Rewrite your message
+  const {name, email}: {
+    name?: string,
+    email?: string,
+  } = Route.useSearch()
+
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: ContactData) => {
     const valibotResult = v.safeParse(
@@ -38,8 +51,8 @@ const contact = ()=> {
     return valibotResult.success
   }
 
-  const {from, companyName} = useLoaderData({from: '/contact'})
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
+    console.log('contact sendMessage', {from, companyName})
     const fields = sharedFormSubmission(event);
     const isValid = validateFormFields(fields)
     if (isValid) {
@@ -50,7 +63,7 @@ const contact = ()=> {
         }
         return `contact form message from${lineBreak}${fields.name}${lineBreak}${fields.email}:${lineBreak}${fields.message}`
     }
-      await sendEmail({
+      const result = await sendEmail({
           data: {
             to: from,
             from,
@@ -59,8 +72,21 @@ const contact = ()=> {
             html: `<p>${message(true)}</p>`,
           }
         })
-      alert(`Message sent`)
-    } else {
+      console.log('contact sendMessage', {result})
+      if (result) {
+        navigation({
+          to: '/contact-sent',
+          search: {
+            email: fields.email,
+            name: fields.name,
+          }
+        })
+      }
+      else {
+        alert(`Message failed to send`)
+      }
+    }
+    else {
       // alert(`validation error`)
     }
   }
@@ -72,7 +98,7 @@ const contact = ()=> {
           <input
             name="name"
             type="name"
-            defaultValue={''}
+            defaultValue={session?.user?.name ?? name ?? ''}
             autoComplete="on"
           />
           <FormFieldError message={validationIssues?.name}/>
@@ -81,7 +107,7 @@ const contact = ()=> {
           <input
             name="email"
             type="email"
-            defaultValue={session?.user?.email ?? ''}
+            defaultValue={session?.user?.email ?? email ?? ''}
             autoComplete="on"
           />
           <FormFieldError message={validationIssues?.email}/>
@@ -101,13 +127,12 @@ const contact = ()=> {
   )
 }
 
-export const Route = createFileRoute('/contact')({
+export const Route = createFileRoute(thisPath)({
   component: contact,
-  loader: async () => {
-    return {
-      from: process.env.SMTP_FROM_ADDRESS,
-      companyName: process.env.COMPANY_NAME,
-    }
+  loader: () => {
+    // this seems to simple.  Why no async and await?
+    // Note they throw an error anyway.
+    return getEmailEnvironmentVars()
   }
 })
 

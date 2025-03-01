@@ -10,8 +10,8 @@
 }
 
 button[type="reset"] {
-  background-color: var(--color-accent); /* rgb(110, 152, 178);*/
-  /*color: var(--color-text-secondary);*/
+  background-color: var(--color-text-secondary); /* rgb(110, 152, 178);*/
+  border-color: var(--color-text-secondary);
 }
 
 button {

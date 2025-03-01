@@ -1,0 +1,29 @@
+import {createFileRoute, Link, useNavigate} from '@tanstack/react-router'
+import { Spacer } from '~/components/Spacer'
+
+export const ContactSent = ({name, email, setMessageSent}) => {
+  const navigation = useNavigate()
+  console.log('ContactSent', {name, email, setMessageSent})
+  return (
+        <form action="/">
+          <h1>We've sent your message to our support team</h1>
+          <p>Our support team will reply to the email you provided:</p>
+          <p style={{marginLeft: '4rem'}}>{email}</p>
+          <Spacer space={1.5} />
+          <button
+            type="reset"
+            onClick={() => setMessageSent(false)}
+          >
+            Wrong Email Address?
+          </button>
+          <div style={{textAlign: "right"}}>
+            <button
+              type="submit"
+              onClick={() => navigation({to: "/"})}
+            >
+              Done
+            </button>
+          </div>
+        </form>
+  )
+}

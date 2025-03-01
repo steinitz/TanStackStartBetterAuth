@@ -1,7 +1,7 @@
 import {betterAuth} from "better-auth";
 import {appDatabase} from "~/lib/database";
 import nodemailer, {type Transport} from "nodemailer";
-import {transportOptions} from "~/lib/mailSender";
+import {transportOptions} from "~/lib/mailUtilities";
 
 const from = process.env.SMTP_FROM_ADDRESS
 //console.log('auth', {from})

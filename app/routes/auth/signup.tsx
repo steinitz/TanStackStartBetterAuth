@@ -1,11 +1,12 @@
 import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
-import {createFileRoute} from '@tanstack/react-router'
+import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {signUp} from '~/lib/auth-client'
 import {FormFieldError} from '~/components/FormFieldError';
 import {PasswordInput} from '~/components/InputFields';
 import {fieldsFromFormData} from "~/lib/form";
 import {routeStrings} from '~/constants';
+import {Spacer} from "~/components/Spacer";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type SignupData = {
@@ -31,7 +32,12 @@ export const Route = createFileRoute(thisPath)({
 })
 
 export default function SignUp() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [success, setSuccess] = useState(false)
+
   const [validationIssues, setValidationIssues] = useState<any>({})
+
 
   const validateFormFields = (fields: SignupData) => {
     let isValid = true;
@@ -72,8 +78,8 @@ export default function SignUp() {
         },
         onSuccess: (ctx) => {
           console.log('signup.email - onSuccess', {ctx})
-
-          window.location.href = routeStrings.signin
+          setSuccess(true)
+          // window.location.href = routeStrings.signin
         },
         onError: (ctx) => {
           console.log('signup.email - onError', {ctxError: ctx.error.message})
@@ -93,6 +99,7 @@ export default function SignUp() {
     event.stopPropagation();
     const formData = new FormData(event.currentTarget);
     const fields = fieldsFromFormData(formData)
+    setEmail(fields.email as string)
 
     console.log( 'handleSignUp', {fields})
     const isValid = validateFormFields(fields as SignupData)
@@ -103,6 +110,7 @@ export default function SignUp() {
 
   return (
     <section>
+      {!success ?
       <form onSubmit={handleSignUp}>
         <label>Email
           <input
@@ -126,6 +134,25 @@ export default function SignUp() {
         />
         <button type="submit">Sign Up</button>
       </form>
+      :
+        <form>
+          <h1>Account Created</h1>
+          <p>We've sent an email-confirmation link to</p>
+          <p style={{marginLeft: '4rem'}}>{email}</p>
+          <p>Please check your email inbox and follow the instructions</p>
+          <Spacer space={1} />
+          <Spacer />
+          <div style={{textAlign: "right"}}>
+            <button
+              type="submit"
+              onClick={() => navigate({to: "/"})}
+            >
+              Ok
+            </button>
+          </div>
+        </form>
+
+      }
     </section>
   )
 }

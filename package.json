@@ -7,24 +7,24 @@
   },
   "dependencies": {
     "@tanstack/router": "^0.0.1-beta.53",
-    "@tanstack/start": "^1.99.3",
-    "@tanstack/start-api-routes": "^1.99.3",
-    "better-auth": "^1.1.13",
-    "better-sqlite3": "^11.8.0",
+    "@tanstack/start": "^1.112.1",
+    "@tanstack/start-api-routes": "^1.111.9",
+    "better-auth": "^1.2.0",
+    "better-sqlite3": "^11.8.1",
     "nodemailer": "^6.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "valibot": "^1.0.0-beta.15",
-    "vinxi": "^0.5.1"
+    "valibot": "^1.0.0-rc.3",
+    "vinxi": "^0.5.3"
   },
   "devDependencies": {
-    "@tanstack/router-devtools": "^1.99.6",
+    "@tanstack/router-devtools": "^1.112.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/nodemailer": "^6.4.17",
-    "@types/react": "^19.0.7",
-    "@types/react-dom": "^19.0.3",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.2",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }

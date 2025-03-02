@@ -30,7 +30,6 @@ export const Header = () => {
       {/*>*/}
         <Link
           style={{
-            // ...adjustVerticalLocationStyle,
             marginRight: '21px',
           }}
           to="/"
@@ -49,7 +48,7 @@ export const Header = () => {
         {!isContactFormRoute &&
           <Link
             style={{
-              ...adjustVerticalLocationStyle,
+              ...adjustVerticalLocationStyle(),
             }}
             to="/contact"
           >

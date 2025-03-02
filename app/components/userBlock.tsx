@@ -4,12 +4,14 @@ import {routeStrings} from "~/constants";
 
 const loggedInTextTopMarginTweak = 21
 
-export const adjustVerticalLocationStyle = {
+export const adjustVerticalLocationStyle = (fineAdjustment=0) => {
   // Nasty tweaking to align to the vertical position and
   // bottom margin of the single Login button in a Form below.
   // Also used by _index.tsx.
-  marginTop: `${loggedInTextTopMarginTweak}px`,
-  marginBottom: `${loggedInTextTopMarginTweak * 2}px`,
+  return {
+    marginTop: `${loggedInTextTopMarginTweak + (fineAdjustment || 0)}px`,
+    marginBottom: `${loggedInTextTopMarginTweak * 2}px`,
+  }
 }
 
 export function UserBlock() {
@@ -23,16 +25,22 @@ export function UserBlock() {
     <div
       style={{
         display: 'flex',
-       }}
+      }}
     >
       {session?.user ? <>
-          <p>
+          <p style={{
+            ...adjustVerticalLocationStyle(1),
+            marginRight: '5rem',
+            fontWeight: '200',
+            fontSize: '0.95rem',
+          }}
+          >
             {session?.user.email}
           </p>
           <div>
             <Link
               style={{
-                ...adjustVerticalLocationStyle,
+                ...adjustVerticalLocationStyle(),
                 marginRight: '21px',
               }}
               to="/profile"
@@ -54,7 +62,7 @@ export function UserBlock() {
                 })
               }}
               style={{
-                ...adjustVerticalLocationStyle,
+                ...adjustVerticalLocationStyle(),
                 marginRight: '21px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -68,7 +76,7 @@ export function UserBlock() {
         !isSignInRoute &&
         <Link
           style={{
-            ...adjustVerticalLocationStyle,
+            ...adjustVerticalLocationStyle(),
             marginRight: '21px',
           }}
           to={routeStrings.signin}
@@ -76,6 +84,6 @@ export function UserBlock() {
           Sign In
         </Link>
       }
-     </div>
+    </div>
   )
 }

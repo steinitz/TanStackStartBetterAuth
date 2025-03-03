@@ -3,7 +3,7 @@ import {sendTestEmail} from "~/lib/mailUtilities";
 import {updateCount} from "~/lib/count";
 import {useRouter} from "@tanstack/react-router";
 
-export function DeveloperTools({theCount, testMessage}: any) {
+export function DeveloperTools({theCount}: any) {
   const router = useRouter()
   //const theCount2 = await getCount() can't use asynce in client components
   const handleSendTestMessage = async () => {

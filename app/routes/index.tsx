@@ -36,7 +36,6 @@ function Home() {
           <>
           <Spacer />
             <DeveloperTools
-              testsMessage={testMessage}
               theCount={theCount}
             />
           </>

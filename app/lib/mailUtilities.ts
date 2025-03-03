@@ -64,11 +64,11 @@ export const testMessage = () => {
   }
 }
 
-export const testMail = createServerFn({method: 'POST'})
+export const verifyMailServer = createServerFn({method: 'POST'})
   .validator((d: string) => d)
   .handler(async ({data}) => {
     let result = {error: null, success: null}
-    // console.log('running testMail server function', /*{mailSender, data}*/)
+    // console.log('running verifyMailServer server function', /*{mailSender, data}*/)
     const mailSender = nodemailer.createTransport(transportOptions as Transport)
     mailSender.verify(function (error: any, success: any) {
       if (error) {
@@ -80,6 +80,19 @@ export const testMail = createServerFn({method: 'POST'})
       }
     });
     return result
+  }
+)
+
+export const sendTestEmail = createServerFn({method: 'POST'})
+  .validator((d: any) => d)
+  .handler(async () => {
+    // console.log('sending testMessage', {/*mailSender, */ data})
+    const mailSender = nodemailer.createTransport(transportOptions as Transport)
+    const result = await mailSender?.sendMail(
+     testMessage(),
+    )
+    const success = result.accepted[0] // return the first accepted email address
+    return success
   }
 )
 

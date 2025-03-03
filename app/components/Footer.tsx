@@ -1,3 +1,6 @@
+import {sendEmail} from "~/lib/mailUtilities";
+import {updateCount} from "~/lib/count";
+import {DeveloperTools} from "~/components/DeveloperTools";
 
 export const Footer = () => {
   return (
@@ -43,7 +46,7 @@ export const Footer = () => {
               Ecology icon by Maan Icons - Flaticon
             </a>
           </div>
-         </section>
+        </section>
       </main>
     </div>
   )

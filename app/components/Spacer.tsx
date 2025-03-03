@@ -4,7 +4,7 @@ interface propTypes {
 }
 
 export const Spacer = (props: propTypes) => {
-  const {space = 2.5, orientation = 'vertical'} = props;
+  const {space = 2.0, orientation = 'vertical'} = props;
   // const direction = orientation === 'vertical' ? 'borderRightWidth' : 'borderBottomWidth'
   return orientation === 'vertical' ?
     <hr

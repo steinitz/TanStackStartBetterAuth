@@ -5,6 +5,7 @@ import {sharedFormSubmission} from "~/lib/form";
 import * as v from "valibot";
 import {resetPassword} from '~/lib/auth-client';
 import { routeStrings } from '~/constants';
+import { Spacer } from '~/components/Spacer';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
@@ -60,21 +61,19 @@ export const SetNewPassword = () => {
   return (
     <>
       <div>
-        <h1>Set New Password</h1>
       </div>
       <section>
         <form onSubmit={handleSetNewPassword}>
+        <h1>Set New Password</h1>
           <PasswordInput
             validationIssue={validationIssues?.password}
           />
-          <button type="submit">Set New Password</button>
+          <Spacer />
+          <div style={{textAlign: "right"}}>
+            <button type="submit">Set New Password</button>
+          </div>
         </form>
       </section>
-      <button
-        type={'submit'}
-      >
-        Index - for troubleshooting, remove
-      </button>
     </>
   )
 }

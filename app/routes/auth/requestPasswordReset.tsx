@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { FormFieldError } from '~/components/FormFieldError'
 import { SyntheticEvent, useState } from 'react'
-import { sharedFormSubmission } from '~/lib/form'
+import {niceValidationIssues, sharedFormSubmission} from '~/lib/form'
 import * as v from 'valibot'
 import { forgetPassword } from '~/lib/auth-client'
+import {Spacer} from "~/components/Spacer";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
@@ -20,35 +21,46 @@ const PasswordResetSchema = v.object({
 })
 
 export const SetNewPassword = () => {
+  const navigate = useNavigate()
+
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: PasswordResetData) => {
-    let isValid = true
-
-    try {
-      const valibotResult = v.parse(
-        PasswordResetSchema,
-        fields,
-        // ensure each key, e.g. password, has only one error message
-        { abortPipeEarly: true },
-      )
-      console.log('validating email\n', { valibotResult })
-    } catch (error: any) {
-      /*: ValiError<typeof SignupSchema>*/
-      const flattenedIssues = v.flatten<typeof PasswordResetSchema>(
-        error.issues,
-      )
-      setValidationIssues(flattenedIssues?.nested ?? {})
-      isValid = false
+    // let isValid = true
+    // try {
+    //   const valibotResult = v.parse(
+    //     PasswordResetSchema,
+    //     fields,
+    //     // ensure each key, e.g. password, has only one error message
+    //     { abortPipeEarly: true },
+    //   )
+    //   console.log('validating email\n', { valibotResult })
+    // } catch (error: any) {
+    //   const flattenedIssues = v.flatten<typeof PasswordResetSchema>(
+    //     error.issues,
+    //   )
+    //   setValidationIssues(flattenedIssues?.nested ?? {})
+    //   isValid = false
+    // }
+    //
+    // return isValid
+    const valibotResult = v.safeParse(
+    PasswordResetSchema,
+    fields,
+    {abortPipeEarly: true} // max one issue per key
+    )
+    if (!valibotResult.success) {
+      setValidationIssues(niceValidationIssues(valibotResult))
     }
-
-    return isValid
+    return valibotResult.success
   }
 
+  const [email, setEmail] = useState('')
   const handlePasswordReset = async (
     event: SyntheticEvent<HTMLFormElement>,
   ) => {
     const fields = sharedFormSubmission(event)
     const email = fields.email as string
+    setEmail(email)
     console.log('handlePasswordReset', { email })
 
     const isValid = validateFormFields(fields as PasswordResetData)
@@ -81,8 +93,23 @@ export const SetNewPassword = () => {
           </label>
           <button type="submit">Reset Password</button>
         </form>
+         <form>
+          <h1>Account Created</h1>
+          <p>We've sent an password-reset link to</p>
+          <p style={{marginLeft: '4rem'}}>{email}</p>
+          <p>Please check your email inbox and follow the instructions</p>
+          <Spacer space={2} />
+          <div style={{textAlign: "right"}}>
+            <button
+              type="submit"
+              onClick={() => navigate({to: "/"})}
+            >
+              Ok
+            </button>
+          </div>
+        </form>
       </section>
-      <button type={'submit'}>Index - for troubleshooting, remove</button>
+     <button type={'submit'}>Index - for troubleshooting, remove</button>
     </>
   )
 }

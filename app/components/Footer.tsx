@@ -32,6 +32,20 @@ export const Footer = () => {
               Built with React, TanStack Start, Better-Auth, Valibot, NodeMailer and MVP.css
             </p>
           </div>
+          <div
+            style={{
+              fontSize: '0.8rem',
+              marginTop: '-17px', // why needed to align with the link?
+            }}
+          >
+            <DeveloperTools
+              detailItemsStyleAttribute={{
+                position: "absolute",
+                top: "-5rem",
+                left: '50%',
+              }}
+            />
+          </div>
           <div>
             <a
               style={{

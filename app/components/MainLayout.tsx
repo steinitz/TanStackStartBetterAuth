@@ -1,18 +1,11 @@
 // app/routes/index.tsx
-import {ReactNode, useNavigate, useRouter} from '@tanstack/react-router'
-import {UserBlock} from '~/components/userBlock'
-import {useSession} from '~/lib/auth-client'
+import { ReactNode } from "react";
 import {Footer} from "~/components/Footer";
-import {Header} from './Header';
-
+import {Header} from '~/components/Header';
 
 export const MainLayout = ({children}: Readonly<{children: ReactNode}>)=> {
-  const router = useRouter()
-  const navigate = useNavigate()
-  const {data: session} = useSession()
-  // console.log('index Home', {session: session ?? 'no session',})
-  const email = session?.user?.email
-
+  // const {theCount} = Route.useLoaderData()
+  const theCount = 5
   return (
     <main>
       <Header />
@@ -21,3 +14,14 @@ export const MainLayout = ({children}: Readonly<{children: ReactNode}>)=> {
     </main>
   )
 }
+
+// export const Route = createFileRoute('/_mainLayout')({
+//   component: MainLayout,
+//   loader: async () => {
+//     return {
+//       theCount: await getCount(),
+//       // testMessage: testMessage()
+//     }
+//   }
+// })
+

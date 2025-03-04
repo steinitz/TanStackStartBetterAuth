@@ -35,9 +35,6 @@ function Home() {
         (
           <>
           <Spacer />
-            <DeveloperTools
-              theCount={theCount}
-            />
           </>
         )
       }

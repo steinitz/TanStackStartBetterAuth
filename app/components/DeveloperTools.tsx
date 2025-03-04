@@ -5,30 +5,27 @@ import {getRouteApi, useRouter} from "@tanstack/react-router";
 import {useEffect, useState} from "react";
 
 type DetailsItemsStyleAttributeType = {
-  detailItemsStyleAttribute?: {
+  // detailItemsStyleAttribute?: {
     position: string,
     top: string,
     left:string,
   }
-}
+// }
 
 export const DeveloperTools =(
-  {detailItemsStyleAttribute}: any /*{
-    detailItemsStyleAttribute?: DetailsItemsStyleAttributeType
-  }*/
+  {detailItemsStyleAttribute}: {detailItemsStyleAttribute: DetailsItemsStyleAttributeType}
 )=> {
-  const [theCount, setTheCount] = useState(0)
-
   // crappy way to get the count since I can't have a loader here
   // because its not a route
+  const [theCount, setTheCount] = useState(0)
   const doGetCount = async () => {
     const count =  await getCount()
     setTheCount(count)
   }
 
   const router = useRouter()
-  // build the styling for the details items
-  // include the position styling if provided in the props
+    // crappy way to get the count since I can't have
+    // a loader here because its not a route
   const detailsItemsStyle: any = {
     display: "flex",
     flexDirection: "row",
@@ -47,8 +44,8 @@ export const DeveloperTools =(
     await updateCount({data: 1}).then(() => {
       router.invalidate()
     })
-    // crappy way to get the count since I can't have a loader here
-    // because its not a route
+    // crappy way to get the count since I can't have
+    // a loader here because its not a route
     doGetCount()
   }
 

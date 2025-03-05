@@ -114,7 +114,7 @@ export const SetNewPassword = () => {
   )
 }
 
-export const Route = createFileRoute('/auth/requestPasswordReset')({
+export const Route = createFileRoute('/_app/auth/requestPasswordReset')({
   component: SetNewPassword,
   // loader: async () => await getCount(),
 })

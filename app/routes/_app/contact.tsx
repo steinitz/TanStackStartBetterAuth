@@ -4,7 +4,7 @@ import * as v from "valibot";
 import {emailValidation, niceValidationIssues, sharedFormSubmission} from "~/lib/form";
 import {type SyntheticEvent, useState} from "react";
 
-const thisPath = '/contact'
+const thisPath = '/_app/contact'
 
 import {useSession} from "~/lib/auth-client";
 import {getEmailEnvironmentVars, sendEmail} from "~/lib/mailUtilities";

@@ -1,32 +1,23 @@
 import {Spacer} from "~/components/Spacer";
 import {sendTestEmail} from "~/lib/mailUtilities";
 import {getCount, updateCount} from "~/lib/count";
-import {getRouteApi, useRouter} from "@tanstack/react-router";
+import {getRouteApi, useLoaderData, useRouter} from "@tanstack/react-router";
 import {useEffect, useState} from "react";
 
 type DetailsItemsStyleAttributeType = {
-  // detailItemsStyleAttribute?: {
-    position: string,
-    top: string,
-    left:string,
-  }
-// }
+  position: string,
+  top: string,
+  left:string,
+}
 
 export const DeveloperTools =(
   {detailItemsStyleAttribute}: {detailItemsStyleAttribute: DetailsItemsStyleAttributeType}
 )=> {
-  // crappy way to get the count since I can't have a loader here
-  // because its not a route
-  const [theCount, setTheCount] = useState(0)
-  const doGetCount = async () => {
-    const count =  await getCount()
-    setTheCount(count)
-  }
+
+  const count = useLoaderData({from: '/_app'})
 
   const router = useRouter()
-    // crappy way to get the count since I can't have
-    // a loader here because its not a route
-  const detailsItemsStyle: any = {
+   const detailsItemsStyle: any = {
     display: "flex",
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -42,11 +33,9 @@ export const DeveloperTools =(
 
   const handleUpdateCount = async () => {
     await updateCount({data: 1}).then(() => {
+      // this makes the count value update in the UI
       router.invalidate()
     })
-    // crappy way to get the count since I can't have
-    // a loader here because its not a route
-    doGetCount()
   }
 
   return <details>
@@ -65,7 +54,7 @@ export const DeveloperTools =(
         type="button"
         onClick={handleUpdateCount}
       >
-        Add 1 to {theCount}
+        Add 1 to {count}
       </button>
     </div>
   </details>;

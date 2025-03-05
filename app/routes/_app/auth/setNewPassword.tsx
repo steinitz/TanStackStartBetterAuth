@@ -78,7 +78,7 @@ export const SetNewPassword = () => {
   )
 }
 
-export const Route = createFileRoute('/auth/setNewPassword')({
+export const Route = createFileRoute('/_app/auth/setNewPassword')({
   component: SetNewPassword,
   // loader: async () => await getCount(),
 })

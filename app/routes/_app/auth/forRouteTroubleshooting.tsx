@@ -21,7 +21,7 @@ export const Profile = () => {
   )
 }
 
-export const Route = createFileRoute('/auth/forRouteTroubleshooting')({
+export const Route = createFileRoute('/_app/auth/forRouteTroubleshooting')({
   component: Profile,
   // loader: async () => await getCount(),
 })

@@ -1,17 +1,17 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {SyntheticEvent, useState} from "react";
 import * as v from "valibot";
-import {sharedFormSubmission} from "~/lib/form";
+import {niceValidationIssues, sharedFormSubmission} from "~/lib/form";
 import {changeEmail} from "~/lib/auth-client";
 import {FormFieldError} from "~/components/FormFieldError";
-import { Spacer } from "~/components/Spacer";
+import {Spacer} from "~/components/Spacer";
 
-type NewEmailData = {
+type ProfileData = {
   email: string
 }
 
 // Valibot
-const NewEmailSchema = v.object({
+const ProfileSchema = v.object({
   email: v.pipe(
     v.string('email must be a string'),
     v.nonEmpty('email address required'),
@@ -20,30 +20,21 @@ const NewEmailSchema = v.object({
 })
 
 export const Profile = () => {
-  const [validationIssues, setValidationIssues] = useState<any>({})
   const [emailChangeError, setEmailChangeError] = useState<any>()
   const [emailChangeDidSucceed, setEmailChangeDidSucceed] = useState(false)
   const [newEmailAddress, setNewEmailAddress] = useState('')
-  const validateFormFields = (fields: NewEmailData) => {
-    let isValid = true
+  const [validationIssues, setValidationIssues] = useState<any>({})
 
-    try {
-      const valibotResult = v.parse(
-        NewEmailSchema,
-        fields,
-        // ensure each key, e.g. password, has only one error message
-        { abortPipeEarly: true },
-      )
-      console.log('validating email\n', { valibotResult })
-    } catch (error: any) {
-      const flattenedIssues = v.flatten<typeof NewEmailSchema>(
-        error.issues,
-      )
-      setValidationIssues(flattenedIssues?.nested ?? {})
-      isValid = false
+  const validateFormFields = (fields: ProfileData) => {
+    const valibotResult = v.safeParse(
+    ProfileSchema,
+    fields,
+    {abortPipeEarly: true} // max one issue per key
+    )
+    if (!valibotResult.success) {
+      setValidationIssues(niceValidationIssues(valibotResult))
     }
-
-    return isValid
+    return valibotResult.success
   }
 
   const handleNewEmailRequest = async (
@@ -53,7 +44,7 @@ export const Profile = () => {
     const newEmail = fields.email as string
     console.log('handleNewEmailRequest', { newEmail })
 
-    const isValid = validateFormFields(fields as NewEmailData)
+    const isValid = validateFormFields(fields as ProfileData)
     console.log('handleNewEmailRequest', { isValid })
 
     if (isValid) {
@@ -113,13 +104,11 @@ export const Profile = () => {
           }
         </form>
       </section>
-      <button type={'submit'}>Index - for troubleshooting, remove</button>
     </>
   )
 }
 
-export const Route = createFileRoute('/profile')({
+export const Route = createFileRoute('/_app/profile')({
   component: Profile,
-  // loader: async () => await getCount(),
 })
 

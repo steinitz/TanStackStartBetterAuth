@@ -2,11 +2,12 @@ import {Link, useRouterState} from "@tanstack/react-router";
 import {adjustVerticalLocationStyle, UserBlock} from "~/components/userBlock";
 import {Spacer} from "./Spacer";
 import {routeStrings} from "~/constants";
+import {activeLinkStyle} from "~/components/styles";
 
 export const Header = () => {
   const router = useRouterState()
 
-  const isContactFormRoute = router.location.pathname === routeStrings.signin
+  // const isContactFormRoute = router.location.pathname === routeStrings.signin
 
   return(
     <section
@@ -45,16 +46,17 @@ export const Header = () => {
         </Link>
         <Spacer orientation={'horizontal'} space={1} />
         <UserBlock />
-        {!isContactFormRoute &&
           <Link
             style={{
               ...adjustVerticalLocationStyle(),
             }}
             to="/contact"
+            activeProps={{
+              style: activeLinkStyle
+            }}
           >
             Support
           </Link>
-        }
       {/*</div>*/}
     </section>
   )

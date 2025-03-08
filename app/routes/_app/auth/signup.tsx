@@ -26,7 +26,7 @@ const SignupSchema = v.object({
   name: v.string(),
 });
 
-const thisPath = '/auth/signup'
+const thisPath = '/_app/auth/signup'
 export const Route = createFileRoute(thisPath)({
   component: SignUp,
 })

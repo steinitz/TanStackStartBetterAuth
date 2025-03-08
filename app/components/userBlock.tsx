@@ -1,6 +1,7 @@
 import {Link, useNavigate, useRouterState} from '@tanstack/react-router'
 import {signOut, useSession} from '~/lib/auth-client'
 import {routeStrings} from "~/constants";
+import {activeLinkStyle} from "~/components/styles";
 
 const loggedInTextTopMarginTweak = 21
 
@@ -44,6 +45,9 @@ export function UserBlock() {
                 marginRight: '21px',
               }}
               to="/profile"
+              activeProps={{
+                style: activeLinkStyle
+              }}
             >
               Profile
             </Link>

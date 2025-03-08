@@ -2,7 +2,6 @@ import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
 import {Link, useNavigate} from '@tanstack/react-router'
 import {signIn} from '~/lib/auth-client'
-import {Spacer} from '~/components/Spacer'
 import {PasswordInput} from "~/components/InputFields";
 import {FormFieldError} from "~/components/FormFieldError";
 import {niceValidationIssues, sharedFormSubmission} from "~/lib/form";
@@ -81,7 +80,7 @@ export const SignIn = () => {
 
     if (isValid) {
       await doSignIn(fields)
-      navigate({to: '/auth/requestPasswordReset'})
+      navigate({to: '/'})
     }
   }
 

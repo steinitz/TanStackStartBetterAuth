@@ -35,4 +35,9 @@ export const repurposedFormBoxStyle = {
   minWidth: "var(--width-card)",
   padding: "1.5rem",
   // textAlign: "var(--justify-normal)" // typescript doesn't like this ??
-};
+}
+
+export const activeLinkStyle = {
+  color: 'var(--color-text)',
+  textDecoration: 'none',
+}

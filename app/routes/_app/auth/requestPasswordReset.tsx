@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { FormFieldError } from '~/components/FormFieldError'
-import { SyntheticEvent, useState } from 'react'
+import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {FormFieldError} from '~/components/FormFieldError'
+import {SyntheticEvent, useState} from 'react'
 import {niceValidationIssues, sharedFormSubmission} from '~/lib/form'
 import * as v from 'valibot'
-import { forgetPassword } from '~/lib/auth-client'
+import {forgetPassword} from '~/lib/auth-client'
 import {Spacer} from "~/components/Spacer";
+import {isEmptyString} from "~/lib/utils";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
@@ -20,29 +21,11 @@ const PasswordResetSchema = v.object({
   ),
 })
 
-export const SetNewPassword = () => {
+export const RequestPasswordReset = () => {
   const navigate = useNavigate()
 
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: PasswordResetData) => {
-    // let isValid = true
-    // try {
-    //   const valibotResult = v.parse(
-    //     PasswordResetSchema,
-    //     fields,
-    //     // ensure each key, e.g. password, has only one error message
-    //     { abortPipeEarly: true },
-    //   )
-    //   console.log('validating email\n', { valibotResult })
-    // } catch (error: any) {
-    //   const flattenedIssues = v.flatten<typeof PasswordResetSchema>(
-    //     error.issues,
-    //   )
-    //   setValidationIssues(flattenedIssues?.nested ?? {})
-    //   isValid = false
-    // }
-    //
-    // return isValid
     const valibotResult = v.safeParse(
     PasswordResetSchema,
     fields,
@@ -61,10 +44,10 @@ export const SetNewPassword = () => {
     const fields = sharedFormSubmission(event)
     const email = fields.email as string
     setEmail(email)
-    console.log('handlePasswordReset', { email })
+    console.log('handlePasswordReset', {email})
 
     const isValid = validateFormFields(fields as PasswordResetData)
-    console.log('handlePasswordReset', { isValid })
+    console.log('handlePasswordReset', {isValid})
 
     if (isValid) {
       /*const {data, error} = */ await forgetPassword({
@@ -76,45 +59,45 @@ export const SetNewPassword = () => {
 
   return (
     <>
-      <div>
-        <h1>Reset Password</h1>
-      </div>
       <section>
-        <form onSubmit={handlePasswordReset}>
-          <label>
-            Email
-            <input
-              name="email"
-              type="email"
-              defaultValue={''}
-              autoComplete="on"
-            />
-            <FormFieldError message={validationIssues?.email} />
-          </label>
-          <button type="submit">Reset Password</button>
-        </form>
-         <form>
-          <h1>Account Created</h1>
-          <p>We've sent an password-reset link to</p>
-          <p style={{marginLeft: '4rem'}}>{email}</p>
-          <p>Please check your email inbox and follow the instructions</p>
-          <Spacer space={2} />
-          <div style={{textAlign: "right"}}>
-            <button
-              type="submit"
-              onClick={() => navigate({to: "/"})}
-            >
-              Ok
-            </button>
-          </div>
-        </form>
+        {isEmptyString(email) ?
+          <form onSubmit={handlePasswordReset}>
+            <h1>Password Reset</h1>
+            <label>
+              Email
+              <input
+                name="email"
+                type="email"
+                defaultValue={''}
+                autoComplete="on"
+              />
+              <FormFieldError message={validationIssues?.email}/>
+            </label>
+            <button type="submit">Reset Password</button>
+          </form>
+          :
+          <form>
+            <h1>Password Reset Link Sent</h1>
+            <p>We've sent a password-reset link to</p>
+            <p style={{marginLeft: '4rem'}}>{email}</p>
+            <p>Please check your email inbox and follow the instructions</p>
+            <Spacer space={2}/>
+            <div style={{textAlign: "right"}}>
+              <button
+                type="submit"
+                onClick={() => navigate({to: "/"})}
+              >
+                Ok
+              </button>
+            </div>
+          </form>
+        }
       </section>
-     <button type={'submit'}>Index - for troubleshooting, remove</button>
     </>
   )
 }
 
 export const Route = createFileRoute('/_app/auth/requestPasswordReset')({
-  component: SetNewPassword,
+  component: RequestPasswordReset,
   // loader: async () => await getCount(),
 })

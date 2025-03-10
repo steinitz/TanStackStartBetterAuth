@@ -15,6 +15,13 @@ export const adjustVerticalLocationStyle = (fineAdjustment=0) => {
   }
 }
 
+const navLinkStyle = {
+  ...adjustVerticalLocationStyle(),
+  marginRight: '21px',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+}
+
 export function UserBlock() {
   const navigate = useNavigate()
   const {data: session} = useSession()
@@ -28,65 +35,58 @@ export function UserBlock() {
         display: 'flex',
       }}
     >
-      {session?.user ? <>
-          <p style={{
-            ...adjustVerticalLocationStyle(1),
-            marginRight: '5rem',
-            fontWeight: '200',
-            fontSize: '0.95rem',
-          }}
-          >
-            {session?.user.email}
-          </p>
-          <div>
-            <Link
-              style={{
-                ...adjustVerticalLocationStyle(),
-                marginRight: '21px',
-              }}
-              to="/profile"
-              activeProps={{
-                style: activeLinkStyle
-              }}
-            >
-              Profile
-            </Link>
-          </div>
-          <p>&nbsp;</p>
-
-          <div>
-            <Link
-              onClick={() => {
-                signOut({
-                  fetchOptions: {
-                    onSuccess: () => {
-                      navigate({to: routeStrings.signin})
-                    },
-                  },
-                })
-              }}
-              style={{
-                ...adjustVerticalLocationStyle(),
-                marginRight: '21px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-              }}
-              to={routeStrings.signin}
-            >
-              Sign Out
-            </Link>
-          </div>
-        </> :
-        !isSignInRoute &&
+      <p style={{
+        ...adjustVerticalLocationStyle(1),
+        marginRight: '5rem',
+        fontWeight: '200',
+        fontSize: '0.95rem',
+      }}
+      >
+        {session?.user.email}
+      </p>
+      <div>
         <Link
-          style={{
-            ...adjustVerticalLocationStyle(),
-            marginRight: '21px',
+          style={navLinkStyle}
+          to={'/profile'}
+          activeProps={{
+            style: activeLinkStyle
           }}
-          to={routeStrings.signin}
         >
-          Sign In
+          Profile
         </Link>
+      </div>
+      {
+        session?.user ?
+        <div>
+          <Link
+            onClick={() => {
+              signOut({
+                fetchOptions: {
+                  onSuccess: () => {
+                    navigate({to: routeStrings.signin})
+                  },
+                },
+              })
+            }}
+            style={navLinkStyle}
+            to={routeStrings.signin}
+          >
+            Sign Out
+          </Link>
+        </div>
+        :
+        // !isSignInRoute &&
+        <div>
+          <Link
+            to={routeStrings.signin}
+            style={navLinkStyle}
+            activeProps={{
+              style: activeLinkStyle
+            }}
+          >
+            Sign In
+          </Link>
+        </div>
       }
     </div>
   )

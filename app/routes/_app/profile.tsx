@@ -1,12 +1,14 @@
 import {createFileRoute} from "@tanstack/react-router";
-import {SyntheticEvent, useState} from "react";
+import {MouseEvent, SyntheticEvent, useState} from "react";
 import * as v from "valibot";
-import {niceValidationIssues, sharedFormSubmission} from "~/lib/form";
+import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~/lib/form";
 import {changeEmail, deleteUser, useSession} from "~/lib/auth-client";
-import {FormFieldError} from "~/components/FormFieldError";
 import {Spacer} from "~/components/Spacer";
-import Dialog from "~/components/Dialog";
-import {EmailInput, FullNameInput, PasswordInput, PreferredNameInput, UsernameInput} from "~/components/InputFields";
+import {EmailInput, PasswordInput} from "~/components/InputFields";
+import {DeleteAccountConfirmationDialog} from "~/components/Profile/deleteAccountConfirmationDialog";
+import {CheckForEmailChangeLinkDialog} from "~/components/Profile/checkForEmailChangeLinkDialog";
+import {routeStrings} from "~/constants";
+import { SignIn } from "~/components/SignIn";
 
 type ProfileData = {
   email: string
@@ -28,7 +30,9 @@ export const Profile = () => {
   const [emailChangeDidSucceed, setEmailChangeDidSucceed] = useState(false)
   const [newEmailAddress, setNewEmailAddress] = useState('')
   const [validationIssues, setValidationIssues] = useState<any>({})
-  const [shouldShowConfirmation, setShouldShowConfirmation] = useState(false)
+  // confirmation dialogs state
+  const [shouldShowDeleteConfirmation, setShouldShowDeleteConfirmation] = useState(false)
+  const [shouldShowCheckForEmailChange, setShouldShowCheckForEmailChange] = useState(false)
 
   const validateFormFields = (fields: ProfileData) => {
     const valibotResult = v.safeParse(
@@ -64,7 +68,7 @@ export const Profile = () => {
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
-          // callbackURL: '/',
+          callbackURL: routeStrings.signin,
         })
         console.log('handleSaveChanges', {data, error})
         if (error) {
@@ -77,102 +81,88 @@ export const Profile = () => {
     }
   }
 
-  const intents = {save: 'save', delete: 'delete'}
+  // const intents = {save: 'save', delete: 'delete'}
 
-  function handleDeleteAccountRequest(/*event: SyntheticEvent<HTMLFormElement>*/): void {
-    // const fields = sharedFormSubmission(event)
-    setShouldShowConfirmation(true)
+  function handleDeleteAccountRequest(
+    event: MouseEvent
+    // event: SyntheticEvent<HTMLFormElement>
+  ): void {
+    preventDefaultFormSubmission (event)
+    setShouldShowDeleteConfirmation(true)
   }
 
-  function handleDeleteConfirmation(): void {
-    // const fields = sharedFormSubmission(event)
+  function handleDeleteConfirmation(event: SyntheticEvent<HTMLFormElement>): void {
+    preventDefaultFormSubmission (event)
     deleteUser()
   }
 
   return (
-    <section>
-      <Spacer/>
-      <form
-        onSubmit={handleSaveChanges}
-        // style={{maxWidth: '350px'}}
-      >
-        <Dialog
-          isOpen={shouldShowConfirmation}
-          onClose={
-            () => setShouldShowConfirmation(false)
-          }
-        >
-          <h3>Delete Account? &nbsp;Can't be undone.</h3>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between"
-            }}
+    <>
+      <DeleteAccountConfirmationDialog
+        open={shouldShowDeleteConfirmation}
+        onClose={() => setShouldShowDeleteConfirmation(false)}
+        onClick={handleDeleteConfirmation}
+      />
+      <CheckForEmailChangeLinkDialog
+        open={shouldShowCheckForEmailChange}
+        onClose={() => setShouldShowCheckForEmailChange(false)}
+      />
+      <section>
+        {session?.user ?
+          <form
+            onSubmit={handleSaveChanges}
+            // style={{maxWidth: '350px'}}
           >
-            <button
-              type="submit"
-              name="intent" value={intents.delete}
-              onClick={handleDeleteConfirmation}
+            <h1>Profile</h1>
+
+            <EmailInput
+              validationErrors={validationIssues}
+              defaultValue={email}
+            />
+            <PasswordInput validationIssue={validationIssues.password}/>
+            {/*<UsernameInput*/}
+            {/*  validationErrors={validationIssues}*/}
+            {/*  defaultValue={username}*/}
+            {/*/>*/}
+            {/*<PreferredNameInput*/}
+            {/*  validationErrors={validationIssues}*/}
+            {/*  defaultValue={preferredName}*/}
+            {/*/>*/}
+            {/*<FullNameInput*/}
+            {/*  validationErrors={validationIssues}*/}
+            {/*  defaultValue={fullName}*/}
+            {/*/>*/}
+            <div
               style={{
-                backgroundColor: "var(--color-error)",
-                borderColor: "var(--color-error)"
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between"
               }}
             >
-              Delete
-            </button>
-            <button onClick={() => setShouldShowConfirmation(false)}>
-              Cancel
-            </button>
-          </div>
-        </Dialog>
-
-        <h1>Profile</h1>
-
-        <EmailInput
-          validationErrors={validationIssues}
-          defaultValue={email}
-        />
-        <PasswordInput validationIssue={validationIssues.password}/>
-        {/*<UsernameInput*/}
-        {/*  validationErrors={validationIssues}*/}
-        {/*  defaultValue={username}*/}
-        {/*/>*/}
-        {/*<PreferredNameInput*/}
-        {/*  validationErrors={validationIssues}*/}
-        {/*  defaultValue={preferredName}*/}
-        {/*/>*/}
-        {/*<FullNameInput*/}
-        {/*  validationErrors={validationIssues}*/}
-        {/*  defaultValue={fullName}*/}
-        {/*/>*/}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between"
-          }}
-        >
-          <button
-            onClick={handleDeleteAccountRequest}
-            style={{
-              backgroundColor: 'var(--color-error)',
-              borderColor: 'var(--color-error)'
-            }}
-          >
-            Delete Account
-          </button>
-          <Spacer orientation="horizontal" space={1} />
-          <button
-            type="submit"
-            // name="intent" value={intents.save}
-            // onClick={handleSaveChanges}
-          >
-            Save Changes
-          </button>
-        </div>
-      </form>
-    </section>
+              <button
+                onClick={handleDeleteAccountRequest}
+                style={{
+                  backgroundColor: 'var(--color-error)',
+                  borderColor: 'var(--color-error)'
+                }}
+              >
+                Delete Account
+              </button>
+              <Spacer orientation="horizontal" space={1}/>
+              <button
+                type="submit"
+                // name="intent" value={intents.save}
+                // onClick={handleSaveChanges}
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+          :
+          <SignIn/>
+        }
+      </section>
+    </>
   )
 }
 

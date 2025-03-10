@@ -16,48 +16,39 @@ export const Header = () => {
         width: '100%',
         // height: '5rem',
         backgroundColor: 'var(--color-bg)',
-        justifyContent: 'space-between',
+        // justifyContent: 'space-between',
         flexDirection: 'row',
         marginBottom: '-13px',
       }}
     >
-      {/*<div*/}
-      {/*  style={{*/}
-      {/*    width: '70%',*/}
-      {/*    display: 'flex',*/}
-      {/*    justifyContent: 'space-between',*/}
-      {/*    flexDirection: 'row',*/}
-      {/*  }}*/}
-      {/*>*/}
-        <Link
+      <Link
+        style={{
+          marginRight: '21px',
+        }}
+        to="/"
+      >
+        <img
           style={{
-            marginRight: '21px',
+            width: '55px',
+            height: '55px',
           }}
-          to="/"
-        >
-          <img
-            style={{
-              width: '55px',
-              height: '55px',
-            }}
-            src="/logo.png"
-            alt="logo"
-          />
-        </Link>
-        <Spacer orientation={'horizontal'} space={1} />
-        <UserBlock />
-          <Link
-            style={{
-              ...adjustVerticalLocationStyle(),
-            }}
-            to="/contact"
-            activeProps={{
-              style: activeLinkStyle
-            }}
-          >
-            Support
-          </Link>
-      {/*</div>*/}
+          src="/logo.png"
+          alt="logo"
+        />
+      </Link>
+      <Spacer orientation={'horizontal'} space={1}/>
+      <UserBlock/>
+      <Link
+        style={{
+          ...adjustVerticalLocationStyle(),
+        }}
+        to="/contact"
+        activeProps={{
+          style: activeLinkStyle
+        }}
+      >
+        Support
+      </Link>
     </section>
   )
 }

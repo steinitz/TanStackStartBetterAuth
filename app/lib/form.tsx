@@ -1,3 +1,4 @@
+import { SyntheticEvent } from "react";
 import * as v from "valibot";
 
 export const fieldsFromFormData = (formData: FormData) => {
@@ -12,7 +13,7 @@ export const fieldsFromFormData = (formData: FormData) => {
 }
 
 export const preventDefaultFormSubmission  = (
-  event: React.SyntheticEvent<HTMLFormElement>
+  event: SyntheticEvent
 ): any => {
   // prevent default form submission behavior
   event.preventDefault();
@@ -20,7 +21,7 @@ export const preventDefaultFormSubmission  = (
 }
 
 export const sharedFormSubmission = (
-  event: React.SyntheticEvent<HTMLFormElement>
+  event: SyntheticEvent<HTMLFormElement>
 ): any => {
   preventDefaultFormSubmission(event)
   // extract field values from form

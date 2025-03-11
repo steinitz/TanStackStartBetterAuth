@@ -10,21 +10,17 @@ export function CheckForEmailChangeLinkDialog(props: {
       props.onClose
     }
   >
-    <h3>Check your email for a link to verify your new email address</h3>
+    <h3 style={{maxWidth: "17rem"}}>Check your email for a link to verify your new email address</h3>
     <div
       style={{
         display: "flex",
         flexDirection: "row",
-        justifyContent: "space-between"
+        justifyContent: "flex-end"
       }}
     >
       <button
         type="submit"
         onClick={props.onClose}
-        style={{
-          backgroundColor: "var(--color-error)",
-          borderColor: "var(--color-error)"
-        }}
       >
         Ok
       </button>

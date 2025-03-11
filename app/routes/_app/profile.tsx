@@ -26,14 +26,17 @@ const ProfileSchema = v.object({
 export const Profile = () => {
   const {data: session} = useSession()
 
-  const [emailChangeError, setEmailChangeError] = useState<any>()
-  const [emailChangeDidSucceed, setEmailChangeDidSucceed] = useState(false)
-  const [newEmailAddress, setNewEmailAddress] = useState('')
-  const [validationIssues, setValidationIssues] = useState<any>({})
-  // confirmation dialogs state
+  // confirmation dialogs state - looking for a nice way to put the state in the dialogs
   const [shouldShowDeleteConfirmation, setShouldShowDeleteConfirmation] = useState(false)
   const [shouldShowCheckForEmailChange, setShouldShowCheckForEmailChange] = useState(false)
 
+  const email = session?.user?.email
+
+  const [emailChangeError, setEmailChangeError] = useState<any>()
+  // const [emailChangeDidSucceed, setEmailChangeDidSucceed] = useState(false)
+  const [newEmailAddress, setNewEmailAddress] = useState('')
+
+  const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: ProfileData) => {
     const valibotResult = v.safeParse(
       ProfileSchema,
@@ -45,8 +48,6 @@ export const Profile = () => {
     }
     return valibotResult.success
   }
-
-  const email = session?.user?.email
 
   // const username = 'fred'
   // const preferredName = 'Fred'
@@ -68,14 +69,15 @@ export const Profile = () => {
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
-          callbackURL: routeStrings.signin,
+          // callbackURL: routeStrings.signin,
         })
         console.log('handleSaveChanges', {data, error})
         if (error) {
           console.log('handleSaveChanges', {error})
+          alert('Error changing email address')
           setEmailChangeError(error.message as string)
         } else {
-          setEmailChangeDidSucceed(true)
+          setShouldShowCheckForEmailChange(true)
         }
       }
     }
@@ -160,13 +162,13 @@ export const Profile = () => {
           </form>
           :
           <>
-          <h4
-            style={{margin: '-1rem', fontWeight: 'normal'}}
-          >
-            Sign In to access your Profile
-          </h4>
-<Spacer />
-          <SignIn />
+            <h4
+              style={{margin: '-1rem', fontWeight: 'normal'}}
+            >
+              Sign In to access your Profile
+            </h4>
+            <Spacer/>
+            <SignIn/>
           </>
         }
       </section>

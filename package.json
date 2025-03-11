@@ -6,8 +6,8 @@
     "start": "vinxi start"
   },
   "dependencies": {
+    "@tanstack/react-start": "^1.114.13",
     "@tanstack/router": "^0.0.1-beta.53",
-    "@tanstack/start": "^1.112.1",
     "@tanstack/start-api-routes": "^1.111.9",
     "better-auth": "^1.2.0",
     "better-sqlite3": "^11.8.1",

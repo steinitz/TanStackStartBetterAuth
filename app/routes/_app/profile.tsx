@@ -159,7 +159,15 @@ export const Profile = () => {
             </div>
           </form>
           :
-          <SignIn/>
+          <>
+          <h4
+            style={{margin: '-1rem', fontWeight: 'normal'}}
+          >
+            Sign In to access your Profile
+          </h4>
+<Spacer />
+          <SignIn />
+          </>
         }
       </section>
     </>

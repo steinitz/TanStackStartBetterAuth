@@ -1,4 +1,4 @@
-import {createServerFn} from '@tanstack/start'
+import {createServerFn} from '@tanstack/react-start'
 import * as fs from 'node:fs'
 
 const filePath = 'count.txt'

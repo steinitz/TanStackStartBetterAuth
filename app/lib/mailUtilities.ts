@@ -1,6 +1,6 @@
 import nodemailer, {type Transport} from "nodemailer";
 // import {transportOptions} from "./mailSender";
-import {createServerFn} from "@tanstack/start";
+import {createServerFn} from "@tanstack/react-start";
 
 // TypeScript issues remain below in transportOptions. Codeium unable to help.
 

@@ -1,16 +1,11 @@
-import {Dialog, DialogRefType} from "~/components/Dialog";
+import {Dialog, dialogRefType} from "~/components/Dialog";
 import {useImperativeHandle, useRef} from "react";
-
-export type deleteAccountConfirmationDialogRefType = {
-  setIsOpen: (arg0: boolean) => void
-  onClick: () => void
-}
 
 export function DeleteAccountConfirmationDialog({
   onClick,
   ref
 }: any) {
-  const dialogRef = useRef<DialogRefType>(null)
+  const dialogRef = useRef<dialogRefType>(null)
 
   const setIsOpen = dialogRef.current?.setIsOpen || (()=>{})
   useImperativeHandle(ref, () => {

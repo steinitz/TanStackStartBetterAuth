@@ -1,7 +1,6 @@
 import {ReactNode, useImperativeHandle, useState} from "react";
 
-export type DialogRefType = {
-  isOpen: boolean
+export type dialogRefType = {
   setIsOpen: (arg0: boolean) => void
 }
 
@@ -16,7 +15,6 @@ export const Dialog = ({
   const[isOpen, setIsOpen] = useState(false)
   useImperativeHandle(ref, () => {
       return {
-        isOpen,
         setIsOpen,
       }
     })

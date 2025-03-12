@@ -1,10 +1,6 @@
 import {useImperativeHandle, useRef} from "react";
 import {Dialog, DialogRefType} from "~/components/Dialog";
 
-export type dialogIsOpenRefType = {
-  setIsOpen: (arg0: boolean) => void
-}
-
 export function CheckForEmailChangeLinkDialog({
   ref
 }: any) {

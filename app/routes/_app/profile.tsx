@@ -7,14 +7,13 @@ import {Spacer} from "~/components/Spacer";
 import {EmailInput, PasswordInput} from "~/components/InputFields";
 import {
   DeleteAccountConfirmationDialog,
-  deleteAccountConfirmationDialogRefType
 } from "~/components/Profile/deleteAccountConfirmationDialog";
 import {
   CheckForEmailChangeLinkDialog,
-  dialogIsOpenRefType
 } from "~/components/Profile/checkForEmailChangeLinkDialog";
 import {} from "~/components/Profile/checkForEmailChangeLinkDialog";
 import {SignIn} from "~/components/SignIn";
+import {dialogRefType} from "~/components/Dialog";
 
 type ProfileData = {
   email: string
@@ -33,8 +32,8 @@ export const Profile = () => {
   const {data: session} = useSession()
 
   // confirmation dialog refs for access to setIsOpen
-  const checkForEmailChangeLinkDialogRef = useRef<dialogIsOpenRefType>(null)
-  const deleteAccountConfirmationDialogRef = useRef<deleteAccountConfirmationDialogRefType>(null)
+  const checkForEmailChangeLinkDialogRef = useRef<dialogRefType>(null)
+  const deleteAccountConfirmationDialogRef = useRef<dialogRefType>(null)
 
   const email = session?.user?.email
 

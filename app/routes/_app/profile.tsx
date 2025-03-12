@@ -1,14 +1,20 @@
 import {createFileRoute} from "@tanstack/react-router";
-import {MouseEvent, SyntheticEvent, useState} from "react";
+import {MouseEvent, SyntheticEvent, useRef, useState} from "react";
 import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~/lib/form";
 import {changeEmail, deleteUser, useSession} from "~/lib/auth-client";
 import {Spacer} from "~/components/Spacer";
 import {EmailInput, PasswordInput} from "~/components/InputFields";
-import {DeleteAccountConfirmationDialog} from "~/components/Profile/deleteAccountConfirmationDialog";
-import {CheckForEmailChangeLinkDialog} from "~/components/Profile/checkForEmailChangeLinkDialog";
-import {routeStrings} from "~/constants";
-import { SignIn } from "~/components/SignIn";
+import {
+  DeleteAccountConfirmationDialog,
+  deleteAccountConfirmationDialogRefType
+} from "~/components/Profile/deleteAccountConfirmationDialog";
+import {
+  CheckForEmailChangeLinkDialog,
+  dialogIsOpenRefType
+} from "~/components/Profile/checkForEmailChangeLinkDialog";
+import {} from "~/components/Profile/checkForEmailChangeLinkDialog";
+import {SignIn} from "~/components/SignIn";
 
 type ProfileData = {
   email: string
@@ -26,14 +32,13 @@ const ProfileSchema = v.object({
 export const Profile = () => {
   const {data: session} = useSession()
 
-  // confirmation dialogs state - looking for a nice way to put the state in the dialogs
-  const [shouldShowDeleteConfirmation, setShouldShowDeleteConfirmation] = useState(false)
-  const [shouldShowCheckForEmailChange, setShouldShowCheckForEmailChange] = useState(false)
+  // confirmation dialog refs for access to setIsOpen
+  const checkForEmailChangeLinkDialogRef = useRef<dialogIsOpenRefType>(null)
+  const deleteAccountConfirmationDialogRef = useRef<deleteAccountConfirmationDialogRefType>(null)
 
   const email = session?.user?.email
 
   const [emailChangeError, setEmailChangeError] = useState<any>()
-  // const [emailChangeDidSucceed, setEmailChangeDidSucceed] = useState(false)
   const [newEmailAddress, setNewEmailAddress] = useState('')
 
   const [validationIssues, setValidationIssues] = useState<any>({})
@@ -77,7 +82,7 @@ export const Profile = () => {
           alert('Error changing email address')
           setEmailChangeError(error.message as string)
         } else {
-          setShouldShowCheckForEmailChange(true)
+          checkForEmailChangeLinkDialogRef.current?.setIsOpen(true)
         }
       }
     }
@@ -87,10 +92,9 @@ export const Profile = () => {
 
   function handleDeleteAccountRequest(
     event: MouseEvent
-    // event: SyntheticEvent<HTMLFormElement>
   ): void {
     preventDefaultFormSubmission (event)
-    setShouldShowDeleteConfirmation(true)
+    deleteAccountConfirmationDialogRef.current?.setIsOpen(true)
   }
 
   function handleDeleteConfirmation(event: SyntheticEvent<HTMLFormElement>): void {
@@ -101,13 +105,10 @@ export const Profile = () => {
   return (
     <>
       <DeleteAccountConfirmationDialog
-        open={shouldShowDeleteConfirmation}
-        onClose={() => setShouldShowDeleteConfirmation(false)}
-        onClick={handleDeleteConfirmation}
+        ref={deleteAccountConfirmationDialogRef}
       />
       <CheckForEmailChangeLinkDialog
-        open={shouldShowCheckForEmailChange}
-        onClose={() => setShouldShowCheckForEmailChange(false)}
+        ref={checkForEmailChangeLinkDialogRef}
       />
       <section>
         {session?.user ?

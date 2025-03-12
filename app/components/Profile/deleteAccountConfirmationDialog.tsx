@@ -1,15 +1,24 @@
-import Dialog from "~/components/Dialog";
+import {Dialog, DialogRefType} from "~/components/Dialog";
+import {useImperativeHandle, useRef} from "react";
 
-export function DeleteAccountConfirmationDialog(props: {
-  open: boolean,
-  onClose: () => void,
-  onClick: any
-}) {
+export type deleteAccountConfirmationDialogRefType = {
+  setIsOpen: (arg0: boolean) => void
+  onClick: () => void
+}
+
+export function DeleteAccountConfirmationDialog({
+  onClick,
+  ref
+}: any) {
+  const dialogRef = useRef<DialogRefType>(null)
+
+  const setIsOpen = dialogRef.current?.setIsOpen || (()=>{})
+  useImperativeHandle(ref, () => {
+    return {setIsOpen}
+  })
+
   return <Dialog
-    isOpen={props.open}
-    onClose={
-      props.onClose
-    }
+    ref={dialogRef}
   >
     <h3>Delete Account? &nbsp;Can't be undone.</h3>
     <div
@@ -21,7 +30,7 @@ export function DeleteAccountConfirmationDialog(props: {
     >
       <button
         type="submit"
-        onClick={props.onClick}
+        onClick={onClick}
         style={{
           backgroundColor: "var(--color-error)",
           borderColor: "var(--color-error)"
@@ -29,7 +38,7 @@ export function DeleteAccountConfirmationDialog(props: {
       >
         Delete
       </button>
-      <button onClick={props.onClose}>
+      <button onClick={() =>setIsOpen(false)}>
         Cancel
       </button>
     </div>

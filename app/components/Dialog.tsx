@@ -1,13 +1,25 @@
-import {MouseEventHandler, ReactNode} from "react";
+import {ReactNode, useImperativeHandle, useState} from "react";
 
-const Dialog = ({
-  isOpen, onClose, children
+export type DialogRefType = {
+  isOpen: boolean
+  setIsOpen: (arg0: boolean) => void
+}
+
+export const Dialog = ({
+  children, ref
 }: {
-  isOpen: boolean,
-  onClose: MouseEventHandler<HTMLDivElement>,
-  children: ReactNode
+  children: ReactNode,
+  ref: any
 }) => {
-  if (!isOpen) return null;
+
+  // parents can access this child state via an imperative handle ref
+  const[isOpen, setIsOpen] = useState(false)
+  useImperativeHandle(ref, () => {
+      return {
+        isOpen,
+        setIsOpen,
+      }
+    })
 
   // Tweaking the z-index of the divs might be the wrong approach
   // but without them, two problems:
@@ -15,51 +27,53 @@ const Dialog = ({
   // 2. The occluding div occludes the dialog
 
   return (
-    <>
-      {/*This div occludes the parent page*/}
-      <div
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          backgroundColor: "var(--color-bg)",
-          opacity: "0.5",
-          zIndex: 2,
-          display: "flex",
-        }}
-      />
-
-      {/*This div positions the dialog*/}
-      <div
-        onClick={onClose}
-        style={{
-          position: "absolute",
-          left: 0,
-          marginTop: '1rem',
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {/*This div is the dialog*/}
+    isOpen ?
+      <>
+        {/*This div occludes the parent page*/}
         <div
           style={{
-            background: "var(--color-bg)",
-
-            // this padding assumes an <h3> on top and buttons on the bottom
-            padding: "0.5% 2% 1.5% 2%",
-
-            border: "2px solid #000",
-            borderRadius: "10px",
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "var(--color-bg)",
+            opacity: "0.5",
             zIndex: 2,
+            display: "flex",
+          }}
+        />
+
+        {/*This div positions the dialog*/}
+        <div
+          onClick={() => setIsOpen(false)}
+          style={{
+            position: "absolute",
+            left: 0,
+            marginTop: '1rem',
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {children}
-        </div>
-      </div>
-    </>
-  );
-};
+          {/*This div is the dialog*/}
+          <div
+            style={{
+              background: "var(--color-bg)",
 
-export default Dialog;
+              // this padding assumes an <h3> on top and buttons on the bottom
+              padding: "0.5% 2% 1.5% 2%",
+
+              border: "2px solid #000",
+              borderRadius: "10px",
+              zIndex: 2,
+            }}
+          >
+            {children}
+          </div>
+        </div>
+      </>
+      :
+      null
+  )
+}
+

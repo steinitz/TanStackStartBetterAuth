@@ -1,6 +1,7 @@
 import nodemailer, {type Transport} from "nodemailer";
 // import {transportOptions} from "./mailSender";
 import {createServerFn} from "@tanstack/react-start";
+import { redirect } from '@tanstack/react-router'
 
 // TypeScript issues remain below in transportOptions. Codeium unable to help.
 
@@ -29,7 +30,7 @@ export const transportOptions: Transport = {
 export const sendEmail = createServerFn({method: 'POST'})
   .validator((d: any) => d)
   .handler(async ({data}) => {
-    console.log('sending testMessage', {/*mailSender, */ data})
+    console.log('sending email', {/*mailSender, */ data})
     const mailSender = nodemailer.createTransport(transportOptions as Transport)
     const result = await mailSender?.sendMail(
      data,
@@ -96,11 +97,28 @@ export const sendTestEmail = createServerFn({method: 'POST'})
   }
 )
 
+// part of a hack to avoid Better Auth's two emails when
+// the user changes their email address.
+export const pretendToSendEmail = createServerFn(
+  {method: 'POST' }
+)
+  .validator((d: any) => d)
+  .handler(async ({data: url}) => {
+    console.log('pretendToSendEmail', {url})
+    throw redirect({
+      href: url,
+      headers: {
+        'location': url
+      }
+    })
+})
+
 // graveyard
 
   // sendMailInnerFunction = (data: any) => {
   //   console.log('sending testMessage', {/*mailSender, */ data})
-  //   const mailSender = nodemailer.createTransport(transportOptions as Transport)
+  //   const mailSender =
+//   nodemailer.createTransport(transportOptions as Transport)
   //   mailSender?.sendMail(data, function (error: any, info: any) {
   //     if (error) {
   //       console.log(error);

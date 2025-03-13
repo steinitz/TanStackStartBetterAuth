@@ -1,7 +1,7 @@
 import {betterAuth} from "better-auth";
 import {appDatabase} from "~/lib/database";
 import nodemailer, {type Transport} from "nodemailer";
-import {transportOptions} from "~/lib/mailUtilities";
+import {pretendToSendEmail, transportOptions} from "~/lib/mailUtilities";
 
 const from = process.env.SMTP_FROM_ADDRESS
 //console.log('auth', {from})
@@ -20,13 +20,19 @@ export const auth = betterAuth({
       sendChangeEmailVerification: async (
         { user, newEmail, url/*, token */}/*, request*/
       ) => {
-        await mailSender.sendMail({
-          to: user.email,
-          from,
-          subject: 'Approve email address change',
-          text: `${changeEmailText} ${newEmail} ${url}`,
-          html: `<p>${changeEmailText} ${newEmail} ${url}</p>`,
-        })
+        // await mailSender.sendMail({
+        //   to: user.email,
+        //   from,
+        //   subject: 'Approve email address change',
+        //   text: `${changeEmailText} ${newEmail} ${url}`,
+        //   html: `<p>${changeEmailText} ${newEmail} ${url}</p>`,
+        // })
+
+        // hack to avoid sending two emails when the user changes
+        // their email address.  Also avoids the nasty situation
+        // when the user no longer has access to the previous
+        // email address
+        await pretendToSendEmail({data: url})
       }
     },
     deleteUser: {

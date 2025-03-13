@@ -1,23 +1,19 @@
 import {useImperativeHandle, useRef} from "react";
-import {Dialog, DialogRefType} from "~/components/Dialog";
+import {Dialog, dialogRefType} from "~/components/Dialog";
 
-export function CheckForEmailChangeLinkDialog({
+export function CheckForEmailChangeConfirmationLinkDialog({
   ref
 }: any) {
 
-  const dialogRef = useRef<DialogRefType>(null)
+  const dialogRef = useRef<dialogRefType>(null)
   const setIsOpen = dialogRef.current?.setIsOpen || (()=>{})
 
-  useImperativeHandle(ref, () => {
-    return {
-      setIsOpen,
-    }
-  })
+  useImperativeHandle(ref, () => ({setIsOpen}))
 
   return <Dialog
     ref={dialogRef}
    >
-    <h3 style={{maxWidth: "17rem"}}>Check your email for a link to verify your new email address</h3>
+    <h3 style={{maxWidth: "17rem"}}>Check your email for a link to confirm that you wish to change your email address</h3>
     <div
       style={{
         display: "flex",

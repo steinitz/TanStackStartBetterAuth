@@ -9,11 +9,13 @@ import {
   DeleteAccountConfirmationDialog,
 } from "~/components/Profile/deleteAccountConfirmationDialog";
 import {
-  CheckForEmailChangeLinkDialog,
-} from "~/components/Profile/checkForEmailChangeLinkDialog";
-import {} from "~/components/Profile/checkForEmailChangeLinkDialog";
+  CheckForEmailChangeConfirmationLinkDialog,
+} from "~/components/Profile/checkForEmailChangeConfirmationLinkDialog";
+import {} from "~/components/Profile/checkForEmailChangeConfirmationLinkDialog";
 import {SignIn} from "~/components/SignIn";
 import {dialogRefType} from "~/components/Dialog";
+import Spinner from "~/components/Spinner";
+import {CheckForNewEmailVerificationLinkDialog} from "~/components/Profile/checkForNewEmailVerificationLinkDialog";
 
 type ProfileData = {
   email: string
@@ -32,13 +34,15 @@ export const Profile = () => {
   const {data: session} = useSession()
 
   // confirmation dialog refs for access to setIsOpen
-  const checkForEmailChangeLinkDialogRef = useRef<dialogRefType>(null)
+  const checkForEmailChangeLinkConfirmationDialogRef = useRef<dialogRefType>(null)
+  const checkForNewEmailVerificationLinkDialogRef = useRef<dialogRefType>(null)
   const deleteAccountConfirmationDialogRef = useRef<dialogRefType>(null)
 
   const email = session?.user?.email
 
   const [emailChangeError, setEmailChangeError] = useState<any>()
   const [newEmailAddress, setNewEmailAddress] = useState('')
+  const [shouldShowEmailChangeSpinner, setShouldShowEmailChangeSpinner] = useState(false)
 
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: ProfileData) => {
@@ -70,19 +74,22 @@ export const Profile = () => {
     if (isValid) {
       if (fields.email !== email) {
         // note: BetterAuth supports email confirmation for changing email.
+        setShouldShowEmailChangeSpinner(true)
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
           // callbackURL: routeStrings.signin,
         })
         console.log('handleSaveChanges', {data, error})
+
         if (error) {
           console.log('handleSaveChanges', {error})
           alert('Error changing email address')
           setEmailChangeError(error.message as string)
         } else {
-          checkForEmailChangeLinkDialogRef.current?.setIsOpen(true)
+          checkForEmailChangeLinkConfirmationDialogRef.current?.setIsOpen(true)
         }
+        setShouldShowEmailChangeSpinner(false)
       }
     }
   }
@@ -103,11 +110,15 @@ export const Profile = () => {
 
   return (
     <>
+
       <DeleteAccountConfirmationDialog
         ref={deleteAccountConfirmationDialogRef}
       />
-      <CheckForEmailChangeLinkDialog
-        ref={checkForEmailChangeLinkDialogRef}
+      <CheckForEmailChangeConfirmationLinkDialog
+        ref={checkForEmailChangeLinkConfirmationDialogRef}
+      />
+      <CheckForEmailChangeConfirmationLinkDialog
+        ref={checkForNewEmailVerificationLinkDialogRef}
       />
       <section>
         {session?.user ?
@@ -115,7 +126,11 @@ export const Profile = () => {
             onSubmit={handleSaveChanges}
             // style={{maxWidth: '350px'}}
           >
-            <h1>Profile</h1>
+            <div style={{display: "flex", flexDirection: "row", justifyContent: "flex-start"}}>
+              <h1>Profile</h1>
+              {shouldShowEmailChangeSpinner && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
+            </div>
+
 
             <EmailInput
               validationErrors={validationIssues}

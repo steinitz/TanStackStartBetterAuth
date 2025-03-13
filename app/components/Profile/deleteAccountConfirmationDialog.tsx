@@ -8,9 +8,7 @@ export function DeleteAccountConfirmationDialog({
   const dialogRef = useRef<dialogRefType>(null)
 
   const setIsOpen = dialogRef.current?.setIsOpen || (()=>{})
-  useImperativeHandle(ref, () => {
-    return {setIsOpen}
-  })
+  useImperativeHandle(ref, () => ({setIsOpen}))
 
   return <Dialog
     ref={dialogRef}

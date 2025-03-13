@@ -13,11 +13,7 @@ export const Dialog = ({
 
   // parents can access this child state via an imperative handle ref
   const[isOpen, setIsOpen] = useState(false)
-  useImperativeHandle(ref, () => {
-      return {
-        setIsOpen,
-      }
-    })
+  useImperativeHandle(ref, () => ({setIsOpen}))
 
   // Tweaking the z-index of the divs might be the wrong approach
   // but without them, two problems:
@@ -30,13 +26,18 @@ export const Dialog = ({
         {/*This div occludes the parent page*/}
         <div
           style={{
+            // overflow: 'hidden', /* Hide scrollbars */
             position: "absolute",
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
+            margin: '0',
+            padding: '0',
             backgroundColor: "var(--color-bg)",
             opacity: "0.5",
             zIndex: 2,
-            display: "flex",
+            // display: "flex",
           }}
         />
 

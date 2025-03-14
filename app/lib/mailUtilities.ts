@@ -1,7 +1,7 @@
 import nodemailer, {type Transport} from "nodemailer";
 // import {transportOptions} from "./mailSender";
 import {createServerFn} from "@tanstack/react-start";
-import { redirect } from '@tanstack/react-router'
+import {redirect} from '@tanstack/react-router'
 
 // TypeScript issues remain below in transportOptions. Codeium unable to help.
 
@@ -99,8 +99,10 @@ export const sendTestEmail = createServerFn({method: 'POST'})
 
 // part of a hack to avoid Better Auth's two emails when
 // the user changes their email address.
+// doesn't work
+/*
 export const pretendToSendEmail = createServerFn(
-  {method: 'POST' }
+  {method: 'GET' }
 )
   .validator((d: any) => d)
   .handler(async ({data: url}) => {
@@ -108,10 +110,11 @@ export const pretendToSendEmail = createServerFn(
     throw redirect({
       href: url,
       headers: {
-        'location': url
+        'location': url,
       }
     })
 })
+*/
 
 // graveyard
 

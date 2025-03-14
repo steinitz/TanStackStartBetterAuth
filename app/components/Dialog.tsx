@@ -1,6 +1,7 @@
 import {ReactNode, useImperativeHandle, useState} from "react";
 
 export type dialogRefType = {
+  isOpen?: () => boolean
   setIsOpen: (arg0: boolean) => void
 }
 
@@ -13,7 +14,7 @@ export const Dialog = ({
 
   // parents can access this child state via an imperative handle ref
   const[isOpen, setIsOpen] = useState(false)
-  useImperativeHandle(ref, () => ({setIsOpen}))
+  useImperativeHandle(ref, () => ({isOpen: ()=>isOpen, setIsOpen}))
 
   // Tweaking the z-index of the divs might be the wrong approach
   // but without them, two problems:

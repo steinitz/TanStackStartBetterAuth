@@ -2,13 +2,19 @@ import {useImperativeHandle, useRef} from "react";
 import {Dialog, dialogRefType} from "~/components/Dialog";
 
 export function CheckForNewEmailVerificationLinkDialog({
-  ref
+  ref, onClick
 }: any) {
 
   const dialogRef = useRef<dialogRefType>(null)
-  const setIsOpen = dialogRef.current?.setIsOpen || (()=>{})
+  const isOpen = dialogRef.current?.isOpen || (()=> {})
+  const setIsOpen = dialogRef.current?.setIsOpen || (()=> {})
 
-  useImperativeHandle(ref, () => ({setIsOpen}))
+  useImperativeHandle(ref, () => ({isOpen, setIsOpen}))
+
+  const handleOnClick = () => {
+    setIsOpen(false)
+    onClick()
+  }
 
   return <Dialog
     ref={dialogRef}
@@ -23,7 +29,7 @@ export function CheckForNewEmailVerificationLinkDialog({
     >
       <button
         type="submit"
-        onClick={() => setIsOpen(false)}
+        onClick={handleOnClick}
       >
         Ok
       </button>

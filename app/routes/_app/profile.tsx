@@ -1,5 +1,5 @@
-import {createFileRoute} from "@tanstack/react-router";
-import {MouseEvent, SyntheticEvent, useRef, useState} from "react";
+import {createFileRoute, useNavigate} from "@tanstack/react-router";
+import {MouseEvent, SyntheticEvent, useEffect, useRef, useState} from "react";
 import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~/lib/form";
 import {changeEmail, deleteUser, useSession} from "~/lib/auth-client";
@@ -17,6 +17,9 @@ import {dialogRefType} from "~/components/Dialog";
 import Spinner from "~/components/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "~/components/Profile/checkForNewEmailVerificationLinkDialog";
 
+const thisPath = '/_app/profile'
+const didConfirmChangeSearchParam = 'didConfirmChange'
+
 type ProfileData = {
   email: string
 }
@@ -32,6 +35,7 @@ const ProfileSchema = v.object({
 
 export const Profile = () => {
   const {data: session} = useSession()
+  const navigate = useNavigate()
 
   // confirmation dialog refs for access to setIsOpen
   const checkForEmailChangeLinkConfirmationDialogRef = useRef<dialogRefType>(null)
@@ -40,8 +44,8 @@ export const Profile = () => {
 
   const email = session?.user?.email
 
-  const [emailChangeError, setEmailChangeError] = useState<any>()
-  const [newEmailAddress, setNewEmailAddress] = useState('')
+  const [, setEmailChangeError] = useState<any>()
+  const [, setNewEmailAddress] = useState('')
   const [shouldShowEmailChangeSpinner, setShouldShowEmailChangeSpinner] = useState(false)
 
   const [validationIssues, setValidationIssues] = useState<any>({})
@@ -78,10 +82,9 @@ export const Profile = () => {
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
-          // callbackURL: routeStrings.signin,
+          callbackURL: `/profile?${didConfirmChangeSearchParam}=true`// `${thisPath}?didConfirmChange=true`,
         })
         console.log('handleSaveChanges', {data, error})
-
         if (error) {
           console.log('handleSaveChanges', {error})
           alert('Error changing email address')
@@ -94,7 +97,24 @@ export const Profile = () => {
     }
   }
 
-  // const intents = {save: 'save', delete: 'delete'}
+  // Show the check for email verification dialog after the user has clicked
+  // the confirm-email-change link.  Slightly awkward but hopefully temporary
+  // awaiting Better Auth to remove the confirm-email-change step
+
+  // Note this only occurs on /profile?didConfirmChange=true to which the email
+  // change confirmation redirects.  After showing the dialog we return to the
+  // vanilla /profile page
+
+  useEffect(() => {
+    const didConfirmChange = new URLSearchParams(
+      window.location.search
+    ).get(didConfirmChangeSearchParam) || undefined
+    // check that we're on the special profile?didConfirmChange=true page
+    if (didConfirmChange) {
+      console.log('useEffect1 - opening dialog')
+      checkForNewEmailVerificationLinkDialogRef.current?.setIsOpen(true)
+    }
+  })
 
   function handleDeleteAccountRequest(
     event: MouseEvent
@@ -117,8 +137,11 @@ export const Profile = () => {
       <CheckForEmailChangeConfirmationLinkDialog
         ref={checkForEmailChangeLinkConfirmationDialogRef}
       />
-      <CheckForEmailChangeConfirmationLinkDialog
+      <CheckForNewEmailVerificationLinkDialog
         ref={checkForNewEmailVerificationLinkDialogRef}
+        // Return to vanilla profile page when the dialog closes.
+        // Also see notes for the useEffect, above
+        onClick={() => navigate({to: '/profile'})}
       />
       <section>
         {session?.user ?
@@ -191,7 +214,7 @@ export const Profile = () => {
   )
 }
 
-export const Route = createFileRoute('/_app/profile')({
+export const Route = createFileRoute(thisPath)({
   component: Profile,
 })
 

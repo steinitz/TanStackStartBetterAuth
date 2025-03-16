@@ -1,32 +1,33 @@
-import {useImperativeHandle, useRef} from "react";
+import {forwardRef} from "react";
 import {Dialog, dialogRefType} from "~/components/Dialog";
 
-export function CheckForEmailChangeConfirmationLinkDialog({
-  ref
-}: any) {
+export const CheckForEmailChangeConfirmationLinkDialog = forwardRef<dialogRefType, {onClick?: () => void}>(
+  function CheckForEmailChangeConfirmationLinkDialog({onClick}, ref) {
+    const handleClick = () => {
+      if (ref && 'current' in ref) {
+        ref.current?.setIsOpen(false);
+      }
+      onClick?.();
+    };
 
-  const dialogRef = useRef<dialogRefType>(null)
-  const setIsOpen = dialogRef.current?.setIsOpen || (()=>{})
-
-  useImperativeHandle(ref, () => ({setIsOpen}))
-
-  return <Dialog
-    ref={dialogRef}
-   >
-    <h3 style={{maxWidth: "17rem"}}>Check your email for a link to confirm that you wish to change your email address</h3>
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "flex-end"
-      }}
-    >
-      <button
-        type="submit"
-        onClick={() => setIsOpen(false)}
-      >
-        Ok
-      </button>
-    </div>
-  </Dialog>;
-}
+    return (
+      <Dialog ref={ref}>
+        <h3 style={{maxWidth: "17rem"}}>Check your email for a link to confirm that you wish to change your email address</h3>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "flex-end"
+          }}
+        >
+          <button
+            type="submit"
+            onClick={handleClick}
+          >
+            Ok
+          </button>
+        </div>
+      </Dialog>
+    );
+  }
+);

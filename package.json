@@ -6,19 +6,19 @@
     "start": "vinxi start"
   },
   "dependencies": {
-    "@tanstack/react-start": "^1.114.13",
-    "@tanstack/router": "^0.0.1-beta.53",
-    "@tanstack/start-api-routes": "^1.111.9",
-    "better-auth": "^1.2.0",
-    "better-sqlite3": "^11.8.1",
+    "@tanstack/react-router": "^1.114.17",
+    "@tanstack/react-start": "^1.114.19",
+    "@tanstack/start-api-routes": "^1.114.19",
+    "better-auth": "^1.2.4",
+    "better-sqlite3": "^11.9.0",
     "nodemailer": "^6.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "valibot": "^1.0.0-rc.3",
+    "valibot": "^1.0.0-rc.4",
     "vinxi": "^0.5.3"
   },
   "devDependencies": {
-    "@tanstack/router-devtools": "^1.112.0",
+    "@tanstack/router-devtools": "^1.114.21",
     "@types/better-sqlite3": "^7.6.12",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19.0.10",

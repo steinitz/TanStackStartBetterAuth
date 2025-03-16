@@ -17,7 +17,8 @@ import {dialogRefType} from "~/components/Dialog";
 import Spinner from "~/components/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "~/components/Profile/checkForNewEmailVerificationLinkDialog";
 
-const thisPath = '/_app/profile'
+const thisNakedPath = '/profile'
+const thisPath = `/_app${thisNakedPath}`
 const didConfirmChangeSearchParam = 'didConfirmChange'
 
 type ProfileData = {
@@ -82,7 +83,7 @@ export const Profile = () => {
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
-          callbackURL: `/profile?${didConfirmChangeSearchParam}=true`// `${thisPath}?didConfirmChange=true`,
+          callbackURL: `thisPath?${didConfirmChangeSearchParam}=true`
         })
         console.log('handleSaveChanges', {data, error})
         if (error) {
@@ -119,29 +120,39 @@ export const Profile = () => {
   function handleDeleteAccountRequest(
     event: MouseEvent
   ): void {
-    preventDefaultFormSubmission (event)
+    console.log('handleDeleteAccountRequest', {deleteAccountConfirmationDialogRef})
+    preventDefaultFormSubmission(event)
     deleteAccountConfirmationDialogRef.current?.setIsOpen(true)
   }
 
-  function handleDeleteConfirmation(event: SyntheticEvent<HTMLFormElement>): void {
-    preventDefaultFormSubmission (event)
+  function handleDelete(): void {
+    console.log('Starting account deletion...')
+    deleteAccountConfirmationDialogRef.current?.setIsOpen(false)
     deleteUser()
+      .then(() => {
+        console.log('handleDelete - Account deletion successful')
+      })
+      .catch((error) => {
+        console.error('handleDelete - Account deletion failed:', error)
+        alert('Error deleting account')
+      })
   }
 
   return (
     <>
-
       <DeleteAccountConfirmationDialog
         ref={deleteAccountConfirmationDialogRef}
+        onDelete={handleDelete}
       />
       <CheckForEmailChangeConfirmationLinkDialog
         ref={checkForEmailChangeLinkConfirmationDialogRef}
+        onClick={() => navigate({to: thisNakedPath})}
       />
       <CheckForNewEmailVerificationLinkDialog
         ref={checkForNewEmailVerificationLinkDialogRef}
         // Return to vanilla profile page when the dialog closes.
         // Also see notes for the useEffect, above
-        onClick={() => navigate({to: '/profile'})}
+        onClick={() => navigate({to: thisNakedPath})}
       />
       <section>
         {session?.user ?

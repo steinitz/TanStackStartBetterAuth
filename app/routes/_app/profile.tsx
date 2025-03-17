@@ -1,5 +1,5 @@
 import {createFileRoute, useNavigate} from "@tanstack/react-router";
-import {MouseEvent, SyntheticEvent, useEffect, useRef, useState} from "react";
+import {MouseEvent, RefObject, SyntheticEvent, useEffect, useRef, useState} from "react";
 import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~/lib/form";
 import {changeEmail, deleteUser, useSession} from "~/lib/auth-client";
@@ -11,9 +11,8 @@ import {
 import {
   CheckForEmailChangeConfirmationLinkDialog,
 } from "~/components/Profile/checkForEmailChangeConfirmationLinkDialog";
-import {} from "~/components/Profile/checkForEmailChangeConfirmationLinkDialog";
 import {SignIn} from "~/components/SignIn";
-import {dialogRefType} from "~/components/Dialog";
+import {DialogRefType, DialogMethodsType, makeDialogRef} from "~/components/Dialog";
 import Spinner from "~/components/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "~/components/Profile/checkForNewEmailVerificationLinkDialog";
 
@@ -38,10 +37,9 @@ export const Profile = () => {
   const {data: session} = useSession()
   const navigate = useNavigate()
 
-  // confirmation dialog refs for access to setIsOpen
-  const checkForEmailChangeLinkConfirmationDialogRef = useRef<dialogRefType>(null)
-  const checkForNewEmailVerificationLinkDialogRef = useRef<dialogRefType>(null)
-  const deleteAccountConfirmationDialogRef = useRef<dialogRefType>(null)
+  const checkForEmailChangeLinkConfirmationDialogRef = makeDialogRef();
+  const checkForNewEmailVerificationLinkDialogRef = makeDialogRef();
+  const deleteAccountConfirmationDialogRef = makeDialogRef();
 
   const email = session?.user?.email
 
@@ -91,7 +89,7 @@ export const Profile = () => {
           alert('Error changing email address')
           setEmailChangeError(error.message as string)
         } else {
-          checkForEmailChangeLinkConfirmationDialogRef.current?.setIsOpen(true)
+          checkForEmailChangeLinkConfirmationDialogRef.current.setIsOpen(true)
         }
         setShouldShowEmailChangeSpinner(false)
       }
@@ -113,21 +111,19 @@ export const Profile = () => {
     // check that we're on the special profile?didConfirmChange=true page
     if (didConfirmChange) {
       console.log('useEffect1 - opening dialog')
-      checkForNewEmailVerificationLinkDialogRef.current?.setIsOpen(true)
+      checkForNewEmailVerificationLinkDialogRef.current.setIsOpen(true)
     }
   })
 
-  function handleDeleteAccountRequest(
-    event: MouseEvent
-  ): void {
+  function handleDeleteAccountRequest(event: MouseEvent<HTMLButtonElement>): void {
     console.log('handleDeleteAccountRequest', {deleteAccountConfirmationDialogRef})
     preventDefaultFormSubmission(event)
-    deleteAccountConfirmationDialogRef.current?.setIsOpen(true)
+    deleteAccountConfirmationDialogRef.current.setIsOpen(true)
   }
 
   function handleDelete(): void {
-    console.log('Starting account deletion...')
-    deleteAccountConfirmationDialogRef.current?.setIsOpen(false)
+    console.log('handleDelete - Account deletion successful')
+    deleteAccountConfirmationDialogRef.current.setIsOpen(false)
     deleteUser()
       .then(() => {
         console.log('handleDelete - Account deletion successful')
@@ -150,8 +146,6 @@ export const Profile = () => {
       />
       <CheckForNewEmailVerificationLinkDialog
         ref={checkForNewEmailVerificationLinkDialogRef}
-        // Return to vanilla profile page when the dialog closes.
-        // Also see notes for the useEffect, above
         onClick={() => navigate({to: thisNakedPath})}
       />
       <section>
@@ -228,34 +222,3 @@ export const Profile = () => {
 export const Route = createFileRoute(thisPath)({
   component: Profile,
 })
-
-// graveyard
-
- /*      emailChangeDidSucceed ?
-        <>
-          <h4
-            style={{textAlign: 'center'}}
-          >
-            {`Check your email inbox for a link to verify your new email address`}
-          </h4>
-          <p
-            style={{textAlign: 'center'}}
-          >
-            {`${newEmailAddress}`}
-          </p>
-        </>
-        :
-        <>
-          <label>
-            Change Email Address
-            <input
-              name="email"
-              type="email"
-              defaultValue={''}
-              autoComplete="on"
-            />
-            <FormFieldError message={validationIssues?.email || emailChangeError}/>
-          </label>
-          <button type="submit">Set New Email Address</button>
-        </>
-*/

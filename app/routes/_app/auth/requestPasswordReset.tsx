@@ -76,7 +76,7 @@ export const RequestPasswordReset = () => {
             <button type="submit">Reset Password</button>
           </form>
           :
-          <form>
+          <form onSubmit={() => navigate({to: "/"})}>
             <h1>Password Reset Link Sent</h1>
             <p>We've sent a password-reset link to</p>
             <p style={{marginLeft: '4rem'}}>{email}</p>
@@ -85,7 +85,6 @@ export const RequestPasswordReset = () => {
             <div style={{textAlign: "right"}}>
               <button
                 type="submit"
-                onClick={() => navigate({to: "/"})}
               >
                 Ok
               </button>

@@ -95,13 +95,13 @@ export const SignIn = () => {
             defaultValue={""}
             autoComplete="on"
           />
-          <FormFieldError message={validationIssues?.email}/>
+          <FormFieldError message={validationIssues?.email} />
         </label>
         <PasswordInput
           validationIssue={validationIssues?.password}
         />
-         <div style={{display: "flex", flexDirection: "row", justifyContent: "space-between"}}>
-          <p style={{maxWidth: '180px', lineHeight: 1.2, color: 'var(--color-error)'}}>
+        <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+          <p style={{ maxWidth: '180px', lineHeight: 1.2, color: 'var(--color-error)' }}>
             {/*loginError ?? */' '}
           </p>
           <button type="submit">Sign In</button>

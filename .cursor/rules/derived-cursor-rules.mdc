@@ -1,0 +1,75 @@
+---
+description: Cursor rules derived by SpecStory from the project AI interaction history
+globs: *
+---
+
+## PROJECT OVERVIEW
+This section provides a high-level overview of the project.  [Add Project Description Here]
+
+## CODE STYLE
+Maintain consistent indentation (4 spaces).  Follow standard naming conventions.  Colons at the end of code lines are optional; maintain consistency throughout the project.  Current preference is to omit colons.
+
+## FOLDER ORGANIZATION
+[Describe folder structure.  Example: src/, test/, docs/]
+
+## TECH STACK
+[List technologies used. Example: Python 3.9, Flask, React]  @testing-library/react, @testing-library/jest-dom, @types/jest, TanStack Query, TanStack Router, Jest, ts-jest, typescript, ts-jest
+
+## PROJECT-SPECIFIC STANDARDS
+[Add project-specific coding standards here.]
+
+## WORKFLOW & RELEASE RULES
+Use Git for version control.  Follow a standard branching strategy (e.g., Gitflow).  New releases should be documented thoroughly.  If using agent mode in Cursor for code assistance, ensure it is properly selected.  If issues persist after selecting agent mode, try relaunching the application or refreshing the page. Check documentation or support resources if problems continue.  Note: The AI assistant cannot switch modes independently; user intervention is required to switch between Agent and Edit modes.  Agent mode may not provide codebase access as expected;  sharing code snippets directly (Edit mode) may be more reliable for code assistance.  Agent mode access to the codebase is unreliable; Edit mode is recommended for direct code assistance.  Agent mode functionality is limited and may not provide access to the codebase as expected.  Edit mode is the recommended approach for direct code assistance.  Agent mode access to files is unreliable; Edit mode is recommended for file access and code assistance.  Agent mode access is unreliable; Edit mode is recommended.  Cursor's Agent mode functionality is unreliable for accessing files and the codebase; Edit mode is strongly recommended.  The AI assistant cannot directly access or modify files within the user's codebase.  File access requires the user to share the file content directly.  The AI assistant's knowledge cutoff is October 2023.  The AI assistant does not retain memory of past conversations or code snippets; each interaction is treated independently.  Cursor's Agent mode may not reliably provide codebase access.  Edit mode is the recommended approach for direct code assistance.  Agent mode access is unreliable; Edit mode is recommended for direct code assistance.  The AI assistant cannot directly access or modify files within the user's codebase. File access requires the user to share the file content directly.  The AI assistant's knowledge cutoff is October 2023.  The AI assistant does not retain memory of past conversations or code snippets; each interaction is treated independently.  The AI assistant cannot directly access files; code must be provided directly.
+
+
+## REFERENCE EXAMPLES
+[Include examples of code snippets, configurations, etc.]  Example Unit Test (Dialog.test.tsx):  See `app/components/Dialog.test.tsx` example within interaction logs from 2025-03-18.  Example Unit Test Code (from 2025-03-18 interaction):
+
+```typescript
+import React, { useRef } from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Dialog, makeDialogRef } from './Dialog';
+
+const TestDialog = () => {
+  const dialogRef = makeDialogRef();
+  return (
+    <Dialog ref={dialogRef}>
+      <h3>Test Dialog</h3>
+      <button onClick={() => dialogRef.current?.setIsOpen(false)}>Close</button>
+    </Dialog>
+  );
+};
+
+test('it opens and closes the dialog', () => {
+  render(<TestDialog />);
+  
+  // Initially, the dialog should not be visible
+  expect(screen.queryByText(/Test Dialog/i)).not.toBeInTheDocument();
+
+  // Open the dialog
+  fireEvent.click(screen.getByText(/Open Dialog/i)); // You may need to add a button to open the dialog in your TestDialog component
+
+  // Now the dialog should be visible
+  expect(screen.getByText(/Test Dialog/i)).toBeInTheDocument();
+
+  // Close the dialog
+  fireEvent.click(screen.getByText(/Close/i));
+  
+  // The dialog should no longer be visible
+  expect(screen.queryByText(/Test Dialog/i)).not.toBeInTheDocument();
+});
+```
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+[Describe documentation standards and tools used.]  Note: AI assistant's knowledge cutoff is October 2023.  The AI assistant does not retain memory of past conversations or code snippets; each interaction is treated independently.  The AI assistant cannot directly access files; code must be provided directly.  The AI assistant does not have internet access or access to external databases; its responses are based solely on provided context.  The AI assistant cannot directly access or modify files within the user's codebase. File access requires the user to share the file content directly.  The AI assistant's responses are based solely on the information provided within the current session.  Past interactions and code are not accessible unless explicitly resupplied.  The AI assistant does not have internet access. Responses are based solely on provided context.
+
+## DEBUGGING
+Standard debugging techniques should be employed. For Cursor-specific issues, restarting the application or refreshing the page may resolve temporary glitches. Consult documentation for further assistance.  The AI assistant does not have internet access or access to external databases; its responses are based solely on provided context.  The AI assistant does not retain memory of past conversations or code snippets; each interaction is treated independently.  The AI assistant operates in either Agent or Edit mode, determined by user selection.  Agent mode may not provide direct codebase access;  Edit mode requires the user to supply code snippets directly.  The AI assistant's responses are based solely on the information provided within the current session.  Past interactions and code are not accessible unless explicitly resupplied.  The AI assistant cannot directly access files; code must be provided directly.  The AI assistant's knowledge cutoff is October 2023.  The AI assistant cannot directly access or modify files within the user's codebase. File access requires the user to share the file content directly. The AI assistant does not have internet access. Responses are based solely on provided context.
+
+## FINAL DOs AND DON'Ts
+- DO use agent mode in Cursor for code assistance when needed, but be aware that access to the codebase through agent mode may be unreliable.  Edit mode is recommended for direct code assistance.
+- DO restart the application or refresh the page if encountering persistent issues with agent mode or other Cursor functionalities.
+- DO consult the documentation or support resources for troubleshooting.
+- DO share code snippets directly (Edit Mode) for more reliable code assistance if Agent mode proves unreliable.
+- DON'T directly share entire codebases with the AI assistant; use code snippets or agent mode (with awareness of potential limitations) instead.
+- NOTE: The AI assistant's knowledge base is current up to October 2023.  Queries beyond this date may not be accurately answered.  The AI assistant cannot access past interactions or code unless resupplied within the current session.  The AI assistant cannot independently switch between Agent and Edit modes. User intervention is required. The AI assistant cannot directly access files; code must be provided directly.  Agent mode access to files is unreliable; Edit mode is recommended for file access and code assistance.  Agent mode access is unreliable; Edit mode is recommended. The AI assistant cannot directly access or modify files within the user's codebase. File access requires the user to share the file content directly.  The AI assistant does not have access to the user's files or codebase, even in Agent mode.  Code must be shared directly in Edit mode for reliable assistance.  The AI assistant does not have the ability to access the internet or external databases. My responses are based solely on the information and context provided in our conversation.  The AI assistant's responses are based solely on the information provided within the current session. Past interactions and code are not accessible unless explicitly resupplied.  The AI assistant does not have the ability to directly modify files within the user's codebase.  The AI assistant's knowledge cutoff is October 2023. The AI assistant does not have internet access.  Responses are based solely on provided context.  The AI assistant does not have internet access. My responses are based solely on the information and context provided in our conversation.  The AI assistant cannot directly access or modify files in the user's codebase. File access requires the user to share the file content directly.  The AI assistant does not have internet access.  Responses are based solely on provided context.

@@ -5,6 +5,11 @@ count.txt
 sqlite.db
 /better-auth_migrations/
 
+#cursor
+.cursorrules
+
+#cursor chat archiver - SpecStory
+.specstory
 ### Example user template
 
 # IntelliJ project files

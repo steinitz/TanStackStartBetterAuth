@@ -3,14 +3,15 @@
   "scripts": {
     "dev": "vinxi dev --port 3000",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "test": "jest"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.114.17",
-    "@tanstack/react-start": "^1.114.19",
-    "@tanstack/start-api-routes": "^1.114.19",
+    "@tanstack/react-router": "^1.114.23",
+    "@tanstack/react-start": "^1.114.23",
+    "@tanstack/start-api-routes": "^1.114.23",
     "better-auth": "^1.2.4",
-    "better-sqlite3": "^11.9.0",
+    "better-sqlite3": "^11.9.1",
     "nodemailer": "^6.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -18,13 +19,24 @@
     "vinxi": "^0.5.3"
   },
   "devDependencies": {
-    "@tanstack/router-devtools": "^1.114.21",
+    "@tanstack/router-devtools": "^1.114.23",
     "@types/better-sqlite3": "^7.6.12",
+    "@types/jest": "^29.5.14",
     "@types/nodemailer": "^6.4.17",
-    "@types/react": "^19.0.10",
+    "@types/react": "^19.0.11",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
+    
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
+
     "vite-tsconfig-paths": "^5.1.4"
   }
 }

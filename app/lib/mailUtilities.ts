@@ -2,20 +2,19 @@ import nodemailer, {type Transport} from "nodemailer";
 // import {transportOptions} from "./mailSender";
 import {createServerFn} from "@tanstack/react-start";
 import {redirect} from '@tanstack/react-router'
-
-// TypeScript issues remain below in transportOptions. Codeium unable to help.
+import {serverEnv, clientEnv, isServer} from '../config/env'
 
 // https://www.nodemailer.com/smtp/
 export const transportOptions: Transport = {
   // I don't think the nodemailer types are working so we need...
   // @ts-ignore
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secureConnection: true,
+  host: serverEnv.smtp.host,
+  port: serverEnv.smtp.port,
+  secure: true, // true for port 465, false for other ports
   auth: {
     // type: 'login', // defaults to 'login'
-    user: process.env.SMTP_USERNAME,
-    pass: process.env.SMTP_PASSWORD,
+    user: serverEnv.smtp.username,
+    pass: serverEnv.smtp.password,
   }
 }
 
@@ -30,35 +29,38 @@ export const transportOptions: Transport = {
 export const sendEmail = createServerFn({method: 'POST'})
   .validator((d: any) => d)
   .handler(async ({data}) => {
+    if (!isServer()) {
+      throw new Error('sendEmail must be called from the server')
+    }
     console.log('sending email', {/*mailSender, */ data})
     const mailSender = nodemailer.createTransport(transportOptions as Transport)
     const result = await mailSender?.sendMail(
-     data,
+      data,
     )
     const success = result.accepted[0] // return the first accepted email address
     return success
   }
 )
 
-// hack to reliably get email vars because the route loaders sometimes run on the client.  Sigh.
+// Get email vars that are safe to expose to the client
 export const getEmailEnvironmentVars = createServerFn({method: 'POST'})
   .validator((d: any) => d)
-  // How can this work without an async?
   .handler(() => {
-    const result = {
-      from: process.env.SMTP_FROM_ADDRESS,
-      companyName: process.env.COMPANY_NAME,
+    return {
+      from: clientEnv.smtp.fromAddress,
+      companyName: clientEnv.company.name,
     }
-    return result
   }
 )
 
-// must be called from the server or process.env... will be undefined
-// or, could use the getEmailEnvironmentVars hack above on the client
+// must be called from the server
 export const testMessage = () => {
+  if (!isServer()) {
+    throw new Error('testMessage must be called from the server')
+  }
   return {
-    from: process.env.SMTP_FROM_ADDRESS,
-    to: process.env.SMTP_FROM_ADDRESS,
+    from: clientEnv.smtp.fromAddress,
+    to: clientEnv.smtp.fromAddress,
     subject: "Nodemailer Test",
     text: "Plaintext version of the test message",
     html: "<p>HTML version of the test message</p>",
@@ -90,7 +92,7 @@ export const sendTestEmail = createServerFn({method: 'POST'})
     // console.log('sending testMessage', {/*mailSender, */ data})
     const mailSender = nodemailer.createTransport(transportOptions as Transport)
     const result = await mailSender?.sendMail(
-     testMessage(),
+      testMessage(),
     )
     const success = result.accepted[0] // return the first accepted email address
     return success

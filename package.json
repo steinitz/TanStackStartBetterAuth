@@ -2,8 +2,9 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev --port 3000",
-    "build": "vinxi build",
+    "build": "vinxi build && echo '\nTo start the production server, use: npm run start:prod'",
     "start": "vinxi start",
+    "start:prod": "node bootstrap.env.mjs",
     "test": "jest"
   },
   "dependencies": {

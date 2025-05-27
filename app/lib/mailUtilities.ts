@@ -7,12 +7,12 @@ import {isServer, getEnvVar} from '../config/env'
 // Validate SMTP configuration
 function getSmtpConfig() {
   return {
-    host: getEnvVar('SMTP_HOST', true),
-    port: Number(getEnvVar('SMTP_PORT', true)),
+    host: getEnvVar('SMTP_HOST'),
+    port: Number(getEnvVar('SMTP_PORT')),
     secure: true, // true for port 465, false for other ports
     auth: {
-      user: getEnvVar('SMTP_USERNAME', true),
-      pass: getEnvVar('SMTP_PASSWORD', true),
+      user: getEnvVar('SMTP_USERNAME'),
+      pass: getEnvVar('SMTP_PASSWORD'),
     }
   } as const
 }
@@ -49,8 +49,8 @@ export const getEmailEnvironmentVars = createServerFn({method: 'POST'})
   .validator((d: any) => d)
   .handler(() => {
     return {
-      from: getEnvVar('SMTP_FROM_ADDRESS', true),
-      companyName: getEnvVar('COMPANY_NAME', true),
+      from: getEnvVar('SMTP_FROM_ADDRESS'),
+      companyName: getEnvVar('COMPANY_NAME'),
     }
   }
 )
@@ -60,7 +60,7 @@ export const testMessage = () => {
   if (!isServer()) {
     throw new Error('testMessage must be called from the server')
   }
-  const fromAddress = getEnvVar('SMTP_FROM_ADDRESS', true)
+  const fromAddress = getEnvVar('SMTP_FROM_ADDRESS')
   return {
     from: fromAddress,
     to: fromAddress,

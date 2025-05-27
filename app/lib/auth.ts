@@ -11,7 +11,7 @@ const verificationLinkChangeText = 'Click the link to verify your new email addr
 const passwordResetLinkText = 'Click the link to reset your password: '
 const changeEmailText = 'Click the link to change your email address to'
 
-const mailSender = nodemailer.createTransport(transportOptions as Transport)
+const mailSender = nodemailer.createTransport(transportOptions as unknown as Transport)
 
 export const auth = betterAuth({
   database: appDatabase,

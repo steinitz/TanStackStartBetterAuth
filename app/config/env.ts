@@ -16,7 +16,7 @@ export function getEnvVar(name: string): string {
   if (!isServer()) {
     throw new Error('getEnvVar can only be called on the server')
   }
-  
+
   const value = process.env[name]
   if (!value) {
     throw new Error(`Environment variable ${name} is not set`)
@@ -25,14 +25,12 @@ export function getEnvVar(name: string): string {
 }
 
 // Type for client environment variables
-type ClientEnv = {
-  APP_NAME: string
-}
+type ClientEnv = any
 
 // Client-safe environment variables populated during SSR.
 // These values are public and safe to expose to the browser.
 export let clientEnv: ClientEnv = {
-  APP_NAME: 'GenSX Demo'
+  // APP_NAME: 'GenSX Demo'
 }
 
 // Declare window augmentation for TypeScript
@@ -45,14 +43,14 @@ declare global {
 if (isServer()) {
   // Load environment variables on server
   dotenv.config()
-  
+
   // Fallback to development env file
   dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` })
 
   // Populate client-safe variables
   try {
     clientEnv = {
-      APP_NAME: process.env.APP_NAME || 'GenSX Demo'
+      APP_NAME: process.env.APP_NAME || 'Steinitz Developements App'
     }
   } catch (error) {
     console.error('Error loading client environment variables:', error)
@@ -63,4 +61,5 @@ if (isServer()) {
   if (window.__ENV) {
     clientEnv = window.__ENV
   }
-} 
+}
+

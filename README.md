@@ -47,7 +47,7 @@ The system elegantly handles client-side environment variables through SSR:
 4. TypeScript ensures only designated client-safe variables are accessible
 
 Example of client-side usage:
-```typescript
+```tsx
 // In your client component
 import { clientEnv } from '~/config/env'
 
@@ -84,7 +84,7 @@ The variable will be automatically:
 ```typescript
 // In .env.development or .env.production
 SMTP_PASSWORD=secret123
-COMPANY_NAME=Acme Corp
+COMPANY_NAME="Acme Corp"
 
 // In app/config/env.ts
 const serverOnlyVars = [

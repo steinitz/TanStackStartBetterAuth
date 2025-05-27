@@ -9,7 +9,9 @@ const thisPath = '/_app/contact'
 import {useSession} from "~/lib/auth-client";
 import {getEmailEnvironmentVars, sendEmail} from "~/lib/mailUtilities";
 import {ContactSent} from '~/components/ContactSent';
-import { clientEnv, getEnvVar } from '~/config/env';
+import {
+  clientEnv,
+  getEnvVar } from '~/config/env';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type ContactData = {
@@ -27,6 +29,7 @@ const ContactSchema = v.object({
 
 const from = clientEnv.SMTP_FROM_ADDRESS
 const companyName = clientEnv.COMPANY_NAME
+
 console.log('contact', {from, companyName})
 
 const contact = () => {

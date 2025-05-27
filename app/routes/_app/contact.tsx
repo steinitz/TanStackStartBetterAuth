@@ -8,7 +8,8 @@ const thisPath = '/_app/contact'
 
 import {useSession} from "~/lib/auth-client";
 import {getEmailEnvironmentVars, sendEmail} from "~/lib/mailUtilities";
-import { ContactSent } from '~/components/ContactSent';
+import {ContactSent} from '~/components/ContactSent';
+import { clientEnv, getEnvVar } from '~/config/env';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type ContactData = {
@@ -24,10 +25,14 @@ const ContactSchema = v.object({
   message: v.pipe(v.string(), v.nonEmpty('please type a message')),
 });
 
-const contact = () => {
+const from = clientEnv.SMTP_FROM_ADDRESS
+const companyName = clientEnv.COMPANY_NAME
+console.log('contact', {from, companyName})
 
+const contact = () => {
   // validate the form fields
   const [validationIssues, setValidationIssues] = useState<any>({})
+
   const validateFormFields = (fields: ContactData) => {
     const valibotResult = v.safeParse(
     ContactSchema,
@@ -44,7 +49,7 @@ const contact = () => {
   // big block of code message state and acutal emailing
   //
 
-  const {from, companyName} = useLoaderData({from: thisPath})
+  // const {from, companyName} = useLoaderData({from: thisPath})
   // these three help the user edit the message, if needed, for resending
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -149,10 +154,10 @@ const contact = () => {
 
 export const Route = createFileRoute(thisPath)({
   component: contact,
-  loader: () => {
-    // this seems to simple.  Why no async and await?
-    // Note async and await throw an error anyway.
-    return getEmailEnvironmentVars()
-  }
+  // loader: () => {
+  //   // this seems too simple.  Why no async and await?
+  //   // Note async and await throw an error anyway.
+  //   return getEmailEnvironmentVars()
+  // }
 })
 

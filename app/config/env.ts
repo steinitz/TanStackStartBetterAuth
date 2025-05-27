@@ -6,45 +6,61 @@ export const isServer = () => typeof window === 'undefined'
 
 // List of environment variables that should never be exposed to the client
 const serverOnlyVars = [
-  'SMTP_HOST',
-  'SMTP_PORT',
-  'SMTP_USERNAME',
-  'SMTP_PASSWORD',
-  'BETTER_AUTH_SECRET',
-  'GITHUB_CLIENT_ID',
-  'GITHUB_CLIENT_SECRET',
+  'OPENAI_API_KEY',
+  'GROQ_API_KEY',
+  'ANTHROPIC_API_KEY',
 ] as const
 
-// Helper to safely get environment variables
-export function getEnvVar(name: string, required = false): string | undefined {
+// Helper to safely get environment variables (server-side only)
+export function getEnvVar(name: string): string {
+  if (!isServer()) {
+    throw new Error('getEnvVar can only be called on the server')
+  }
+  
   const value = process.env[name]
-  if (required && !value) {
-    throw new Error(`Required environment variable ${name} is not set`)
+  if (!value) {
+    throw new Error(`Environment variable ${name} is not set`)
   }
   return value
 }
 
+// Type for client environment variables
+type ClientEnv = {
+  APP_NAME: string
+}
+
+// Client-safe environment variables populated during SSR.
+// These values are public and safe to expose to the browser.
+export let clientEnv: ClientEnv = {
+  APP_NAME: 'GenSX Demo'
+}
+
+// Declare window augmentation for TypeScript
+declare global {
+  interface Window {
+    __ENV?: ClientEnv
+  }
+}
+
 if (isServer()) {
   // Load environment variables on server
+  dotenv.config()
+  
+  // Fallback to development env file
   dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` })
 
-  // Validate critical infrastructure variables at startup
-  const criticalVars = [
-    'BETTER_AUTH_SECRET',  // needed for auth to work at all
-    'BETTER_AUTH_URL',     // needed for auth to work at all
-  ] as const
-
-  for (const key of criticalVars) {
-    getEnvVar(key, true)
+  // Populate client-safe variables
+  try {
+    clientEnv = {
+      APP_NAME: process.env.APP_NAME || 'GenSX Demo'
+    }
+  } catch (error) {
+    console.error('Error loading client environment variables:', error)
   }
 } else {
-  // On the client, filter out server-only variables
-  const safeVars = Object.entries(process.env).reduce((acc, [key, value]) => {
-    if (!serverOnlyVars.includes(key as any)) {
-      acc[key] = value
-    }
-    return acc
-  }, {} as Record<string, string | undefined>)
-  
-  process.env = safeVars
+  // On the client, get values from window.__ENV
+  // This will be populated during SSR
+  if (window.__ENV) {
+    clientEnv = window.__ENV
+  }
 } 

@@ -9,6 +9,7 @@ import {
 // import {TanStackRouterDevtools} from '@tanstack/router-devtools'
 import type {ReactNode} from 'react'
 import {MainLayout} from '~/components/MainLayout'
+import {clientEnv} from '~/config/env'
 
 /*
 const TanStackRouterDevtools =
@@ -93,6 +94,11 @@ function RootDocument({children}: Readonly<{children: ReactNode}>) {
       </head>
       <body>
         <MainLayout>{children}</MainLayout>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__ENV = ${JSON.stringify(clientEnv)};`,
+          }}
+        />
         <Scripts />
       </body>
     </html>

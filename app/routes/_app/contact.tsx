@@ -49,7 +49,7 @@ const contact = () => {
   }
 
   //
-  // big block of code message state and acutal emailing
+  // big block of code: message state and acutal emailing
   //
 
   // const {from, companyName} = useLoaderData({from: thisPath})

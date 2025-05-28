@@ -5,11 +5,11 @@ import * as dotenv from 'dotenv'
 export const isServer = () => typeof window === 'undefined'
 
 // List of environment variables that should never be exposed to the client
-const serverOnlyVars = [
-  'OPENAI_API_KEY',
-  'GROQ_API_KEY',
-  'ANTHROPIC_API_KEY',
-] as const
+// const serverOnlyVars = [
+//   'OPENAI_API_KEY',
+//   'GROQ_API_KEY',
+//   'ANTHROPIC_API_KEY',
+// ] as const
 
 // Helper to safely get environment variables (server-side only)
 export function getEnvVar(name: string): string {
@@ -25,12 +25,18 @@ export function getEnvVar(name: string): string {
 }
 
 // Type for client environment variables
-type ClientEnv = any
+type ClientEnv = {
+  APP_NAME: string,
+  SMTP_FROM_ADDRESS: string | undefined,
+  COMPANY_NAME: string,
+}
 
 // Client-safe environment variables populated during SSR.
 // These values are public and safe to expose to the browser.
 export let clientEnv: ClientEnv = {
-  // APP_NAME: 'GenSX Demo'
+  APP_NAME: '',
+  SMTP_FROM_ADDRESS: '',
+  COMPANY_NAME: ''
 }
 
 // Declare window augmentation for TypeScript
@@ -49,8 +55,11 @@ if (isServer()) {
 
   // Populate client-safe variables
   try {
+    // these variables seemed to be available before this initialization.  What's going on?
     clientEnv = {
-      APP_NAME: process.env.APP_NAME || 'Steinitz Developements App'
+      APP_NAME: process.env.APP_NAME || 'Steinitz Developements App',
+      SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS,
+      COMPANY_NAME: 'process.env.COMPANY_NAME',
     }
   } catch (error) {
     console.error('Error loading client environment variables:', error)

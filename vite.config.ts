@@ -8,4 +8,16 @@ export default defineConfig({
     port: 3000,
   },
   plugins: [tsConfigPaths(), tanstackStart()],
+  build: {
+    rollupOptions: {
+      external: [
+        // Exclude reference directory from build
+        /^\/reference\//,
+      ],
+    },
+  },
+  // Exclude reference directory from file watching and processing
+  optimizeDeps: {
+    exclude: ['reference'],
+  },
 })

@@ -22,6 +22,26 @@ export const Route = createRootRoute({
         title: 'TanStack Start App',
       },
     ],
+    links: [
+      {
+        rel: 'stylesheet',
+        href: 'https://unpkg.com/mvp.css',
+      },
+      {
+        rel: 'stylesheet',
+        href: '/mvp-css-override.css',
+      },
+      {
+        rel: 'stylesheet',
+        href: '/styles.css',
+      },
+      // fonts from https://fontawesome.com/
+      {
+        rel: 'stylesheet',
+        type: 'text/css',
+        href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+      }
+    ]
   }),
   component: RootComponent,
 })
@@ -36,7 +56,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html>
+    <html color-mode="user">
       <head>
         <HeadContent />
       </head>

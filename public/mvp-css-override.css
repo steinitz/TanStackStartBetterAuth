@@ -1,0 +1,71 @@
+:root {
+    --color-error: darkred;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[color-mode="user"] {
+    --color-bg: #222; /* darker background for better readability */
+    --color-error: red
+  }
+}
+
+button[type="reset"] {
+  background-color: var(--color-text-secondary); /* rgb(110, 152, 178);*/
+  border-color: var(--color-text-secondary);
+}
+
+button {
+  padding: 0.6rem 1.5rem;
+}
+
+input {
+  min-width: 91%; /* this might be extreme and mess up certain inputs */
+}
+
+main {
+  padding-top: 0.5rem;
+  max-width: 1000px;
+  /*margin: !*0*! auto;*/
+}
+
+nav {
+  margin-bottom: 2rem;
+}
+
+form header {
+  margin: 0;
+  padding: -80px;
+}
+
+/*section {*/
+/*  margin-bottom: 0;*/
+/*  margin-top: 0;*/
+/*  padding-top: 0;*/
+/*  padding-bottom: 0;*/
+/*  background-color: red;*/
+/*}*/
+
+/*
+These don't fix the not-centered headers
+header {
+    text-align: center;
+}
+
+header a b,
+header a em,
+header a i,
+header a strong {
+  text-align: center;
+  margin: auto;
+}
+*/
+
+
+
+/*
+This didn't fix the weird Safari selection behavior when
+the validation errors are hidden and unselectable
+
+form {
+  user-select: 'none',}
+*/

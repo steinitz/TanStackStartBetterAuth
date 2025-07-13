@@ -11,16 +11,47 @@
 import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthSignupRouteImport } from './routes/auth/signup'
+import { Route as AuthSigninRouteImport } from './routes/auth/signin'
+import { Route as AuthSetNewPasswordRouteImport } from './routes/auth/setNewPassword'
+import { Route as AuthRequestPasswordResetRouteImport } from './routes/auth/requestPasswordReset'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
 
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthSignupRoute = AuthSignupRouteImport.update({
+  id: '/auth/signup',
+  path: '/auth/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSigninRoute = AuthSigninRouteImport.update({
+  id: '/auth/signin',
+  path: '/auth/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSetNewPasswordRoute = AuthSetNewPasswordRouteImport.update({
+  id: '/auth/setNewPassword',
+  path: '/auth/setNewPassword',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRequestPasswordResetRoute =
+  AuthRequestPasswordResetRouteImport.update({
+    id: '/auth/requestPasswordReset',
+    path: '/auth/requestPasswordReset',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -29,24 +60,63 @@ const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/profile': typeof ProfileRoute
+  '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
+  '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
+  '/auth/signin': typeof AuthSigninRoute
+  '/auth/signup': typeof AuthSignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/profile': typeof ProfileRoute
+  '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
+  '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
+  '/auth/signin': typeof AuthSigninRoute
+  '/auth/signup': typeof AuthSignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/profile': typeof ProfileRoute
+  '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
+  '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
+  '/auth/signin': typeof AuthSigninRoute
+  '/auth/signup': typeof AuthSignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/profile'
+    | '/auth/requestPasswordReset'
+    | '/auth/setNewPassword'
+    | '/auth/signin'
+    | '/auth/signup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/profile'
+    | '/auth/requestPasswordReset'
+    | '/auth/setNewPassword'
+    | '/auth/signin'
+    | '/auth/signup'
+  id:
+    | '__root__'
+    | '/'
+    | '/profile'
+    | '/auth/requestPasswordReset'
+    | '/auth/setNewPassword'
+    | '/auth/signin'
+    | '/auth/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProfileRoute: typeof ProfileRoute
+  AuthRequestPasswordResetRoute: typeof AuthRequestPasswordResetRoute
+  AuthSetNewPasswordRoute: typeof AuthSetNewPasswordRoute
+  AuthSigninRoute: typeof AuthSigninRoute
+  AuthSignupRoute: typeof AuthSignupRoute
 }
 export interface FileServerRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatServerRoute
@@ -72,11 +142,46 @@ export interface RootServerRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/signup': {
+      id: '/auth/signup'
+      path: '/auth/signup'
+      fullPath: '/auth/signup'
+      preLoaderRoute: typeof AuthSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/signin': {
+      id: '/auth/signin'
+      path: '/auth/signin'
+      fullPath: '/auth/signin'
+      preLoaderRoute: typeof AuthSigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/setNewPassword': {
+      id: '/auth/setNewPassword'
+      path: '/auth/setNewPassword'
+      fullPath: '/auth/setNewPassword'
+      preLoaderRoute: typeof AuthSetNewPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/requestPasswordReset': {
+      id: '/auth/requestPasswordReset'
+      path: '/auth/requestPasswordReset'
+      fullPath: '/auth/requestPasswordReset'
+      preLoaderRoute: typeof AuthRequestPasswordResetRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -95,6 +200,11 @@ declare module '@tanstack/react-start/server' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProfileRoute: ProfileRoute,
+  AuthRequestPasswordResetRoute: AuthRequestPasswordResetRoute,
+  AuthSetNewPasswordRoute: AuthSetNewPasswordRoute,
+  AuthSigninRoute: AuthSigninRoute,
+  AuthSignupRoute: AuthSignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

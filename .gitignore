@@ -9,6 +9,7 @@ build/
 # Environment files
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
@@ -47,6 +48,10 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+
+# Local data files
+sqlite.db
+count.txt
 
 # Reference directory (contains external git repos)
 reference/

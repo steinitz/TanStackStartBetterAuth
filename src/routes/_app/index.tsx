@@ -1,9 +1,9 @@
 // src/routes/index.tsx
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { useSession, signOut } from '../lib/auth-client'
+import { useSession, signOut } from '~/lib/auth-client'
 
-export const Route = createFileRoute('/')({ 
+export const Route = createFileRoute('/_app/')({ 
   component: Home,
 })
 

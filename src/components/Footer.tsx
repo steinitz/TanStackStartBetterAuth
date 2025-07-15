@@ -1,3 +1,5 @@
+import { DeveloperTools } from './DeveloperTools'
+
 export const Footer = () => {
   return (
     <div
@@ -13,7 +15,7 @@ export const Footer = () => {
         <section
           style={{
             display: 'flex',
-            backgroundColor: 'var(--color-bg)',
+            backgroundColor: 'var(--color-bg)', // make it opaque
             justifyContent: 'space-between',
             alignContent: 'center',
           }}
@@ -22,11 +24,25 @@ export const Footer = () => {
             <p
               style={{
                 fontSize: '0.8rem',
-                marginTop: '4px',
+                marginTop: '4px', // why needed to align with the link?
               }}
             >
-              Built with React, TanStack Start, Better-Auth, Valibot, and MVP.css
+              Built with React, TanStack Start, Better-Auth, Valibot, NodeMailer and MVP.css
             </p>
+          </div>
+          <div
+            style={{
+              fontSize: '0.8rem',
+              marginTop: '-17px', // why needed to align with the link?
+            }}
+          >
+            <DeveloperTools
+              detailItemsStyleAttribute={{
+                position: 'absolute',
+                top: '-5rem',
+                left: '50%',
+              }}
+            />
           </div>
           <div>
             <a

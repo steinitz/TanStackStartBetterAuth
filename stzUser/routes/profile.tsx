@@ -81,7 +81,7 @@ export const Profile = () => {
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
-          callbackURL: `thisPath?${didConfirmChangeSearchParam}=true`
+          callbackURL: `${thisPath}?${didConfirmChangeSearchParam}=true`
         })
         console.log('handleSaveChanges', {data, error})
         if (error) {
@@ -158,7 +158,6 @@ export const Profile = () => {
               <h1>Profile</h1>
               {shouldShowEmailChangeSpinner && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
             </div>
-
 
             <EmailInput
               validationErrors={validationIssues}

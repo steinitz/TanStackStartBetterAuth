@@ -1,5 +1,5 @@
 import { Spacer } from '~stzUtils/components/Spacer'
-import { sendTestEmail } from '~/lib/mail-utilities'
+import { sendTestEmail } from '~stzUser/lib/mail-utilities'
 import { getCount, updateCount } from '~/lib/count'
 import { useLoaderData, useRouter } from '@tanstack/react-router'
 

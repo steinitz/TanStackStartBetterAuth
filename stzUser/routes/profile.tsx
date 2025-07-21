@@ -60,6 +60,7 @@ export const Profile = () => {
     return valibotResult.success
   }
 
+  
   // const username = 'fred'
   // const preferredName = 'Fred'
   // const fullName = 'Fred Smith'
@@ -218,6 +219,8 @@ export const Profile = () => {
   )
 }
 
-export const Route = createFileRoute(thisPath)({
-  component: Profile,
-})
+// Route export removed - this component is now imported by src/routes/_app/profile.tsx
+// export const Route = createFileRoute(thisPath)({
+//   component: Profile,
+// })
+

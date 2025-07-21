@@ -3,9 +3,9 @@ import * as v from "valibot";
 import {emailValidation, niceValidationIssues, sharedFormSubmission} from "~stzUser/lib/form";
 import {type SyntheticEvent, useState} from "react";
 import {useSession} from "~stzUser/lib/auth-client";
-import {sendEmail} from "~/lib/mail-utilities";
+import {sendEmail} from "~stzUser/lib/mail-utilities";
 import {ContactSent} from '~stzUser/components/ContactSent';
-import {clientEnv} from '~/lib/env';
+import {clientEnv} from '~stzUser/lib/env';
 
 // TypeScript - suggested by Valibot docs, and comes in handy later
 type ContactData = {

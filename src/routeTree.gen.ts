@@ -14,10 +14,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppAuthVerifyEmailRouteImport } from './routes/_app/auth/verify-email'
 import { Route as AppAuthSignupRouteImport } from './routes/_app/auth/signup'
 import { Route as AppAuthSigninRouteImport } from './routes/_app/auth/signin'
 import { Route as AppAuthSetNewPasswordRouteImport } from './routes/_app/auth/setNewPassword'
 import { Route as AppAuthRequestPasswordResetRouteImport } from './routes/_app/auth/requestPasswordReset'
+import { Route as AppAuthForRouteTroubleshootingRouteImport } from './routes/_app/auth/forRouteTroubleshooting'
 import { ServerRoute as AppApiAuthSplatServerRouteImport } from './routes/_app/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -34,6 +36,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAuthVerifyEmailRoute = AppAuthVerifyEmailRouteImport.update({
+  id: '/auth/verify-email',
+  path: '/auth/verify-email',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppAuthSignupRoute = AppAuthSignupRouteImport.update({
@@ -57,6 +64,12 @@ const AppAuthRequestPasswordResetRoute =
     path: '/auth/requestPasswordReset',
     getParentRoute: () => AppRouteRoute,
   } as any)
+const AppAuthForRouteTroubleshootingRoute =
+  AppAuthForRouteTroubleshootingRouteImport.update({
+    id: '/auth/forRouteTroubleshooting',
+    path: '/auth/forRouteTroubleshooting',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
 const AppApiAuthSplatServerRoute = AppApiAuthSplatServerRouteImport.update({
   id: '/_app/api/auth/$',
   path: '/api/auth/$',
@@ -66,55 +79,67 @@ const AppApiAuthSplatServerRoute = AppApiAuthSplatServerRouteImport.update({
 export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/': typeof AppIndexRoute
+  '/auth/forRouteTroubleshooting': typeof AppAuthForRouteTroubleshootingRoute
   '/auth/requestPasswordReset': typeof AppAuthRequestPasswordResetRoute
   '/auth/setNewPassword': typeof AppAuthSetNewPasswordRoute
   '/auth/signin': typeof AppAuthSigninRoute
   '/auth/signup': typeof AppAuthSignupRoute
+  '/auth/verify-email': typeof AppAuthVerifyEmailRoute
 }
 export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/': typeof AppIndexRoute
+  '/auth/forRouteTroubleshooting': typeof AppAuthForRouteTroubleshootingRoute
   '/auth/requestPasswordReset': typeof AppAuthRequestPasswordResetRoute
   '/auth/setNewPassword': typeof AppAuthSetNewPasswordRoute
   '/auth/signin': typeof AppAuthSigninRoute
   '/auth/signup': typeof AppAuthSignupRoute
+  '/auth/verify-email': typeof AppAuthVerifyEmailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
   '/_app/profile': typeof AppProfileRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/auth/forRouteTroubleshooting': typeof AppAuthForRouteTroubleshootingRoute
   '/_app/auth/requestPasswordReset': typeof AppAuthRequestPasswordResetRoute
   '/_app/auth/setNewPassword': typeof AppAuthSetNewPasswordRoute
   '/_app/auth/signin': typeof AppAuthSigninRoute
   '/_app/auth/signup': typeof AppAuthSignupRoute
+  '/_app/auth/verify-email': typeof AppAuthVerifyEmailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/profile'
     | '/'
+    | '/auth/forRouteTroubleshooting'
     | '/auth/requestPasswordReset'
     | '/auth/setNewPassword'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/verify-email'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/profile'
     | '/'
+    | '/auth/forRouteTroubleshooting'
     | '/auth/requestPasswordReset'
     | '/auth/setNewPassword'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/verify-email'
   id:
     | '__root__'
     | '/_app'
     | '/_app/profile'
     | '/_app/'
+    | '/_app/auth/forRouteTroubleshooting'
     | '/_app/auth/requestPasswordReset'
     | '/_app/auth/setNewPassword'
     | '/_app/auth/signin'
     | '/_app/auth/signup'
+    | '/_app/auth/verify-email'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/auth/verify-email': {
+      id: '/_app/auth/verify-email'
+      path: '/auth/verify-email'
+      fullPath: '/auth/verify-email'
+      preLoaderRoute: typeof AppAuthVerifyEmailRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/auth/signup': {
       id: '/_app/auth/signup'
       path: '/auth/signup'
@@ -193,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthRequestPasswordResetRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/auth/forRouteTroubleshooting': {
+      id: '/_app/auth/forRouteTroubleshooting'
+      path: '/auth/forRouteTroubleshooting'
+      fullPath: '/auth/forRouteTroubleshooting'
+      preLoaderRoute: typeof AppAuthForRouteTroubleshootingRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -210,19 +249,23 @@ declare module '@tanstack/react-start/server' {
 interface AppRouteRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAuthForRouteTroubleshootingRoute: typeof AppAuthForRouteTroubleshootingRoute
   AppAuthRequestPasswordResetRoute: typeof AppAuthRequestPasswordResetRoute
   AppAuthSetNewPasswordRoute: typeof AppAuthSetNewPasswordRoute
   AppAuthSigninRoute: typeof AppAuthSigninRoute
   AppAuthSignupRoute: typeof AppAuthSignupRoute
+  AppAuthVerifyEmailRoute: typeof AppAuthVerifyEmailRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAuthForRouteTroubleshootingRoute: AppAuthForRouteTroubleshootingRoute,
   AppAuthRequestPasswordResetRoute: AppAuthRequestPasswordResetRoute,
   AppAuthSetNewPasswordRoute: AppAuthSetNewPasswordRoute,
   AppAuthSigninRoute: AppAuthSigninRoute,
   AppAuthSignupRoute: AppAuthSignupRoute,
+  AppAuthVerifyEmailRoute: AppAuthVerifyEmailRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

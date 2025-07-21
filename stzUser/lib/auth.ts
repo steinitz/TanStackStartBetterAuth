@@ -1,40 +1,55 @@
-import {betterAuth} from "better-auth";
-import {appDatabase} from "~stzUser/lib/database";
-import nodemailer, {type Transport} from "nodemailer";
-import {transportOptions} from "~/lib/mail-utilities";
+// src/lib/auth.ts
+import { betterAuth } from "better-auth"
+import { reactStartCookies } from "better-auth/react-start"
+import Database from "better-sqlite3"
+import nodemailer, { type Transport } from "nodemailer"
+import { transportOptions } from "../../stzUser/lib/mail-utilities"
+// import { getEnvVar } from "./env"
+
+// Create database instance
+const database = new Database("sqlite.db")
 
 const from = process.env.SMTP_FROM_ADDRESS
-//console.log('auth', {from})
 
-const verificationLinkText = 'Click the link to verify email address' // signup
-const verificationLinkChangeText = 'Click the link to verify your new email address' // email change
+// new email address verification text
+const verifyEmailSubject = 'Verify your email address'
+const verifyEmailInstructions = 'Click the link below to verify your email address' // signup
+const verifyEmailLinkText = 'Confirm Email Address' // signup
+
+// change email address verification text
+const verifyChangeEmailSubject = 'Verify your new email address'
+const verifyChangeEmailInstructions = 'Click the link below to verify your new email address' // email change
+const verifyChangeEmailLinkText = 'Confirm New Email Address'
+
+// password Reset text
 const passwordResetLinkText = 'Click the link to reset your password: '
-const changeEmailText = 'Click the link to change your email address to'
 
-const mailSender = nodemailer.createTransport(transportOptions as unknown as Transport)
+const mailSender = transportOptions ? nodemailer.createTransport(transportOptions as unknown as Transport) : null
 
 export const auth = betterAuth({
-  database: appDatabase,
+  database,
   user: {
     changeEmail: {
       enabled: true,
+      /*
       sendChangeEmailVerification: async (
-        { user, newEmail, url/*, token */}/*, request*/
+        { user, newEmail, url }
       ) => {
+        if (!mailSender) return
         await mailSender.sendMail({
           to: user.email,
           from,
           subject: 'Approve email address change',
-          text: `${changeEmailText} ${newEmail} ${url}`,
-          html: `<p>${changeEmailText} ${newEmail} ${url}</p>`,
-        })
+          text: `${changeEmailText1} ${newEmail} 
 
-        // hack to avoid sending two emails when the user changes
-        // their email address.  Also avoids the nasty situation
-        // when the user no longer has access to the previous
-        // email address
-        // await pretendToSendEmail({data: url})
+${changeEmailText2}
+          ${url}`,
+          html: `<p>${changeEmailText1} ${newEmail}</p>
+          <br />
+          <a href=${url}>${changeEmailText2}</a>`,
+        })
       }
+      */
     },
     deleteUser: {
       enabled: true
@@ -44,8 +59,9 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     sendResetPassword: async (
-      {user, url/*, token*/}/*, request*/
+      { user, url }
     ) => {
+      if (!mailSender) return
       await mailSender.sendMail({
         to: user.email,
         from,
@@ -57,24 +73,27 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
-    sendVerificationEmail: async (
-      {
+    sendVerificationEmail: async ({
         user,
         url,
-        //token
       },
       request
     ) => {
-      console.log('sendVerificationEmail', {request})
-      let subject: string = 'Verify your email address'
-      let text: string = `${verificationLinkText} ${user.email} ${url}`
-      let html: string = `<p>${verificationLinkText} ${user.email} ${url}</p>`
-      // tweak the wording if it's an email address change
-      if(request?.url.includes('verify-email')) {
-        subject = 'Verify your new email address'
-        text = `${verificationLinkChangeText} ${user.email} ${url}`
-        html = `<p>${verificationLinkChangeText} ${user.email} ${url}</p>`
+      // console.log('sendVerificationEmail', { request })
+      if (!mailSender) {
+        console.error('Better Auth email verification: no mail sender');
+        return
       }
+      const isEmailChange = request?.url.includes('verify-email')
+      let subject: string = isEmailChange ? verifyChangeEmailSubject : verifyEmailSubject
+      let text: string = `${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email} 
+      
+      ${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}
+      ${url}`
+
+      let html: string = `<p>${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email}</P>
+                          <a href=${url}>${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}</a>`
+
       await mailSender.sendMail({
         to: user.email,
         from,
@@ -84,6 +103,7 @@ export const auth = betterAuth({
       })
     }
   },
+
   // socialProviders: {
   //    github: {
   //     // '!' tells the compiler this will be defined, so don't worry
@@ -91,5 +111,8 @@ export const auth = betterAuth({
   //     clientSecret: process.env.GITHUB_CLIENT_SECRET!,
   //    }
   //},
-})
 
+  plugins: [
+    reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
+  ],
+})

@@ -26,10 +26,11 @@ const SignupSchema = v.object({
   name: v.string(),
 });
 
-const thisPath = '/_app/auth/signup'
-export const Route = createFileRoute(thisPath)({
-  component: SignUp,
-})
+// Route export removed - this component is now imported by src/routes/_app/auth/signup.tsx
+// const thisPath = '/_app/auth/signup'
+// export const Route = createFileRoute(thisPath)({
+//   component: SignUp,
+// })
 
 export default function SignUp() {
   const navigate = useNavigate()

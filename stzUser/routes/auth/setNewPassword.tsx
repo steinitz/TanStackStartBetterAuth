@@ -78,7 +78,8 @@ export const SetNewPassword = () => {
   )
 }
 
-export const Route = createFileRoute('/_app/auth/setNewPassword')({
-  component: SetNewPassword,
-  // loader: async () => await getCount(),
-})
+// Route export removed - this component is now imported by src/routes/_app/auth/setNewPassword.tsx
+// export const Route = createFileRoute('/_app/auth/setNewPassword')({
+//   component: SetNewPassword,
+//   // loader: async () => await getCount(),
+// })

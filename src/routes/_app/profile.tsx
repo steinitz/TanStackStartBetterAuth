@@ -1,8 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Profile } from '~stzUser/routes/profile'
+import { lazy } from 'react'
 
-// Temporary route that imports the Profile component from stzUser
-// This allows the project to build while we work on Virtual File Routes integration
+// Lazy load the Profile component from stzUser
+const ProfileComponent = lazy(async () => {
+  const module = await import('~stzUser/routes/profile')
+  return { default: module.Profile }
+})
+
 export const Route = createFileRoute('/_app/profile')({
-  component: Profile,
+  component: ProfileComponent,
 })

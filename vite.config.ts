@@ -2,6 +2,7 @@
 import {defineConfig} from 'vite'
 import tsConfigPaths from 'vite-tsconfig-paths'
 import {tanstackStart} from '@tanstack/react-start/plugin/vite'
+import {tanstackRouter} from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react-swc'
 
 export default defineConfig({
@@ -9,6 +10,9 @@ export default defineConfig({
     port: 3000,
   },
   plugins: [
+    tanstackRouter({
+      virtualRouteConfig: './routes.ts',
+    }),
     tsConfigPaths(), 
     tanstackStart({
       customViteReactPlugin: true

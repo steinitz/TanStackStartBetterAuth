@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react'
-import { Header } from './Header'
-import { Footer } from './Footer'
+// import { Header } from './Header'
+// import { Footer } from './Footer'
 
 export const MainLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
     <main>
-      <Header />
+      {/* <Header /> */}
       {children}
-      <Footer />
+      {/* <Footer /> */}
     </main>
   )
 }

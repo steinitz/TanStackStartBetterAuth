@@ -8,9 +8,7 @@
     "strictNullChecks": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "~stzUtils/*": ["./stzUtils/*"],
-      "~stzUser/*": ["./stzUser/*"]
+      "~/*": ["./src/*"]
     }
   }
 }

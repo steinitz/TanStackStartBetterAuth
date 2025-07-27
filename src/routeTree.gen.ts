@@ -11,14 +11,15 @@
 import type { CreateFileRoute, FileRoutesByPath } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DotDotPagesAboutRouteImport } from './pages/about'
+import { Route as DotDotOutsideRoutesAboutRouteImport } from './outside-routes/about'
 import { Route as indexRouteImport } from './routes/index'
 
-const DotDotPagesAboutRoute = DotDotPagesAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const DotDotOutsideRoutesAboutRoute =
+  DotDotOutsideRoutesAboutRouteImport.update({
+    id: '/about',
+    path: '/about',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const indexRoute = indexRouteImport.update({
   id: '/',
   path: '/',
@@ -27,16 +28,16 @@ const indexRoute = indexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof indexRoute
-  '/about': typeof DotDotPagesAboutRoute
+  '/about': typeof DotDotOutsideRoutesAboutRoute
 }
 export interface FileRoutesByTo {
   '/': typeof indexRoute
-  '/about': typeof DotDotPagesAboutRoute
+  '/about': typeof DotDotOutsideRoutesAboutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof indexRoute
-  '/about': typeof DotDotPagesAboutRoute
+  '/about': typeof DotDotOutsideRoutesAboutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -48,7 +49,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   indexRoute: typeof indexRoute
-  DotDotPagesAboutRoute: typeof DotDotPagesAboutRoute
+  DotDotOutsideRoutesAboutRoute: typeof DotDotOutsideRoutesAboutRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -64,7 +65,7 @@ declare module '@tanstack/react-router' {
       id: '/about'
       path: '/about'
       fullPath: '/about'
-      preLoaderRoute: typeof DotDotPagesAboutRouteImport
+      preLoaderRoute: typeof DotDotOutsideRoutesAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -79,7 +80,7 @@ declare module './routes/index' {
     FileRoutesByPath['/']['fullPath']
   >
 }
-declare module './pages/about' {
+declare module './outside-routes/about' {
   const createFileRoute: CreateFileRoute<
     '/about',
     FileRoutesByPath['/about']['parentRoute'],
@@ -91,7 +92,7 @@ declare module './pages/about' {
 
 const rootRouteChildren: RootRouteChildren = {
   indexRoute: indexRoute,
-  DotDotPagesAboutRoute: DotDotPagesAboutRoute,
+  DotDotOutsideRoutesAboutRoute: DotDotOutsideRoutesAboutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

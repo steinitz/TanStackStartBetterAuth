@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from '@tanstack/react-router'
-import {MainLayout} from '~/components/MainLayout'
+
 
 export const Route = createRootRoute({
   head: () => ({
@@ -32,16 +32,8 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: '/mvp-css-override.css',
       },
-      {
-        rel: 'stylesheet',
-        href: '/styles.css',
-      },
-      // fonts from https://fontawesome.com/
-      {
-        rel: 'stylesheet',
-        type: 'text/css',
-        href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
-      }
+
+
     ]
   }),
   component: RootComponent,
@@ -62,7 +54,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <MainLayout>{children}</MainLayout>
+        <main>{children}</main>
         <Scripts />
       </body>
     </html>

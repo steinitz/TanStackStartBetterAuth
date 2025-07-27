@@ -8,32 +8,34 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import type { CreateFileRoute, FileRoutesByPath } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DotDotPagesAboutRouteImport } from './pages/about'
-import { Route as DotIndexRouteImport } from './routes/index'
+import { Route as indexRouteImport } from './routes/index'
 
 const DotDotPagesAboutRoute = DotDotPagesAboutRouteImport.update({
   id: '/about',
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotIndexRoute = DotIndexRouteImport.update({
+const indexRoute = indexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof DotIndexRoute
+  '/': typeof indexRoute
   '/about': typeof DotDotPagesAboutRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof DotIndexRoute
+  '/': typeof indexRoute
   '/about': typeof DotDotPagesAboutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof DotIndexRoute
+  '/': typeof indexRoute
   '/about': typeof DotDotPagesAboutRoute
 }
 export interface FileRouteTypes {
@@ -45,12 +47,19 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  DotIndexRoute: typeof DotIndexRoute
+  indexRoute: typeof indexRoute
   DotDotPagesAboutRoute: typeof DotDotPagesAboutRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof indexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -58,18 +67,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotDotPagesAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof DotIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
+declare module './routes/index' {
+  const createFileRoute: CreateFileRoute<
+    '/',
+    FileRoutesByPath['/']['parentRoute'],
+    FileRoutesByPath['/']['id'],
+    FileRoutesByPath['/']['path'],
+    FileRoutesByPath['/']['fullPath']
+  >
+}
+declare module './pages/about' {
+  const createFileRoute: CreateFileRoute<
+    '/about',
+    FileRoutesByPath['/about']['parentRoute'],
+    FileRoutesByPath['/about']['id'],
+    FileRoutesByPath['/about']['path'],
+    FileRoutesByPath['/about']['fullPath']
+  >
+}
+
 const rootRouteChildren: RootRouteChildren = {
-  DotIndexRoute: DotIndexRoute,
+  indexRoute: indexRoute,
   DotDotPagesAboutRoute: DotDotPagesAboutRoute,
 }
 export const routeTree = rootRouteImport

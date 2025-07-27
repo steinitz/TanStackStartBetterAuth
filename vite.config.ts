@@ -11,6 +11,9 @@ export default defineConfig({
   },
   plugins: [
     tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      verboseFileRoutes: false,
       virtualRouteConfig: './routes.ts',
     }),
     tsConfigPaths(), 

@@ -11,109 +11,103 @@
 import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteRouteImport } from './routes/_app/route'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppProfileRouteImport } from './routes/_app/profile'
-import { Route as AppAuthVerifyEmailRouteImport } from './routes/_app/auth/verify-email'
-import { Route as AppAuthSignupRouteImport } from './routes/_app/auth/signup'
-import { Route as AppAuthSigninRouteImport } from './routes/_app/auth/signin'
-import { Route as AppAuthSetNewPasswordRouteImport } from './routes/_app/auth/setNewPassword'
-import { Route as AppAuthRequestPasswordResetRouteImport } from './routes/_app/auth/requestPasswordReset'
-import { Route as AppAuthForRouteTroubleshootingRouteImport } from './routes/_app/auth/forRouteTroubleshooting'
-import { ServerRoute as AppApiAuthSplatServerRouteImport } from './routes/_app/api/auth/$'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
+import { Route as AuthSignupRouteImport } from './routes/auth/signup'
+import { Route as AuthSigninRouteImport } from './routes/auth/signin'
+import { Route as AuthSetNewPasswordRouteImport } from './routes/auth/setNewPassword'
+import { Route as AuthRequestPasswordResetRouteImport } from './routes/auth/requestPasswordReset'
+import { Route as AuthProfileRouteImport } from './routes/auth/profile'
+import { Route as AuthForRouteTroubleshootingRouteImport } from './routes/auth/forRouteTroubleshooting'
+import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
 
-const AppRouteRoute = AppRouteRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppAuthVerifyEmailRoute = AppAuthVerifyEmailRouteImport.update({
+const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
   id: '/auth/verify-email',
   path: '/auth/verify-email',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAuthSignupRoute = AppAuthSignupRouteImport.update({
+const AuthSignupRoute = AuthSignupRouteImport.update({
   id: '/auth/signup',
   path: '/auth/signup',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAuthSigninRoute = AppAuthSigninRouteImport.update({
+const AuthSigninRoute = AuthSigninRouteImport.update({
   id: '/auth/signin',
   path: '/auth/signin',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAuthSetNewPasswordRoute = AppAuthSetNewPasswordRouteImport.update({
+const AuthSetNewPasswordRoute = AuthSetNewPasswordRouteImport.update({
   id: '/auth/setNewPassword',
   path: '/auth/setNewPassword',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAuthRequestPasswordResetRoute =
-  AppAuthRequestPasswordResetRouteImport.update({
+const AuthRequestPasswordResetRoute =
+  AuthRequestPasswordResetRouteImport.update({
     id: '/auth/requestPasswordReset',
     path: '/auth/requestPasswordReset',
-    getParentRoute: () => AppRouteRoute,
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AppAuthForRouteTroubleshootingRoute =
-  AppAuthForRouteTroubleshootingRouteImport.update({
+const AuthProfileRoute = AuthProfileRouteImport.update({
+  id: '/auth/profile',
+  path: '/auth/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForRouteTroubleshootingRoute =
+  AuthForRouteTroubleshootingRouteImport.update({
     id: '/auth/forRouteTroubleshooting',
     path: '/auth/forRouteTroubleshooting',
-    getParentRoute: () => AppRouteRoute,
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AppApiAuthSplatServerRoute = AppApiAuthSplatServerRouteImport.update({
-  id: '/_app/api/auth/$',
+const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
+  id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootServerRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/profile': typeof AppProfileRoute
-  '/': typeof AppIndexRoute
-  '/auth/forRouteTroubleshooting': typeof AppAuthForRouteTroubleshootingRoute
-  '/auth/requestPasswordReset': typeof AppAuthRequestPasswordResetRoute
-  '/auth/setNewPassword': typeof AppAuthSetNewPasswordRoute
-  '/auth/signin': typeof AppAuthSigninRoute
-  '/auth/signup': typeof AppAuthSignupRoute
-  '/auth/verify-email': typeof AppAuthVerifyEmailRoute
+  '/': typeof IndexRoute
+  '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
+  '/auth/profile': typeof AuthProfileRoute
+  '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
+  '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
+  '/auth/signin': typeof AuthSigninRoute
+  '/auth/signup': typeof AuthSignupRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
 }
 export interface FileRoutesByTo {
-  '/profile': typeof AppProfileRoute
-  '/': typeof AppIndexRoute
-  '/auth/forRouteTroubleshooting': typeof AppAuthForRouteTroubleshootingRoute
-  '/auth/requestPasswordReset': typeof AppAuthRequestPasswordResetRoute
-  '/auth/setNewPassword': typeof AppAuthSetNewPasswordRoute
-  '/auth/signin': typeof AppAuthSigninRoute
-  '/auth/signup': typeof AppAuthSignupRoute
-  '/auth/verify-email': typeof AppAuthVerifyEmailRoute
+  '/': typeof IndexRoute
+  '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
+  '/auth/profile': typeof AuthProfileRoute
+  '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
+  '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
+  '/auth/signin': typeof AuthSigninRoute
+  '/auth/signup': typeof AuthSignupRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteRouteWithChildren
-  '/_app/profile': typeof AppProfileRoute
-  '/_app/': typeof AppIndexRoute
-  '/_app/auth/forRouteTroubleshooting': typeof AppAuthForRouteTroubleshootingRoute
-  '/_app/auth/requestPasswordReset': typeof AppAuthRequestPasswordResetRoute
-  '/_app/auth/setNewPassword': typeof AppAuthSetNewPasswordRoute
-  '/_app/auth/signin': typeof AppAuthSigninRoute
-  '/_app/auth/signup': typeof AppAuthSignupRoute
-  '/_app/auth/verify-email': typeof AppAuthVerifyEmailRoute
+  '/': typeof IndexRoute
+  '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
+  '/auth/profile': typeof AuthProfileRoute
+  '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
+  '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
+  '/auth/signin': typeof AuthSigninRoute
+  '/auth/signup': typeof AuthSignupRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/profile'
     | '/'
     | '/auth/forRouteTroubleshooting'
+    | '/auth/profile'
     | '/auth/requestPasswordReset'
     | '/auth/setNewPassword'
     | '/auth/signin'
@@ -121,9 +115,9 @@ export interface FileRouteTypes {
     | '/auth/verify-email'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/profile'
     | '/'
     | '/auth/forRouteTroubleshooting'
+    | '/auth/profile'
     | '/auth/requestPasswordReset'
     | '/auth/setNewPassword'
     | '/auth/signin'
@@ -131,155 +125,135 @@ export interface FileRouteTypes {
     | '/auth/verify-email'
   id:
     | '__root__'
-    | '/_app'
-    | '/_app/profile'
-    | '/_app/'
-    | '/_app/auth/forRouteTroubleshooting'
-    | '/_app/auth/requestPasswordReset'
-    | '/_app/auth/setNewPassword'
-    | '/_app/auth/signin'
-    | '/_app/auth/signup'
-    | '/_app/auth/verify-email'
+    | '/'
+    | '/auth/forRouteTroubleshooting'
+    | '/auth/profile'
+    | '/auth/requestPasswordReset'
+    | '/auth/setNewPassword'
+    | '/auth/signin'
+    | '/auth/signup'
+    | '/auth/verify-email'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRouteRoute: typeof AppRouteRouteWithChildren
+  IndexRoute: typeof IndexRoute
+  AuthForRouteTroubleshootingRoute: typeof AuthForRouteTroubleshootingRoute
+  AuthProfileRoute: typeof AuthProfileRoute
+  AuthRequestPasswordResetRoute: typeof AuthRequestPasswordResetRoute
+  AuthSetNewPasswordRoute: typeof AuthSetNewPasswordRoute
+  AuthSigninRoute: typeof AuthSigninRoute
+  AuthSignupRoute: typeof AuthSignupRoute
+  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
 }
 export interface FileServerRoutesByFullPath {
-  '/api/auth/$': typeof AppApiAuthSplatServerRoute
+  '/api/auth/$': typeof ApiAuthSplatServerRoute
 }
 export interface FileServerRoutesByTo {
-  '/api/auth/$': typeof AppApiAuthSplatServerRoute
+  '/api/auth/$': typeof ApiAuthSplatServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
-  '/_app/api/auth/$': typeof AppApiAuthSplatServerRoute
+  '/api/auth/$': typeof ApiAuthSplatServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
   fullPaths: '/api/auth/$'
   fileServerRoutesByTo: FileServerRoutesByTo
   to: '/api/auth/$'
-  id: '__root__' | '/_app/api/auth/$'
+  id: '__root__' | '/api/auth/$'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
-  AppApiAuthSplatServerRoute: typeof AppApiAuthSplatServerRoute
+  ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AppRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/': {
-      id: '/_app/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/profile': {
-      id: '/_app/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/auth/verify-email': {
-      id: '/_app/auth/verify-email'
+    '/auth/verify-email': {
+      id: '/auth/verify-email'
       path: '/auth/verify-email'
       fullPath: '/auth/verify-email'
-      preLoaderRoute: typeof AppAuthVerifyEmailRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof AuthVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/auth/signup': {
-      id: '/_app/auth/signup'
+    '/auth/signup': {
+      id: '/auth/signup'
       path: '/auth/signup'
       fullPath: '/auth/signup'
-      preLoaderRoute: typeof AppAuthSignupRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof AuthSignupRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/auth/signin': {
-      id: '/_app/auth/signin'
+    '/auth/signin': {
+      id: '/auth/signin'
       path: '/auth/signin'
       fullPath: '/auth/signin'
-      preLoaderRoute: typeof AppAuthSigninRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof AuthSigninRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/auth/setNewPassword': {
-      id: '/_app/auth/setNewPassword'
+    '/auth/setNewPassword': {
+      id: '/auth/setNewPassword'
       path: '/auth/setNewPassword'
       fullPath: '/auth/setNewPassword'
-      preLoaderRoute: typeof AppAuthSetNewPasswordRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof AuthSetNewPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/auth/requestPasswordReset': {
-      id: '/_app/auth/requestPasswordReset'
+    '/auth/requestPasswordReset': {
+      id: '/auth/requestPasswordReset'
       path: '/auth/requestPasswordReset'
       fullPath: '/auth/requestPasswordReset'
-      preLoaderRoute: typeof AppAuthRequestPasswordResetRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof AuthRequestPasswordResetRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/auth/forRouteTroubleshooting': {
-      id: '/_app/auth/forRouteTroubleshooting'
+    '/auth/profile': {
+      id: '/auth/profile'
+      path: '/auth/profile'
+      fullPath: '/auth/profile'
+      preLoaderRoute: typeof AuthProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forRouteTroubleshooting': {
+      id: '/auth/forRouteTroubleshooting'
       path: '/auth/forRouteTroubleshooting'
       fullPath: '/auth/forRouteTroubleshooting'
-      preLoaderRoute: typeof AppAuthForRouteTroubleshootingRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof AuthForRouteTroubleshootingRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 declare module '@tanstack/react-start/server' {
   interface ServerFileRoutesByPath {
-    '/_app/api/auth/$': {
-      id: '/_app/api/auth/$'
+    '/api/auth/$': {
+      id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
-      preLoaderRoute: typeof AppApiAuthSplatServerRouteImport
+      preLoaderRoute: typeof ApiAuthSplatServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
   }
 }
 
-interface AppRouteRouteChildren {
-  AppProfileRoute: typeof AppProfileRoute
-  AppIndexRoute: typeof AppIndexRoute
-  AppAuthForRouteTroubleshootingRoute: typeof AppAuthForRouteTroubleshootingRoute
-  AppAuthRequestPasswordResetRoute: typeof AppAuthRequestPasswordResetRoute
-  AppAuthSetNewPasswordRoute: typeof AppAuthSetNewPasswordRoute
-  AppAuthSigninRoute: typeof AppAuthSigninRoute
-  AppAuthSignupRoute: typeof AppAuthSignupRoute
-  AppAuthVerifyEmailRoute: typeof AppAuthVerifyEmailRoute
-}
-
-const AppRouteRouteChildren: AppRouteRouteChildren = {
-  AppProfileRoute: AppProfileRoute,
-  AppIndexRoute: AppIndexRoute,
-  AppAuthForRouteTroubleshootingRoute: AppAuthForRouteTroubleshootingRoute,
-  AppAuthRequestPasswordResetRoute: AppAuthRequestPasswordResetRoute,
-  AppAuthSetNewPasswordRoute: AppAuthSetNewPasswordRoute,
-  AppAuthSigninRoute: AppAuthSigninRoute,
-  AppAuthSignupRoute: AppAuthSignupRoute,
-  AppAuthVerifyEmailRoute: AppAuthVerifyEmailRoute,
-}
-
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
-  AppRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
-  AppRouteRoute: AppRouteRouteWithChildren,
+  IndexRoute: IndexRoute,
+  AuthForRouteTroubleshootingRoute: AuthForRouteTroubleshootingRoute,
+  AuthProfileRoute: AuthProfileRoute,
+  AuthRequestPasswordResetRoute: AuthRequestPasswordResetRoute,
+  AuthSetNewPasswordRoute: AuthSetNewPasswordRoute,
+  AuthSigninRoute: AuthSigninRoute,
+  AuthSignupRoute: AuthSignupRoute,
+  AuthVerifyEmailRoute: AuthVerifyEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
-  AppApiAuthSplatServerRoute: AppApiAuthSplatServerRoute,
+  ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
 }
 export const serverRouteTree = rootServerRouteImport
   ._addFileChildren(rootServerRouteChildren)

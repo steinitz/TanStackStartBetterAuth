@@ -95,9 +95,3 @@ export const RequestPasswordReset = () => {
     </>
   )
 }
-
-// Route export removed - this component is now imported by src/routes/_app/auth/requestPasswordReset.tsx
-// export const Route = createFileRoute('/_app/auth/requestPasswordReset')({
-//   component: RequestPasswordReset,
-//   // loader: async () => await getCount(),
-// })

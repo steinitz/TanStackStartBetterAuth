@@ -47,7 +47,7 @@ export function UserBlock() {
       <div>
         <Link
           style={navLinkStyle}
-          to={'/profile'}
+          to={'/auth/profile'}
           activeProps={{
             style: activeLinkStyle
           }}

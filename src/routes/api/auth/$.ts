@@ -1,8 +1,8 @@
-// src/routes/_app/api/auth/$.ts
+// src/routes/api/auth/$.ts
 import { auth } from '~stzUser/lib/auth'
 import { createServerFileRoute } from '@tanstack/react-start/server'
 
-export const ServerRoute = createServerFileRoute('/_app/api/auth/$').methods({
+export const ServerRoute = createServerFileRoute('/api/auth/$').methods({
   GET: ({ request }) => {
     return auth.handler(request)
   },

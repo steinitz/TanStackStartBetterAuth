@@ -1,5 +1,5 @@
-import {createFileRoute, useNavigate} from "@tanstack/react-router";
-import {MouseEvent, RefObject, SyntheticEvent, useEffect, useRef, useState} from "react";
+import {useNavigate} from "@tanstack/react-router";
+import {MouseEvent, SyntheticEvent, useEffect, useState} from "react";
 import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~stzUser/lib/form";
 import {changeEmail, deleteUser, useSession} from "~stzUser/lib/auth-client";
@@ -12,12 +12,11 @@ import {
   CheckForEmailChangeConfirmationLinkDialog,
 } from "~stzUser/components/Profile/checkForEmailChangeConfirmationLinkDialog";
 import {SignIn} from "~stzUser/components/SignIn";
-import {DialogRefType, DialogMethodsType, makeDialogRef} from "~stzUtils/components/Dialog";
+import {makeDialogRef} from "~stzUtils/components/Dialog";
 import Spinner from "~stzUser/components/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "~stzUser/components/Profile/checkForNewEmailVerificationLinkDialog";
 
-const thisNakedPath = '/profile'
-const thisPath = `/_app${thisNakedPath}`
+const thisPath = '/auth/profile'
 const didConfirmChangeSearchParam = 'didConfirmChange'
 
 type ProfileData = {
@@ -59,11 +58,6 @@ export const Profile = () => {
     }
     return valibotResult.success
   }
-
-  
-  // const username = 'fred'
-  // const preferredName = 'Fred'
-  // const fullName = 'Fred Smith'
 
   const handleSaveChanges = async (
     event: SyntheticEvent<HTMLFormElement>,
@@ -143,11 +137,11 @@ export const Profile = () => {
       />
       <CheckForEmailChangeConfirmationLinkDialog
         ref={checkForEmailChangeLinkConfirmationDialogRef}
-        onClick={() => navigate({to: thisNakedPath})}
+        onClick={() => navigate({to: thisPath})}
       />
       <CheckForNewEmailVerificationLinkDialog
         ref={checkForNewEmailVerificationLinkDialogRef}
-        onClick={() => navigate({to: thisNakedPath})}
+        onClick={() => navigate({to: thisPath})}
       />
       <section>
         {session?.user ?
@@ -165,18 +159,6 @@ export const Profile = () => {
               defaultValue={email}
             />
             <PasswordInput validationIssue={validationIssues.password}/>
-            {/*<UsernameInput*/}
-            {/*  validationErrors={validationIssues}*/}
-            {/*  defaultValue={username}*/}
-            {/*/>*/}
-            {/*<PreferredNameInput*/}
-            {/*  validationErrors={validationIssues}*/}
-            {/*  defaultValue={preferredName}*/}
-            {/*/>*/}
-            {/*<FullNameInput*/}
-            {/*  validationErrors={validationIssues}*/}
-            {/*  defaultValue={fullName}*/}
-            {/*/>*/}
             <div
               style={{
                 display: "flex",
@@ -196,8 +178,6 @@ export const Profile = () => {
               <Spacer orientation="horizontal" space={1}/>
               <button
                 type="submit"
-                // name="intent" value={intents.save}
-                // onClick={handleSaveChanges}
               >
                 Save Changes
               </button>
@@ -218,9 +198,3 @@ export const Profile = () => {
     </>
   )
 }
-
-// Route export removed - this component is now imported by src/routes/_app/profile.tsx
-// export const Route = createFileRoute(thisPath)({
-//   component: Profile,
-// })
-

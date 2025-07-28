@@ -7,14 +7,14 @@ import {Spacer} from "~stzUtils/components/Spacer";
 import {EmailInput, PasswordInput} from "~stzUtils/components/InputFields";
 import {
   DeleteAccountConfirmationDialog,
-} from "~stzUser/components/Profile/deleteAccountConfirmationDialog";
+} from "./deleteAccountConfirmationDialog";
 import {
   CheckForEmailChangeConfirmationLinkDialog,
-} from "~stzUser/components/Profile/checkForEmailChangeConfirmationLinkDialog";
-import {SignIn} from "~stzUser/components/SignIn";
+} from "./checkForEmailChangeConfirmationLinkDialog";
+import {SignIn} from "~stzUser/components/RouteComponents/SignIn";
 import {makeDialogRef} from "~stzUtils/components/Dialog";
-import Spinner from "~stzUser/components/Spinner";
-import {CheckForNewEmailVerificationLinkDialog} from "~stzUser/components/Profile/checkForNewEmailVerificationLinkDialog";
+import Spinner from "~stzUser/components/Other/Spinner";
+import {CheckForNewEmailVerificationLinkDialog} from "./checkForNewEmailVerificationLinkDialog";
 
 const thisPath = '/auth/profile'
 const didConfirmChangeSearchParam = 'didConfirmChange'

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { SetNewPassword } from '~stzUser/routes/auth/setNewPassword'
+import { SetNewPassword } from '~stzUser/components/RouteComponents/SetNewPassword'
 
 // Temporary route that imports the SetNewPassword component from stzUser
 // This allows the project to build while we work on Virtual File Routes integration

@@ -1,5 +1,5 @@
 import {Link, useRouterState} from "@tanstack/react-router";
-import {UserBlock} from "~stzUser/components/userBlock";
+import {UserBlock} from "~stzUser/components/Other/userBlock";
 import {Spacer} from "~stzUtils/components/Spacer";
 
 export const Header = () => {

@@ -1,4 +1,4 @@
-import {createFileRoute, useRouter} from '@tanstack/react-router'
+import {useRouter} from '@tanstack/react-router'
 
 export const Profile = () => {
   const router = useRouter()

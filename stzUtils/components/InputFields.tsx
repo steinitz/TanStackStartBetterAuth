@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {FormFieldError} from "~stzUtils/components/FormFieldError";
-import { ValidatedInput } from "~stzUser/components/ValidatedInput";
+import { ValidatedInput } from "~stzUser/components/Other/ValidatedInput";
 import { fieldLabelSubtext } from "~stzUtils/components/styles";
 
 // Re-export ValidatedInput for use in other components

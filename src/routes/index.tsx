@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
+import {getCount} from '~/lib/count'
 
 export const Route = createFileRoute('/')({ 
   component: Home,
+  loader: async () => await getCount(),
 })
 
 function Home() {

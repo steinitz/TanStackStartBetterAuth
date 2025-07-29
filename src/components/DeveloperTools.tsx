@@ -14,7 +14,7 @@ export const DeveloperTools = ({
 }: {
   detailItemsStyleAttribute: DetailsItemsStyleAttributeType
 }) => {
-  // const count = useLoaderData({ from: '/_app' })
+  const count = useLoaderData({ from: '/' })
 
   const router = useRouter()
   const detailsItemsStyle: any = {
@@ -32,10 +32,10 @@ export const DeveloperTools = ({
   }
 
   const handleUpdateCount = async () => {
-    // await updateCount({ data: 1 }).then(() => {
-    //   // this makes the count value update in the UI
-    //   router.invalidate()
-    // })
+    await updateCount({ data: 1 }).then(() => {
+      // this makes the count value update in the UI
+      router.invalidate()
+    })
   }
 
   return (
@@ -47,8 +47,7 @@ export const DeveloperTools = ({
         </button>
         <Spacer orientation={'horizontal'} />
         <button type="button" onClick={handleUpdateCount}>
-          {/* Add 1 to {count} */}
-          Add 1 to NaN
+          Add 1 to {count}
         </button>
       </div>
     </details>

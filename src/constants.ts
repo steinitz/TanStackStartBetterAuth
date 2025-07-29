@@ -17,4 +17,5 @@ export const errorRowNotFound = "Row not found"
 export const routeStrings = {
   signin: '/auth/signin',
   signup: '/auth/signup',
+  profile: '/auth/profile',
 }

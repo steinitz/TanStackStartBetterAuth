@@ -15,8 +15,8 @@ import {SignIn} from "~stzUser/components/RouteComponents/SignIn";
 import {makeDialogRef} from "~stzUtils/components/Dialog";
 import Spinner from "~stzUser/components/Other/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "./checkForNewEmailVerificationLinkDialog";
+import {routeStrings} from "~/constants";
 
-const thisPath = '/auth/profile'
 const didConfirmChangeSearchParam = 'didConfirmChange'
 
 type ProfileData = {
@@ -64,10 +64,10 @@ export const Profile = () => {
   ) => {
     const fields = sharedFormSubmission(event)
     const newEmail = fields.email as string
-    console.log('handleSaveChanges', {newEmail})
+    console.log('profile.handleSaveChanges: newEmail', newEmail)
 
     const isValid = validateFormFields(fields as ProfileData)
-    console.log('handleSaveChanges', {isValid})
+    console.log('profile.handleSaveChanges: isValid', isValid)
 
     if (isValid) {
       if (fields.email !== email) {
@@ -76,9 +76,9 @@ export const Profile = () => {
         setNewEmailAddress((newEmail))
         const {data, error} = await changeEmail({
           newEmail,
-          callbackURL: `${thisPath}?${didConfirmChangeSearchParam}=true`
+          callbackURL: routeStrings.profile
         })
-        console.log('handleSaveChanges', {data, error})
+        console.log('profile.handleSaveChanges', {data, error})
         if (error) {
           console.log('handleSaveChanges', {error})
           alert('Error changing email address')
@@ -91,24 +91,19 @@ export const Profile = () => {
     }
   }
 
-  // Show the check for email verification dialog after the user has clicked
-  // the confirm-email-change link.  Slightly awkward but hopefully temporary
-  // awaiting Better Auth to remove the confirm-email-change step
-
-  // Note this only occurs on /profile?didConfirmChange=true to which the email
-  // change confirmation redirects.  After showing the dialog we return to the
-  // vanilla /profile page
-
-  useEffect(() => {
-    const didConfirmChange = new URLSearchParams(
-      window.location.search
-    ).get(didConfirmChangeSearchParam) || undefined
-    // check that we're on the special profile?didConfirmChange=true page
-    if (didConfirmChange) {
-      console.log('useEffect1 - opening dialog')
-      checkForNewEmailVerificationLinkDialogRef.current.setIsOpen(true)
-    }
-  })
+  // COMMENTED OUT: No longer needed since sendChangeEmailVerification is disabled
+  // The unified sendVerificationEmail handles email change verification directly
+  // 
+  // useEffect(() => {
+  //   const didConfirmChange = new URLSearchParams(
+  //     window.location.search
+  //   ).get(didConfirmChangeSearchParam) || undefined
+  //   // check that we're on the special profile?didConfirmChange=true page
+  //   if (didConfirmChange) {
+  //     console.log('useEffect1 - opening dialog')
+  //     checkForNewEmailVerificationLinkDialogRef.current.setIsOpen(true)
+  //   }
+  // })
 
   function handleDeleteAccountRequest(event: MouseEvent<HTMLButtonElement>): void {
     console.log('handleDeleteAccountRequest', {deleteAccountConfirmationDialogRef})
@@ -137,11 +132,11 @@ export const Profile = () => {
       />
       <CheckForEmailChangeConfirmationLinkDialog
         ref={checkForEmailChangeLinkConfirmationDialogRef}
-        onClick={() => navigate({to: thisPath})}
+        onClick={() => navigate({to: routeStrings.profile})}
       />
       <CheckForNewEmailVerificationLinkDialog
         ref={checkForNewEmailVerificationLinkDialogRef}
-        onClick={() => navigate({to: thisPath})}
+        onClick={() => navigate({to: routeStrings.profile})}
       />
       <section>
         {session?.user ?

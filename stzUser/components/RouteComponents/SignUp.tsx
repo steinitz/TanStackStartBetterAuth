@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
 import {useNavigate} from '@tanstack/react-router'
-import {signUp} from '~stzUser/lib/auth-client'
+import {signUp, sendVerificationEmail} from '~stzUser/lib/auth-client'
 import {FormFieldError} from '~stzUtils/components/FormFieldError';
 import {PasswordInput} from '~stzUtils/components/InputFields';
 import {fieldsFromFormData} from "~stzUser/lib/form";
@@ -69,12 +69,24 @@ export const SignUp = () => {
         onRequest: (ctx) => {
           console.log('signup.email - onRequest', {ctx})
         },
-        onSuccess: (ctx) => {
+        onSuccess: async (ctx) => {
           console.log('signup.email - onSuccess', {ctx})
           setSuccess(true)
-          // window.location.href = routeStrings.signin
-        },
-        onError: (ctx) => {
+          
+          // WORKAROUND: Manually send verification email since sendOnSignUp is disabled due to bug
+           // See: https://github.com/better-auth/better-auth/issues/2538
+           try {
+             await sendVerificationEmail({
+                email: fields.email,
+                callbackURL: '/'
+              })
+             console.log('Manual verification email sent successfully')
+           } catch (error) {
+             console.error('Error sending verification email:', error)
+           }
+           // window.location.href = routeStrings.signin
+         },
+         onError: (ctx) => {
           console.log('signup.email - onError', {ctxError: ctx.error.message})
         },
       },

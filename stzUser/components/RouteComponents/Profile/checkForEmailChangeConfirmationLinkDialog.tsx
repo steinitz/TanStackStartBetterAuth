@@ -14,7 +14,7 @@ export const CheckForEmailChangeConfirmationLinkDialog = ({
 
   return (
     <Dialog ref={ref}>
-      <h3 style={{maxWidth: "17rem"}}>Check your email for a link to confirm that you wish to change your email address</h3>
+      <h3 style={{maxWidth: "17rem"}}>Check your email for a link to confirm your email-address change</h3>
       <div
         style={{
           display: "flex",

@@ -31,25 +31,24 @@ export const auth = betterAuth({
   user: {
     changeEmail: {
       enabled: true,
-      /*
       sendChangeEmailVerification: async (
         { user, newEmail, url }
       ) => {
+        // Send verification email to the NEW email address for email changes
         if (!mailSender) return
         await mailSender.sendMail({
-          to: user.email,
+          to: newEmail, // Send to the new email address, not the old one
           from,
-          subject: 'Approve email address change',
-          text: `${changeEmailText1} ${newEmail} 
+          subject: verifyChangeEmailSubject /* + ' - sendChangeEmailVerification' */,
+          text: `${verifyChangeEmailInstructions} ${newEmail} 
 
-${changeEmailText2}
+          ${verifyChangeEmailLinkText}
           ${url}`,
-          html: `<p>${changeEmailText1} ${newEmail}</p>
+          html: `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
           <br />
-          <a href=${url}>${changeEmailText2}</a>`,
+          <a href=${url}>${verifyChangeEmailLinkText}</a>`,
         })
       }
-      */
     },
     deleteUser: {
       enabled: true
@@ -57,7 +56,10 @@ ${changeEmailText2}
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    // WORKAROUND: Set to false due to Better Auth bug where sendOnSignUp affects email change verification
+    // See: https://github.com/better-auth/better-auth/issues/2538
+    // This should be true for proper security, but causes email change verification to fail
+    requireEmailVerification: false,
     sendResetPassword: async (
       { user, url }
     ) => {
@@ -72,35 +74,45 @@ ${changeEmailText2}
     },
   },
   emailVerification: {
-    sendOnSignUp: true,
+    // WORKAROUND: Set to false due to Better Auth bug where this setting suppresses ALL email verification
+    // including email change verification. Should be true for signup verification.
+    // See: https://github.com/better-auth/better-auth/issues/2538
+    sendOnSignUp: false,
+    autoSignInAfterVerification: true,
     sendVerificationEmail: async ({
-        user,
-        url,
-      },
+      user,
+      url,
+    },
       request
     ) => {
-      // console.log('sendVerificationEmail', { request })
+      // console.log('auth.sendVerificationEmail request', { request })
+      // console.log('auth.sendVerificationEmail url', { url })
       if (!mailSender) {
         console.error('Better Auth email verification: no mail sender');
         return
       }
-      const isEmailChange = request?.url.includes('verify-email')
-      let subject: string = isEmailChange ? verifyChangeEmailSubject : verifyEmailSubject
-      let text: string = `${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email} 
-      
-      ${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}
-      ${url}`
 
-      let html: string = `<p>${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email}</P>
-                          <a href=${url}>${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}</a>`
+      // only send the email if it's not a change email request
+      // this is fragile but works for now because the url includes 'callbackURL=/auth/profile'
+      const isEmailChange = request?.url.includes('/profile')
+      if (!isEmailChange) {
+        let subject: string = verifyEmailSubject
+        let text: string = `${verifyEmailInstructions} ${user.email} 
+        
+        ${verifyEmailLinkText}
+        ${url}`
 
-      await mailSender.sendMail({
-        to: user.email,
-        from,
-        subject,
-        text,
-        html,
-      })
+        let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
+                            <a href=${url}>${verifyEmailLinkText}</a>`
+
+        await mailSender.sendMail({
+          to: user.email,
+          from,
+          subject,
+          text,
+          html,
+        })
+      }
     }
   },
 
@@ -116,3 +128,13 @@ ${changeEmailText2}
     reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 })
+
+// Graveyard
+        // let subject: string = (isEmailChange ? verifyChangeEmailSubject : verifyEmailSubject) /* + ' - sendVerificationEmail' */
+        // let text: string = `${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email} 
+        
+        // ${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}
+        // ${url}`
+
+        // let html: string = `<p>${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email}</P>
+        //                     <a href=${url}>${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}</a>`

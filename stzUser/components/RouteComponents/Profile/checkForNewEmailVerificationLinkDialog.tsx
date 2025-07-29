@@ -1,3 +1,6 @@
+// This may be obsolete if we can continue supressing the email verification
+// email on email change -- see the emailVerification section in auth.ts 
+
 import {Dialog, DialogRefType} from "~stzUtils/components/Dialog";
 
 export const CheckForNewEmailVerificationLinkDialog = ({

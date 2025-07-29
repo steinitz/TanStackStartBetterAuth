@@ -11,6 +11,7 @@ export const {
 	resetPassword,
 	changeEmail,
 	deleteUser,
+	sendVerificationEmail,
 } =
 	createAuthClient({
 		baseURL: process.env.BETTER_AUTH_BASE_URL || "http://localhost:3000",

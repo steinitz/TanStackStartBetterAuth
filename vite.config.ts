@@ -24,6 +24,10 @@ export default defineConfig({
   },
   // Exclude reference directory from file watching and processing
   optimizeDeps: {
-    exclude: ['reference'],
+    exclude: ['reference', 'better-sqlite3'],
+  },
+  ssr: {
+    noExternal: ['better-auth'],
+    external: ['better-sqlite3']
   },
 })

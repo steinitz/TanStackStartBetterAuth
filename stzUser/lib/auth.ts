@@ -1,6 +1,7 @@
 // src/lib/auth.ts
 import { betterAuth } from "better-auth"
 import { reactStartCookies } from "better-auth/react-start"
+import { admin } from "better-auth/plugins"
 import Database from "better-sqlite3"
 import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
@@ -125,6 +126,7 @@ export const auth = betterAuth({
   //},
 
   plugins: [
+    admin(), // Admin plugin for user management
     reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 })

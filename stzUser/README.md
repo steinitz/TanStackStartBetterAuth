@@ -37,6 +37,18 @@ import { Header } from '~/components/Header'
 import { constants } from '~/constants'
 ```
 
+## Better Auth CLI Usage
+
+Since the auth configuration is located in `stzUser/lib/auth.ts` (not the project root), Better Auth CLI commands require the `--config` flag:
+
+```bash
+# Database migrations
+npx @better-auth/cli migrate --config stzUser/lib/auth.ts
+
+# Other CLI commands
+npx @better-auth/cli [command] --config stzUser/lib/auth.ts
+```
+
 ## Design Principles
 
 1. **Universal Applicability** - Components work across different applications

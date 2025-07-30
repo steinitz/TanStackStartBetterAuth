@@ -1,7 +1,8 @@
-import { Spacer } from '~stzUtils/components/Spacer'
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { sendTestEmail } from '~stzUser/lib/mail-utilities'
-import { getCount, updateCount } from '~/lib/count'
+import { updateCount } from '~/lib/count'
 import { useLoaderData, useRouter } from '@tanstack/react-router'
+import { Spacer } from '~stzUtils/components/Spacer'
 
 type DetailsItemsStyleAttributeType = {
   position: string
@@ -14,9 +15,9 @@ export const DeveloperTools = ({
 }: {
   detailItemsStyleAttribute: DetailsItemsStyleAttributeType
 }) => {
-  const count = useLoaderData({ from: '/' })
-
+  const {count} = useLoaderData({from: '/'})
   const router = useRouter()
+
   const detailsItemsStyle: any = {
     display: 'flex',
     flexDirection: 'row',
@@ -39,17 +40,23 @@ export const DeveloperTools = ({
   }
 
   return (
-    <details>
-      <summary>Developer Tools</summary>
-      <div style={detailsItemsStyle}>
-        <button type="button" onClick={handleSendTestMessage}>
-          Send Test Email
-        </button>
-        <Spacer orientation={'horizontal'} />
-        <button type="button" onClick={handleUpdateCount}>
-          Add 1 to {count}
-        </button>
-      </div>
-    </details>
+    <>
+      <details>
+        <summary>Developer Tools</summary>
+        <div style={detailsItemsStyle}>
+          <button type="button" onClick={handleSendTestMessage}>
+            Send Test Email
+          </button>
+          <Spacer orientation={'horizontal'} />
+          <button type="button" onClick={handleUpdateCount}>
+            Add 1 to {count}
+          </button>
+          <button type="button" onClick={handleUpdateCount}>
+            Manage Users
+          </button>
+        </div>
+        <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} />
+      </details>
+    </>
   )
 }

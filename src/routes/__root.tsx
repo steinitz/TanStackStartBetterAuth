@@ -47,12 +47,12 @@ export const Route = createRootRoute({
     ]
   }),
   component: RootComponent,
-  loader: async () => {
-    const [count] = await Promise.all([
-      getCount(),
-    ])
-    return { count }
-  },
+  // loader: async () => {
+  //   const [count] = await Promise.all([
+  //     getCount(),
+  //   ])
+  //   return { count }
+  // },
 })
 
 function RootComponent() {

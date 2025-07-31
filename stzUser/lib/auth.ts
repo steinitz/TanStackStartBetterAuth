@@ -126,7 +126,9 @@ export const auth = betterAuth({
   //},
 
   plugins: [
-    admin(), // Admin plugin for user management
+    admin({
+      adminUserIds: ["3cuuztz74T7nUTKAwwiqfeB9tRe5kq0n"] // User "a" as initial admin
+    }), // Admin plugin for user management
     reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 })

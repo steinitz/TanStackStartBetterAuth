@@ -1,4 +1,4 @@
-import { getAllUsers, deleteUserById, type User } from '~stzUser/lib/users'
+import { getAllUsers, deleteUserById, setUserRole, removeUserRole, type User } from '~stzUser/lib/users'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState } from 'react'
 
@@ -18,17 +18,27 @@ export function UserManagement({users}) {
     }
   }
 
-  const handleAdminToggle = (userId: string) => {
+  const handleAdminToggle = async (userId: string) => {
     const newAdminUsers = new Set(adminUsers)
-    if (newAdminUsers.has(userId)) {
-      newAdminUsers.delete(userId)
-    } else {
-      newAdminUsers.add(userId)
-    }
-    setAdminUsers(newAdminUsers)
+    const isCurrentlyAdmin = newAdminUsers.has(userId)
     
-    // TODO: Implement actual admin role assignment via Better Auth API
-    console.log('Admin users:', Array.from(newAdminUsers))
+    try {
+      if (isCurrentlyAdmin) {
+        // Remove admin role
+        await removeUserRole({ data: { userId } })
+        newAdminUsers.delete(userId)
+      } else {
+        // Add admin role
+        await setUserRole({ data: { userId, role: 'admin' } })
+        newAdminUsers.add(userId)
+      }
+      
+      setAdminUsers(newAdminUsers)
+      console.log('Admin role updated for user:', userId, 'Is admin:', !isCurrentlyAdmin)
+    } catch (error) {
+      console.error('Error updating admin role:', error)
+      alert('Failed to update admin role')
+    }
   }
 
   const copyUserId = (userId: string) => {

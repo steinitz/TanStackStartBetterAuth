@@ -65,4 +65,48 @@ export const deleteUserById = createServerFn({ method: 'POST' })
     }
   })
 
+export const setUserRole = createServerFn({ method: 'POST' })
+  .validator((data: { userId: string; role: "admin" | "user" }) => data)
+  .handler(async ({ data }) => {
+    // Import better-auth on server side
+    const { auth } = await import('./auth')
+    
+    try {
+      // Use Better Auth admin API to set user role
+      const result = await auth.api.setRole({
+        body: {
+          userId: data.userId,
+          role: data.role
+        }
+      })
+      
+      return { success: true, result }
+    } catch (error) {
+      console.error('Error setting user role:', error)
+      throw new Error('Failed to set user role')
+    }
+  })
+
+export const removeUserRole = createServerFn({ method: 'POST' })
+  .validator((data: { userId: string }) => data)
+  .handler(async ({ data }) => {
+    // Import better-auth on server side
+    const { auth } = await import('./auth')
+    
+    try {
+      // Use Better Auth admin API to set user role to default "user"
+      const result = await auth.api.setRole({
+        body: {
+          userId: data.userId,
+          role: "user"
+        }
+      })
+      
+      return { success: true, result }
+    } catch (error) {
+      console.error('Error removing user role:', error)
+      throw new Error('Failed to remove user role')
+    }
+  })
+
 export type User = UserTable

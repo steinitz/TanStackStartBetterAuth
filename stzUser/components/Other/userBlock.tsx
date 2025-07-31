@@ -1,4 +1,4 @@
-import {Link, useNavigate, useRouterState} from '@tanstack/react-router'
+import {Link, useNavigate} from '@tanstack/react-router'
 import {signOut, useSession} from '~stzUser/lib/auth-client'
 import {routeStrings} from "~/constants";
 import {activeLinkStyle} from "~stzUtils/components/styles";
@@ -25,9 +25,6 @@ const navLinkStyle = {
 export function UserBlock() {
   const navigate = useNavigate()
   const {data: session} = useSession()
-  const router = useRouterState()
-
-  const isSignInRoute = router.location.pathname === routeStrings.signin
 
   return (
     <div

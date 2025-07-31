@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getWebRequest } from '@tanstack/react-start/server'
 
 // Database schema types
 interface UserTable {
@@ -71,13 +72,20 @@ export const setUserRole = createServerFn({ method: 'POST' })
     // Import better-auth on server side
     const { auth } = await import('./auth')
     
+    // Get request context for authentication
+    const request = getWebRequest()
+    if (!request?.headers) {
+      throw new Error('Request headers not available')
+    }
+    
     try {
-      // Use Better Auth admin API to set user role
+      // Use Better Auth admin API to set user role with proper authentication
       const result = await auth.api.setRole({
         body: {
           userId: data.userId,
           role: data.role
-        }
+        },
+        headers: request.headers
       })
       
       return { success: true, result }
@@ -93,13 +101,20 @@ export const removeUserRole = createServerFn({ method: 'POST' })
     // Import better-auth on server side
     const { auth } = await import('./auth')
     
+    // Get request context for authentication
+    const request = getWebRequest()
+    if (!request?.headers) {
+      throw new Error('Request headers not available')
+    }
+    
     try {
       // Use Better Auth admin API to set user role to default "user"
       const result = await auth.api.setRole({
         body: {
           userId: data.userId,
           role: "user"
-        }
+        },
+        headers: request.headers
       })
       
       return { success: true, result }

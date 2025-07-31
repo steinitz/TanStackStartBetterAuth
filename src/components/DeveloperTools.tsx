@@ -1,8 +1,9 @@
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+// import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { sendTestEmail } from '~stzUser/lib/mail-utilities'
 import { updateCount } from '~/lib/count'
 import { useLoaderData, useRouter } from '@tanstack/react-router'
 import { Spacer } from '~stzUtils/components/Spacer'
+import { useEffect, useState } from 'react'
 
 type DetailsItemsStyleAttributeType = {
   position: string
@@ -15,8 +16,17 @@ export const DeveloperTools = ({
 }: {
   detailItemsStyleAttribute: DetailsItemsStyleAttributeType
 }) => {
+  const [isClient, setIsClient] = useState(false)
   const {count} = useLoaderData({from: '/'})
   const router = useRouter()
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
+  if (!isClient) {
+    return null
+  }
 
   const detailsItemsStyle: any = {
     display: 'flex',
@@ -51,11 +61,8 @@ export const DeveloperTools = ({
           <button type="button" onClick={handleUpdateCount}>
             Add 1 to {count}
           </button>
-          <button type="button" onClick={handleUpdateCount}>
-            Manage Users
-          </button>
-        </div>
-        <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} />
+         </div>
+        {/* <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} /> */}
       </details>
     </>
   )

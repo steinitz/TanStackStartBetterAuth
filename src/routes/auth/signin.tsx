@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { SignIn } from '~stzUser/components/RouteComponents/SignIn'
 import { Spacer } from '~stzUtils/components/Spacer'
 
@@ -9,7 +9,6 @@ export const Route = createFileRoute('/auth/signin')({
 })
 
 function signin() {
-  const navigate = useNavigate()
   return (
       <section>
         <SignIn />

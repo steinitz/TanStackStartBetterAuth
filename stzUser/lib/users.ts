@@ -33,7 +33,7 @@ export async function getAllUsers() {
       .selectFrom('user')
       .selectAll()
       .execute()
-    
+    console.log({users})
     return users
   } catch (error) {
     console.error('Error fetching users:', error)

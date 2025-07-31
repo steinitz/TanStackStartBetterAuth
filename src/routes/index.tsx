@@ -4,14 +4,14 @@ import { UserManagement } from '~stzUser/components/Other/UserManagement'
 import { useGetAllUsers, useDeleteUserById, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 
-export const Route = createFileRoute('/')({ 
+export const Route = createFileRoute('/')({
   component: Home,
   loader: async () => {
-    const [count, users] = await Promise.all([
-      getCount(),
-useGetAllUsers()
+    const [/* count, */users] = await Promise.all([
+      // getCount(),
+      useGetAllUsers()
     ])
-    return {count, users}
+    return { /* count, */users }
   },
 })
 

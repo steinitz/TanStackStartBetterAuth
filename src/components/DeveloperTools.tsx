@@ -1,4 +1,5 @@
-// import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { Route as RootRoute } from '~/routes/__root'; // Import the root route
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { sendTestEmail } from '~stzUser/lib/mail-utilities'
 import { updateCount } from '~/lib/count'
 import { useLoaderData, useRouter } from '@tanstack/react-router'
@@ -17,7 +18,7 @@ export const DeveloperTools = ({
   detailItemsStyleAttribute: DetailsItemsStyleAttributeType
 }) => {
   const [isClient, setIsClient] = useState(false)
-  const {count} = useLoaderData({from: '/'})
+  const {count} = useLoaderData({from: RootRoute.id})
   const router = useRouter()
   
   useEffect(() => {
@@ -61,8 +62,8 @@ export const DeveloperTools = ({
           <button type="button" onClick={handleUpdateCount}>
             Add 1 to {count}
           </button>
-         </div>
-        {/* <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} /> */}
+        </div>
+        <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} />
       </details>
     </>
   )

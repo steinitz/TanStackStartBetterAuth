@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from '@tanstack/react-router'
+import { getCount } from '~/lib/count'
 
 import {MainLayout} from '~/components/MainLayout'
 
@@ -46,6 +47,12 @@ export const Route = createRootRoute({
     ]
   }),
   component: RootComponent,
+  loader: async () => {
+    const [count] = await Promise.all([
+      getCount(),
+    ])
+    return { count }
+  },
 })
 
 function RootComponent() {

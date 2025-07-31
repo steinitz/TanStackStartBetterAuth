@@ -30,7 +30,7 @@ export const Footer = () => {
               Built with React, TanStack Start, Better-Auth, Valibot, NodeMailer and MVP.css
             </p>
           </div>
-          {/* <div
+          <div
             style={{
               fontSize: '0.8rem',
               marginTop: '-17px', // why needed to align with the link?
@@ -43,7 +43,7 @@ export const Footer = () => {
                 left: '50%',
               }}
             />
-          </div> */}
+          </div>
           <div>
             <a
               style={{

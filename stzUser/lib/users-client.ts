@@ -14,7 +14,13 @@ export const useGetAllUsers = createServerFn({
 export const useDeleteUserById = createServerFn({ method: 'POST' })
   .validator((userId: string) => userId)
   .handler(async ({ data: userId }) => {
-    return await deleteUserById(userId)
+    // Get request context for authentication
+    const request = getWebRequest()
+    if (!request?.headers) {
+      throw new Error('Request headers not available')
+    }
+    
+    return await deleteUserById(userId, request.headers)
   })
 
 export const useSetUserRole = createServerFn({ method: 'POST' })

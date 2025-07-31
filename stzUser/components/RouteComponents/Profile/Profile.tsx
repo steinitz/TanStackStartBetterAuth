@@ -120,7 +120,9 @@ export const Profile = () => {
       })
       .catch((error) => {
         console.error('handleDelete - Account deletion failed:', error)
-        alert('Error deleting account')
+        // Show the specific error message from the server
+        const errorMessage = error instanceof Error ? error.message : 'Error deleting account'
+        alert(errorMessage)
       })
   }
 

@@ -41,15 +41,23 @@ export async function getAllUsers() {
   }
 }
 
-export async function deleteUserById(userId: string) {
+export async function deleteUserById(userId: string, headers: Headers) {
   console.log('userId', userId)
   
   try {
+    // Get current session to prevent self-deletion
+    const session = await auth.api.getSession({ headers })
+    
+    if (session?.user?.id === userId) {
+      throw new Error('Cannot delete your own account. Please have another admin delete your account or create another admin first.')
+    }
+    
     // Use Better-auth's admin API to remove user by ID
     const result = await auth.api.removeUser({
       body: {
         userId: userId
-      }
+      },
+      headers
     })
     
     return { success: true, result }

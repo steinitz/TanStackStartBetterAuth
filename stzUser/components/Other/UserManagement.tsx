@@ -13,7 +13,9 @@ export function UserManagement({users}) {
         window.location.reload()
       } catch (error) {
         console.error('Error deleting user:', error)
-        alert('Failed to delete user')
+        // Show the specific error message from the server
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete user'
+        alert(errorMessage)
       }
     }
   }

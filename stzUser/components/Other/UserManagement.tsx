@@ -1,4 +1,4 @@
-import { getAllUsers, deleteUserById, setUserRole, removeUserRole, type User } from '~stzUser/lib/users'
+import { useGetAllUsers, useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState } from 'react'
 
@@ -8,7 +8,7 @@ export function UserManagement({users}) {
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
       try {
-        await deleteUserById({ data: userId })
+        await useDeleteUserById({ data: userId })
         // Refresh the page to show updated user list
         window.location.reload()
       } catch (error) {
@@ -25,11 +25,11 @@ export function UserManagement({users}) {
     try {
       if (isCurrentlyAdmin) {
         // Remove admin role
-        await removeUserRole({ data: { userId } })
+        await useRemoveUserRole({ data: { userId } })
         newAdminUsers.delete(userId)
       } else {
         // Add admin role
-        await setUserRole({ data: { userId, role: 'admin' } })
+        await useSetUserRole({ data: { userId, role: 'admin' } })
         newAdminUsers.add(userId)
       }
       

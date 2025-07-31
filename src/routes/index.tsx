@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getCount } from '~/lib/count'
 import { UserManagement } from '~stzUser/components/Other/UserManagement'
-import { getAllUsers, deleteUserById, type User } from '~stzUser/lib/users'
+import { useGetAllUsers, useDeleteUserById, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 
 export const Route = createFileRoute('/')({ 
@@ -9,7 +9,7 @@ export const Route = createFileRoute('/')({
   loader: async () => {
     const [count, users] = await Promise.all([
       getCount(),
-      getAllUsers()
+useGetAllUsers()
     ])
     return {count, users}
   },
@@ -21,7 +21,7 @@ function Home() {
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
       try {
-        await deleteUserById({ data: userId })
+        await useDeleteUserById({ data: userId })
         // Refresh the page to show updated user list
         window.location.reload()
       } catch (error) {

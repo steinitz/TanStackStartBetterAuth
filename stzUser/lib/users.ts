@@ -15,6 +15,14 @@ interface UserTable {
   updatedAt: string
 }
 
+// Extended user type with role information
+interface UserWithRole extends UserTable {
+  role: string | null
+  banned: boolean | null
+  banReason: string | null
+  banExpires: string | null
+}
+
 interface DatabaseSchema {
   user: UserTable
 }
@@ -29,15 +37,27 @@ const db = new Kysely<DatabaseSchema>({
 
 export async function getAllUsers() {
   try {
-    const users = await db
-      .selectFrom('user')
-      .selectAll()
-      .execute()
+    // Use Better Auth API to get users with role information
+    const result = await auth.api.listUsers({
+      query: {}
+    })
+    
+    const users = result?.users || []
     console.log({users})
-    return users
+    return users as UserWithRole[]
   } catch (error) {
     console.error('Error fetching users:', error)
-    return []
+    // Fallback to basic user data if Better Auth API fails
+    try {
+      const basicUsers = await db
+        .selectFrom('user')
+        .selectAll()
+        .execute()
+      return basicUsers.map(user => ({ ...user, role: null, banned: null, banReason: null, banExpires: null })) as UserWithRole[]
+    } catch (dbError) {
+      console.error('Database fallback also failed:', dbError)
+      return []
+    }
   }
 }
 
@@ -108,4 +128,4 @@ export async function removeUserRole(data: { userId: string }, headers: Headers)
   }
 }
 
-export type User = UserTable
+export type User = UserWithRole

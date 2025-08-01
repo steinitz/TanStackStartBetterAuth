@@ -1,6 +1,6 @@
 import { useGetAllUsers, useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { admin } from '~stzUser/lib/auth-client'
 
 export function UserManagement({users}) {
@@ -49,6 +49,31 @@ export function UserManagement({users}) {
     alert('User ID copied to clipboard!')
   }
 
+  // Load admin users on component mount
+  useEffect(() => {
+    const loadAdminUsers = async () => {
+      try {
+        const { data: usersData, error } = await admin.listUsers({
+          query: {}
+        })
+        if (!error && usersData) {
+          const usersList = Array.isArray(usersData) ? usersData : usersData.users || []
+          const adminUserIds = new Set(
+            usersList
+              .filter(user => user.role === 'admin')
+              .map(user => user.id)
+          )
+          setAdminUsers(adminUserIds)
+          console.log('Loaded admin users:', adminUserIds)
+        }
+      } catch (error) {
+        console.error('Error loading admin users:', error)
+      }
+    }
+    
+    loadAdminUsers()
+  }, [])
+
   const testListUsers = async () => {
     try {
       const { data: users, error } = await admin.listUsers({
@@ -67,6 +92,7 @@ export function UserManagement({users}) {
       alert(`❌ listUsers exception: ${error.message || 'Permission denied'}`)
     }
   }
+
 
   return (
     <main>
@@ -114,6 +140,9 @@ export function UserManagement({users}) {
                   </div>
                   <div>
                     {user.emailVerified ? 'Verified' : 'Unverified'}
+                  </div>
+                  <div style={{fontSize: '12px', color: user.role === 'admin' ? '#d63384' : '#6c757d'}}>
+                    Role: {user.role || 'user'} {user.role === 'admin' ? '👑' : '👤'}
                   </div>
                   <div style={{fontSize: '12px', fontFamily: 'monospace'}}>
                     <span 

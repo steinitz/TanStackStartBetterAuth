@@ -1,4 +1,4 @@
-import { useGetAllUsers, useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
+import { useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState, useEffect } from 'react'
 import { admin, useSession } from '~stzUser/lib/auth-client'
@@ -101,23 +101,14 @@ export function UserManagement({users}) {
   return (
     <main>
       <section>
-        <h3>Registered Users ({users.length})</h3>
-        <button 
+       <button 
           onClick={testListUsers}
-          style={{
-            backgroundColor: "var(--color-primary)",
-            color: "white",
-            padding: "8px 16px",
-            marginBottom: "16px",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer"
-          }}
         >
-          Test listUsers (Admin Permission)
+          Test Admin Privilege
         </button>
         <Spacer/>
-        {users.length === 0 ? (
+        <h3>Registered Users ({users.length})</h3>
+         {users.length === 0 ? (
           <p>No users registered yet.</p>
         ) : (
           <article style={{width: '100%'}}>
@@ -126,11 +117,12 @@ export function UserManagement({users}) {
                 key={user.id} 
                 style={{
                   display: 'flex', 
-                  alignItems: 'center', 
+                  alignItems: 'flex-end', 
                   justifyContent: 'space-between', 
                   flexDirection: 'row', 
                   width: '100%',
-                  marginBottom: '21px'
+                  marginBottom: '21px',
+                  textAlign: 'left'
                 }}
                 >
                   <div >
@@ -167,7 +159,7 @@ export function UserManagement({users}) {
                     </span>
                   </div>
                 {signedInUserHasAdminRole && <>
-                  <div style={{ marginTop: '15px' }}>
+                  <div style={{ marginBottom: '-17px', }}>
                     <label style={{ display: 'flex', fontSize: '13px' }}>
                       <input
                         type="checkbox"
@@ -188,7 +180,7 @@ export function UserManagement({users}) {
                         paddingLeft: '3px',
                         paddingRight: '3px',
                         fontSize: '12px',
-                        marginTop: '-14px',
+                        marginBottom: '-10px',
                         height: '21px',
                       }}
                     >

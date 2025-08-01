@@ -6,6 +6,7 @@ import { getAllUsers, deleteUserById, setUserRole, removeUserRole, type User } f
 import {userRolesType} from '~stzUser/constants'
 
 // Client-side server functions that call the server functions
+// No longer used
 export const useGetAllUsers = createServerFn({
   method: 'GET',
 }).handler(async () => {

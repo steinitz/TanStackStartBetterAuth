@@ -1,6 +1,7 @@
 import { useGetAllUsers, useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState } from 'react'
+import { admin } from '~stzUser/lib/auth-client'
 
 export function UserManagement({users}) {
   const [adminUsers, setAdminUsers] = useState<Set<string>>(new Set())
@@ -48,10 +49,43 @@ export function UserManagement({users}) {
     alert('User ID copied to clipboard!')
   }
 
+  const testListUsers = async () => {
+    try {
+      const { data: users, error } = await admin.listUsers({
+        query: {}
+      })
+      if (error) {
+        console.error('listUsers error:', error)
+        alert(`❌ listUsers failed: ${error.message || 'Permission denied'}`)
+      } else {
+        console.log('✅ listUsers success:', users)
+        const userCount = Array.isArray(users) ? users.length : (users?.users?.length || 0)
+        alert(`✅ listUsers success! Found ${userCount} users`)
+      }
+    } catch (error) {
+      console.error('listUsers exception:', error)
+      alert(`❌ listUsers exception: ${error.message || 'Permission denied'}`)
+    }
+  }
+
   return (
     <main>
       <section>
         <h3>Registered Users ({users.length})</h3>
+        <button 
+          onClick={testListUsers}
+          style={{
+            backgroundColor: "var(--color-primary)",
+            color: "white",
+            padding: "8px 16px",
+            marginBottom: "16px",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+        >
+          Test listUsers (Admin Permission)
+        </button>
         <Spacer/>
         {users.length === 0 ? (
           <p>No users registered yet.</p>

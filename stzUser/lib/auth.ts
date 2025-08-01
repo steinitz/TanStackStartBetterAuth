@@ -2,6 +2,8 @@
 import { betterAuth } from "better-auth"
 import { reactStartCookies } from "better-auth/react-start"
 import { admin } from "better-auth/plugins"
+import { createAccessControl } from "better-auth/plugins/access"
+import { adminAc } from "better-auth/plugins/admin/access"
 import Database from "better-sqlite3"
 import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
@@ -130,7 +132,9 @@ export const auth = betterAuth({
 
   plugins: [
     admin({
-      adminUserIds: ["3cuuztz74T7nUTKAwwiqfeB9tRe5kq0n"] // User "a" as initial admin
+      ac: createAccessControl({
+        ...adminAc.statements
+      })
     }), // Admin plugin for user management
     reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],

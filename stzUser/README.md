@@ -49,6 +49,25 @@ npx @better-auth/cli migrate --config stzUser/lib/auth.ts
 npx @better-auth/cli [command] --config stzUser/lib/auth.ts
 ```
 
+## Important Configuration Notes
+
+### Admin System Architecture
+
+Better Auth provides two distinct paths for admin privileges that can create conflicts if not properly understood:
+
+1. **Hardcoded Admin IDs** (`adminUserIds`) - Users whose IDs are included in the `adminUserIds` array have permanent admin privileges regardless of their database role
+2. **Role-based Admins** - Users assigned the "admin" role in the database
+
+**Critical Insight**: According to [Better Auth documentation](https://www.better-auth.com/docs/plugins/admin), admin operations are available to "any user assigned the admin role **OR** any user whose ID is included in the adminUserIds option."
+
+This "OR" relationship means:
+- `adminUserIds` acts as an **override** that bypasses role-based permissions
+- Users in `adminUserIds` maintain admin access even with "user" role in database
+- Role-based permission checks may fail for non-`adminUserIds` users
+- Admin privileges cannot be revoked from `adminUserIds` users through the UI
+
+**Recommendation**: Choose one approach consistently - either use `adminUserIds` for emergency access only, or remove it entirely and rely on database roles for cleaner architecture.
+
 ## Design Principles
 
 1. **Universal Applicability** - Components work across different applications

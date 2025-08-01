@@ -27,6 +27,9 @@ const passwordResetLinkText = 'Click the link to reset your password: '
 
 const mailSender = transportOptions ? nodemailer.createTransport(transportOptions as unknown as Transport) : null
 
+// Article about setting up User Roles - https://www.answeroverflow.com/m/1360090099764826232
+
+
 export const auth = betterAuth({
   database,
   user: {

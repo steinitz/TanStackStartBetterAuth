@@ -1,9 +1,14 @@
 import { useGetAllUsers, useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState, useEffect } from 'react'
-import { admin } from '~stzUser/lib/auth-client'
+import { admin, useSession } from '~stzUser/lib/auth-client'
+import { userRoles, userRolesType } from '~stzUser/constants'
 
 export function UserManagement({users}) {
+  const {data: session} = useSession()
+  const signedInUser = session?.user
+  const signedInUserHasAdminRole = signedInUser?.role === userRoles.admin
+
   const [adminUsers, setAdminUsers] = useState<Set<string>>(new Set())
 
   const handleDeleteUser = async (userId: string, userName: string) => {
@@ -32,7 +37,7 @@ export function UserManagement({users}) {
         newAdminUsers.delete(userId)
       } else {
         // Add admin role
-        await useSetUserRole({ data: { userId, role: 'admin' } })
+        await useSetUserRole({ data: { userId, role: userRoles.admin as userRolesType } })
         newAdminUsers.add(userId)
       }
       
@@ -60,7 +65,7 @@ export function UserManagement({users}) {
           const usersList = Array.isArray(usersData) ? usersData : usersData.users || []
           const adminUserIds = new Set(
             usersList
-              .filter(user => user.role === 'admin')
+              .filter(user => user.role === userRoles.admin)
               .map(user => user.id)
           )
           setAdminUsers(adminUserIds)
@@ -92,7 +97,6 @@ export function UserManagement({users}) {
       alert(`❌ listUsers exception: ${error.message || 'Permission denied'}`)
     }
   }
-
 
   return (
     <main>
@@ -141,9 +145,18 @@ export function UserManagement({users}) {
                   <div>
                     {user.emailVerified ? 'Verified' : 'Unverified'}
                   </div>
-                  <div style={{fontSize: '12px', color: user.role === 'admin' ? '#d63384' : '#6c757d'}}>
-                    Role: {user.role || 'user'} {user.role === 'admin' ? '👑' : '👤'}
-                  </div>
+                  {signedInUserHasAdminRole && 
+                    <div 
+                      style={{
+                        color: (adminUsers.has(user.id) ? 
+                          'var(--color-text)' : 
+                          'var(--color-text-secondary)')
+                        }
+                      }>
+                      Role: {adminUsers.has(user.id) ? userRoles.admin : userRoles.user}&nbsp;
+                            {adminUsers.has(user.id) ? '👑' : '👤'}
+                    </div>
+                  }
                   <div style={{fontSize: '12px', fontFamily: 'monospace'}}>
                     <span 
                       onClick={() => copyUserId(user.id)}
@@ -153,19 +166,20 @@ export function UserManagement({users}) {
                       ID: {user.id.substring(0, 8)}...
                     </span>
                   </div>
-                  <div >
-                    <label style={{display: 'flex', fontSize: '13px'}}>
+                {signedInUserHasAdminRole && <>
+                  <div style={{ marginTop: '15px' }}>
+                    <label style={{ display: 'flex', fontSize: '13px' }}>
                       <input
                         type="checkbox"
                         checked={adminUsers.has(user.id)}
                         onChange={() => handleAdminToggle(user.id)}
-                        style={{marginRight: '-0px', marginLeft: '-21px'}}
+                        style={{ marginRight: '-0px', marginLeft: '-21px' }}
                       />
                       Admin
                     </label>
                   </div>
                   <div>
-                    <button 
+                    <button
                       onClick={() => handleDeleteUser(user.id, user.name || user.email)}
                       style={{
                         backgroundColor: "var(--color-error)",
@@ -181,7 +195,9 @@ export function UserManagement({users}) {
                       Delete
                     </button>
                   </div>
-                  </div>
+                  </>
+                }
+              </div>
             ))}
           </article>
         )}

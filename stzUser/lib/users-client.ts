@@ -3,6 +3,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getWebRequest } from '@tanstack/react-start/server'
 import { getAllUsers, deleteUserById, setUserRole, removeUserRole, type User } from './users'
+import {userRolesType} from '~stzUser/constants'
 
 // Client-side server functions that call the server functions
 export const useGetAllUsers = createServerFn({
@@ -24,7 +25,7 @@ export const useDeleteUserById = createServerFn({ method: 'POST' })
   })
 
 export const useSetUserRole = createServerFn({ method: 'POST' })
-  .validator((data: { userId: string; role: "admin" | "user" }) => data)
+  .validator((data: { userId: string; role: userRolesType }) => data)
   .handler(async ({ data }) => {
     // Get request context for authentication
     const request = getWebRequest()

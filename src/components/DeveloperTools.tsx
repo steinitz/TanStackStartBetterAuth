@@ -6,6 +6,7 @@ import { useLoaderData, useRouter } from '@tanstack/react-router'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useEffect, useState } from 'react'
 import { getCount } from '~/lib/count'
+import { admin, useSession } from '~stzUser/lib/auth-client'
 
 type DetailsItemsStyleAttributeType = {
   position: string
@@ -21,6 +22,7 @@ export const DeveloperTools = ({
   // const {count} = useLoaderData({from: RootRoute.id})
   const [count, setCount] = useState(0)
   const router = useRouter()
+  const {data: session} = useSession()
   
    
   useEffect(() => {
@@ -57,6 +59,26 @@ export const DeveloperTools = ({
     setCount(await getCount())
   }
 
+  const testListUsers = async () => {
+    try {
+      const { data: users, error } = await admin.listUsers({
+        query: {}
+      })
+      if (error) {
+        console.error('listUsers error:', error)
+        alert(`❌ listUsers failed: ${error.message || 'Permission denied'}`)
+      } else {
+        console.log('✅ listUsers success:', users)
+        const userCount = Array.isArray(users) ? users.length : (users?.users?.length || 0)
+        const userEmail = session?.user?.email || 'current user'
+        alert(`✅ Call to admin.listUsers succeeded returning ${userCount} users. This confirms user ${userEmail} has admin privileges.`)
+      }
+    } catch (error) {
+      console.error('listUsers exception:', error)
+      alert(`❌ listUsers exception: ${error.message || 'Permission denied'}`)
+    }
+  }
+
   return (
     <>
       <details>
@@ -68,6 +90,10 @@ export const DeveloperTools = ({
           <Spacer orientation={'horizontal'} />
           <button type="button" onClick={handleUpdateCount}>
             Add 1 to {count}
+          </button>
+          <Spacer orientation={'horizontal'} />
+          <button type="button" onClick={testListUsers}>
+            Test Admin Privilege
           </button>
         </div>
         <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} />

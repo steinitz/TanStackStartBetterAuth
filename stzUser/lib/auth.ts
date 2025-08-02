@@ -7,6 +7,7 @@ import { adminAc } from "better-auth/plugins/admin/access"
 import Database from "better-sqlite3"
 import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
+import { routeStrings } from "~/constants"
 // import { getEnvVar } from "./env"
 
 // Create database instance
@@ -100,7 +101,7 @@ export const auth = betterAuth({
 
       // only send the email if it's not a change email request
       // this is fragile but works for now because the url includes 'callbackURL=/auth/profile'
-      const isEmailChange = request?.url.includes('/profile')
+      const isEmailChange = request?.url.includes(routeStrings.profile)
       if (!isEmailChange) {
         let subject: string = verifyEmailSubject
         let text: string = `${verifyEmailInstructions} ${user.email} 

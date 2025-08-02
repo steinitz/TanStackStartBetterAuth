@@ -79,36 +79,13 @@ export function UserManagement({users}) {
     loadAdminUsers()
   }, [])
 
-  const testListUsers = async () => {
-    try {
-      const { data: users, error } = await admin.listUsers({
-        query: {}
-      })
-      if (error) {
-        console.error('listUsers error:', error)
-        alert(`❌ listUsers failed: ${error.message || 'Permission denied'}`)
-      } else {
-        console.log('✅ listUsers success:', users)
-        const userCount = Array.isArray(users) ? users.length : (users?.users?.length || 0)
-        alert(`✅ listUsers success! Found ${userCount} users`)
-      }
-    } catch (error) {
-      console.error('listUsers exception:', error)
-      alert(`❌ listUsers exception: ${error.message || 'Permission denied'}`)
-    }
-  }
+
 
   return (
     <main>
       <section>
-       <button 
-          onClick={testListUsers}
-        >
-          Test Admin Privilege
-        </button>
-        <Spacer/>
         <h3>Registered Users ({users.length})</h3>
-         {users.length === 0 ? (
+        {users.length === 0 ? (
           <p>No users registered yet.</p>
         ) : (
           <article style={{width: '100%'}}>

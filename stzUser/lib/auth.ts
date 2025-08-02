@@ -140,13 +140,3 @@ export const auth = betterAuth({
     reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 })
-
-// Graveyard
-        // let subject: string = (isEmailChange ? verifyChangeEmailSubject : verifyEmailSubject) /* + ' - sendVerificationEmail' */
-        // let text: string = `${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email} 
-        
-        // ${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}
-        // ${url}`
-
-        // let html: string = `<p>${isEmailChange ? verifyChangeEmailInstructions : verifyEmailInstructions} ${user.email}</P>
-        //                     <a href=${url}>${isEmailChange ? verifyChangeEmailLinkText : verifyEmailLinkText}</a>`

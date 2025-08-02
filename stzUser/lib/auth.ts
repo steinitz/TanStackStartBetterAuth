@@ -4,14 +4,11 @@ import { reactStartCookies } from "better-auth/react-start"
 import { admin } from "better-auth/plugins"
 import { createAccessControl } from "better-auth/plugins/access"
 import { adminAc } from "better-auth/plugins/admin/access"
-import Database from "better-sqlite3"
 import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
+import { appDatabase } from "./database"
 // import { getEnvVar } from "./env"
-
-// Create database instance
-const database = new Database("sqlite.db")
 
 const from = process.env.SMTP_FROM_ADDRESS
 
@@ -34,7 +31,7 @@ const mailSender = transportOptions ? nodemailer.createTransport(transportOption
 
 
 export const auth = betterAuth({
-  database,
+  database: appDatabase,
   user: {
     changeEmail: {
       enabled: true,

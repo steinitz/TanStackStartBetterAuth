@@ -1,8 +1,9 @@
 import { useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { admin, useSession } from '~stzUser/lib/auth-client'
 import { userRoles, userRolesType } from '~stzUser/constants'
+import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table'
 
 export function UserManagement({users}) {
   const {data: session} = useSession()
@@ -10,6 +11,7 @@ export function UserManagement({users}) {
   const signedInUserHasAdminRole = signedInUser?.role === userRoles.admin
 
   const [adminUsers, setAdminUsers] = useState<Set<string>>(new Set())
+  const columnHelper = createColumnHelper<User>()
 
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
@@ -79,7 +81,115 @@ export function UserManagement({users}) {
     loadAdminUsers()
   }, [])
 
+  const columns = useMemo(() => [
+    columnHelper.accessor('name', {
+      header: 'Name',
+      cell: info => <strong>{info.getValue() || 'No name'}</strong>,
+    }),
+    columnHelper.accessor('email', {
+      header: 'Email',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('createdAt', {
+      header: 'Joined',
+      cell: info => `Joined: ${new Date(info.getValue()).toLocaleDateString('en-US')}`,
+    }),
+    columnHelper.accessor('emailVerified', {
+      header: 'Status',
+      cell: info => info.getValue() ? 'Verified' : 'Unverified',
+    }),
+    ...(signedInUserHasAdminRole ? [
+      columnHelper.display({
+        id: 'role',
+        header: 'Role',
+        cell: ({ row }) => {
+          const user = row.original
+          return (
+            <div
+              style={{
+                color: (adminUsers.has(user.id) ? 
+                  'var(--color-text)' : 
+                  'var(--color-text-secondary)')
+              }}
+            >
+              Role: {adminUsers.has(user.id) ? userRoles.admin : userRoles.user}&nbsp;
+              {adminUsers.has(user.id) ? '👑' : '👤'}
+            </div>
+          )
+        },
+      })
+    ] : []),
+    columnHelper.display({
+      id: 'userId',
+      header: 'User ID',
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div style={{fontSize: '12px', fontFamily: 'monospace'}}>
+            <span 
+              onClick={() => copyUserId(user.id)}
+              style={{cursor: 'pointer', textDecoration: 'underline', color: '#0066cc'}}
+              title="Click to copy User ID"
+            >
+              ID: {user.id.substring(0, 8)}...
+            </span>
+          </div>
+        )
+      },
+    }),
+    ...(signedInUserHasAdminRole ? [
+      columnHelper.display({
+        id: 'adminToggle',
+        header: 'Admin',
+        cell: ({ row }) => {
+          const user = row.original
+          return (
+            <div style={{ marginBottom: '-17px' }}>
+              <label style={{ display: 'flex', fontSize: '13px' }}>
+                <input
+                  type="checkbox"
+                  checked={adminUsers.has(user.id)}
+                  onChange={() => handleAdminToggle(user.id)}
+                  style={{ marginRight: '-0px', marginLeft: '-21px' }}
+                />
+                Admin
+              </label>
+            </div>
+          )
+        },
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => {
+          const user = row.original
+          return (
+            <button
+              onClick={() => handleDeleteUser(user.id, user.name || user.email)}
+              style={{
+                backgroundColor: "var(--color-error)",
+                borderColor: "var(--color-error)",
+                paddingTop: '0px',
+                paddingLeft: '3px',
+                paddingRight: '3px',
+                fontSize: '12px',
+                marginBottom: '-10px',
+                height: '21px',
+              }}
+            >
+              Delete
+            </button>
+          )
+        },
+      })
+    ] : []),
+  ], [adminUsers, signedInUserHasAdminRole, handleAdminToggle, handleDeleteUser, copyUserId])
 
+  const table = useReactTable({
+    data: users,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   return (
     <main>
@@ -88,87 +198,52 @@ export function UserManagement({users}) {
         {users.length === 0 ? (
           <p>No users registered yet.</p>
         ) : (
-          <article style={{width: '100%'}}>
-            {users.map((user: User) => (
-              <div 
-                key={user.id} 
-                style={{
-                  display: 'flex', 
-                  alignItems: 'flex-end', 
-                  justifyContent: 'space-between', 
-                  flexDirection: 'row', 
-                  width: '100%',
-                  marginBottom: '21px',
-                  textAlign: 'left'
-                }}
-                >
-                  <div >
-                    <strong>{user.name || 'No name'}</strong>
-                  </div>
-                  <div>
-                    {user.email}
-                  </div>
-                  <div >
-                    Joined: {new Date(user.createdAt).toLocaleDateString('en-US')}
-                  </div>
-                  <div>
-                    {user.emailVerified ? 'Verified' : 'Unverified'}
-                  </div>
-                  {signedInUserHasAdminRole && 
-                    <div 
-                      style={{
-                        color: (adminUsers.has(user.id) ? 
-                          'var(--color-text)' : 
-                          'var(--color-text-secondary)')
-                        }
-                      }>
-                      Role: {adminUsers.has(user.id) ? userRoles.admin : userRoles.user}&nbsp;
-                            {adminUsers.has(user.id) ? '👑' : '👤'}
-                    </div>
-                  }
-                  <div style={{fontSize: '12px', fontFamily: 'monospace'}}>
-                    <span 
-                      onClick={() => copyUserId(user.id)}
-                      style={{cursor: 'pointer', textDecoration: 'underline', color: '#0066cc'}}
-                      title="Click to copy User ID"
-                    >
-                      ID: {user.id.substring(0, 8)}...
-                    </span>
-                  </div>
-                {signedInUserHasAdminRole && <>
-                  <div style={{ marginBottom: '-17px', }}>
-                    <label style={{ display: 'flex', fontSize: '13px' }}>
-                      <input
-                        type="checkbox"
-                        checked={adminUsers.has(user.id)}
-                        onChange={() => handleAdminToggle(user.id)}
-                        style={{ marginRight: '-0px', marginLeft: '-21px' }}
-                      />
-                      Admin
-                    </label>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => handleDeleteUser(user.id, user.name || user.email)}
-                      style={{
-                        backgroundColor: "var(--color-error)",
-                        borderColor: "var(--color-error)",
-                        paddingTop: '0px',
-                        paddingLeft: '3px',
-                        paddingRight: '3px',
-                        fontSize: '12px',
-                        marginBottom: '-10px',
-                        height: '21px',
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  </>
-                }
-              </div>
-            ))}
-          </article>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        style={{
+                          padding: '8px',
+                          textAlign: 'left',
+                          borderBottom: '2px solid var(--color-border)',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map(row => (
+                  <tr key={row.id}>
+                    {row.getVisibleCells().map(cell => (
+                      <td
+                        key={cell.id}
+                        style={{
+                          padding: '8px',
+                          borderBottom: '1px solid var(--color-border)',
+                          verticalAlign: 'top'
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </main>

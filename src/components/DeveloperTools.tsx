@@ -9,6 +9,7 @@ import { getCount } from '~/lib/count'
 import { admin, useSession } from '~stzUser/lib/auth-client'
 import { UserManagement } from '~stzUser/components/Other/UserManagement'
 import { useGetAllUsers, type User } from '~stzUser/lib/users-client'
+import { CSSProperties } from 'react'
 
 type DetailsItemsStyleAttributeType = {
   position: string
@@ -61,7 +62,7 @@ export const DeveloperTools = ({
     loadUsers()
   }, [session?.user?.id, session?.user?.role]) // Reload when user or role changes
 
-  const detailsItemsStyle: any = {
+  const detailsItemsStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'flex-start',

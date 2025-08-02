@@ -8,32 +8,48 @@ interface UserWithRole {
   id: string
   name: string
   email: string
-  emailVerified: number
+  emailVerified: boolean
   image: string | null
-  createdAt: string
-  updatedAt: string
+  createdAt: Date
+  updatedAt: Date
   role: string | null
   banned: boolean | null
   banReason: string | null
-  banExpires: string | null
+  banExpires: Date | null
 }
 
-export async function getAllUsers() {
+// Better Auth listUsers response structure
+interface ListUsersResponse {
+  users: UserWithRole[]
+  total: number
+  limit: number | undefined
+  offset: number | undefined
+}
+
+export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
   try {
     // Use Better Auth API to get users with role information
     const result = await auth.api.listUsers({
-      query: {}
-    })
+      query: {},
+      headers
+    }) as ListUsersResponse
     
-    const users = result?.users || []
-    console.log({users})
-    return users as UserWithRole[]
+    // Return the users array from the response
+    return result.users || []
   } catch (error) {
     console.error('Error fetching users from Better Auth API:', error)
     // Fallback to basic user data from database
     try {
       const stmt = appDatabase.prepare('SELECT * FROM user')
-      const basicUsers = stmt.all() as any[]
+      const basicUsers = stmt.all() as Array<{
+        id: string
+        name: string
+        email: string
+        emailVerified: boolean
+        image: string | null
+        createdAt: Date
+        updatedAt: Date
+      }>
       return basicUsers.map(user => ({ 
         ...user, 
         role: null, 

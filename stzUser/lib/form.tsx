@@ -14,7 +14,7 @@ export const fieldsFromFormData = (formData: FormData) => {
 
 export const preventDefaultFormSubmission  = (
   event: SyntheticEvent
-): any => {
+): void => {
   // prevent default form submission behavior
   event.preventDefault();
   event.stopPropagation();
@@ -22,7 +22,7 @@ export const preventDefaultFormSubmission  = (
 
 export const sharedFormSubmission = (
   event: SyntheticEvent<HTMLFormElement>
-): any => {
+): Record<string, FormDataEntryValue> => {
   preventDefaultFormSubmission(event)
   // extract field values from form
   // maybe should return FormData too

@@ -3,6 +3,9 @@ import {FormFieldError} from "~stzUtils/components/FormFieldError";
 import { ValidatedInput } from "~stzUser/components/Other/ValidatedInput";
 import { fieldLabelSubtext } from "~stzUtils/components/styles";
 
+// Type for validation errors - consistent across the application
+type ValidationErrors = Record<string, string> | undefined
+
 // Re-export ValidatedInput for use in other components
 export { ValidatedInput };
 
@@ -50,7 +53,7 @@ const InputField = ({
   subtext?: string,
   fieldName: string,
   defaultValue?: string
-  validationErrors: any
+  validationErrors: ValidationErrors
   tooltip?: string
 }) => {
   const hasTooltip = !!tooltip && tooltip.length > 0;
@@ -70,7 +73,7 @@ const InputField = ({
 }
 
 export const EmailInput = ({validationErrors, defaultValue}: {
-  validationErrors: any[] | undefined, defaultValue?: string
+  validationErrors: ValidationErrors, defaultValue?: string
 }) => {
   return <InputField
     fieldLabel="Email"
@@ -81,7 +84,7 @@ export const EmailInput = ({validationErrors, defaultValue}: {
 }
 
 export const UsernameInput = ({validationErrors, defaultValue}: {
-  validationErrors: any[] | undefined, defaultValue?: string
+  validationErrors: ValidationErrors, defaultValue?: string
 }) => {
   return <InputField
     fieldLabel="Login Name"
@@ -94,7 +97,7 @@ export const UsernameInput = ({validationErrors, defaultValue}: {
 }
 
 export const PreferredNameInput = ({validationErrors, defaultValue}: {
-  validationErrors: any[] | undefined, defaultValue?: string
+  validationErrors: ValidationErrors, defaultValue?: string
 }) => {
   return <InputField
     fieldLabel="Preferred Name"
@@ -107,7 +110,7 @@ export const PreferredNameInput = ({validationErrors, defaultValue}: {
 }
 
 export const FullNameInput = ({validationErrors, defaultValue}: {
-  validationErrors: any[] | undefined, defaultValue?: string
+  validationErrors: ValidationErrors, defaultValue?: string
 }) => {
   return <InputField
     fieldLabel="Full Name"

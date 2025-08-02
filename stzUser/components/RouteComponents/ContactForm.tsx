@@ -111,7 +111,7 @@ export const ContactForm = ({
     }
   };
 
-  const clearValidationIssue = (key: any) => {
+  const clearValidationIssue = (key: string) => {
     setValidationIssues({...validationIssues, [key]: ''});
   };
 

@@ -9,7 +9,17 @@ import {userRolesType} from '~stzUser/constants'
 export const useGetAllUsers = createServerFn({
   method: 'GET',
 }).handler(async () => {
-  return await getAllUsers()
+  // Better Auth requires authentication headers for admin operations like listUsers
+  // getWebRequest() provides access to the incoming HTTP request context,
+  // including cookies and session data needed for authentication
+  // This is required because Better Auth's admin.listUsers API validates
+  // that the requesting user has admin privileges before returning user data
+  const request = getWebRequest()
+  if (!request?.headers) {
+    throw new Error('Request headers not available')
+  }
+  
+  return await getAllUsers(request.headers)
 })
 
 export const useDeleteUserById = createServerFn({ method: 'POST' })

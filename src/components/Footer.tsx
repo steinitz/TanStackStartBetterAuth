@@ -39,8 +39,8 @@ export const Footer = () => {
             <DeveloperTools
               detailItemsStyleAttribute={{
                 position: 'absolute',
-                top: '-20rem',
-                left: '50%',
+                top: '-70vh',
+                left: '10%',
               }}
             />
           </div>

@@ -142,16 +142,6 @@ export const DeveloperTools = ({
                 )}
               </div>
             )}
-            
-            <div>
-              <section>
-                <p>Session exists: {session?.user ? 'Yes' : 'No'}</p>
-                <p>Session user: {session?.user?.email || 'Not signed in'}</p>
-                <p>Loading users: {isLoadingUsers ? 'Yes' : 'No'}</p>
-                <p>Users count: {users.length}</p>
-              </section>
-            </div>
-
           </div>
 
           </div>

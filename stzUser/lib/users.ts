@@ -1,11 +1,10 @@
 'use server'
 
-import { Kysely, SqliteDialect } from 'kysely'
-import Database from 'better-sqlite3'
 import { auth } from './auth'
+import { appDatabase } from './database'
 
-// Database schema types
-interface UserTable {
+// Extended user type with role information
+interface UserWithRole {
   id: string
   name: string
   email: string
@@ -13,27 +12,11 @@ interface UserTable {
   image: string | null
   createdAt: string
   updatedAt: string
-}
-
-// Extended user type with role information
-interface UserWithRole extends UserTable {
   role: string | null
   banned: boolean | null
   banReason: string | null
   banExpires: string | null
 }
-
-interface DatabaseSchema {
-  user: UserTable
-}
-
-// Create kysely instance
-const database = new Database('sqlite.db')
-const db = new Kysely<DatabaseSchema>({
-  dialect: new SqliteDialect({
-    database,
-  }),
-})
 
 export async function getAllUsers() {
   try {
@@ -46,16 +29,20 @@ export async function getAllUsers() {
     console.log({users})
     return users as UserWithRole[]
   } catch (error) {
-    console.error('Error fetching users:', error)
-    // Fallback to basic user data if Better Auth API fails
+    console.error('Error fetching users from Better Auth API:', error)
+    // Fallback to basic user data from database
     try {
-      const basicUsers = await db
-        .selectFrom('user')
-        .selectAll()
-        .execute()
-      return basicUsers.map(user => ({ ...user, role: null, banned: null, banReason: null, banExpires: null })) as UserWithRole[]
+      const stmt = appDatabase.prepare('SELECT * FROM user')
+      const basicUsers = stmt.all() as any[]
+      return basicUsers.map(user => ({ 
+        ...user, 
+        role: null, 
+        banned: null, 
+        banReason: null, 
+        banExpires: null 
+      })) as UserWithRole[]
     } catch (dbError) {
-      console.error('Database fallback also failed:', dbError)
+      console.error('Database fallback failed:', dbError)
       return []
     }
   }

@@ -30,6 +30,26 @@ export const Header = () => {
         />
       </Link>
       <Spacer orientation={'horizontal'} space={1}/>
+      <Link
+        to="/contact"
+        style={{
+          textDecoration: 'none',
+          color: 'var(--color-text)',
+          padding: '8px 16px',
+          borderRadius: '4px',
+          transition: 'background-color 0.2s',
+          alignSelf: 'center',
+          marginRight: '16px',
+        }}
+        activeProps={{
+          style: {
+            backgroundColor: 'var(--color-accent)',
+            color: 'var(--color-bg)',
+          },
+        }}
+      >
+        Contact
+      </Link>
       <UserBlock/>
     </section>
   )

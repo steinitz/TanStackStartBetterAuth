@@ -97,7 +97,7 @@ export async function setUserRole(data: { userId: string; role: "admin" | "user"
   }
 }
 
-export async function removeUserRole(data: { userId: string }, headers: Headers) {
+export async function demoteUserToUserRole(data: { userId: string }, headers: Headers) {
   try {
     // Use Better Auth admin API to set user role to default "user"
     const result = await auth.api.setRole({
@@ -110,8 +110,8 @@ export async function removeUserRole(data: { userId: string }, headers: Headers)
     
     return { success: true, result }
   } catch (error) {
-    console.error('Error removing user role:', error)
-    throw new Error('Failed to remove user role')
+    console.error('Error demoting user to regular user role:', error)
+    throw new Error('Failed to demote user to regular user role')
   }
 }
 

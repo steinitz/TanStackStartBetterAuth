@@ -1,4 +1,4 @@
-import { useDeleteUserById, useSetUserRole, useRemoveUserRole, type User } from '~stzUser/lib/users-client'
+import { useDeleteUserById, useSetUserRole, useDemoteUserToUserRole, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState, useEffect, useMemo } from 'react'
 import { admin, useSession } from '~stzUser/lib/auth-client'
@@ -34,8 +34,8 @@ export function UserManagement({users}) {
     
     try {
       if (isCurrentlyAdmin) {
-        // Remove admin role
-        await useRemoveUserRole({ data: { userId } })
+        // Demote from admin to regular user
+        await useDemoteUserToUserRole({ data: { userId } })
         newAdminUsers.delete(userId)
       } else {
         // Add admin role

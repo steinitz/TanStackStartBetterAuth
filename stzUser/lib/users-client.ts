@@ -2,7 +2,7 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { getWebRequest } from '@tanstack/react-start/server'
-import { getAllUsers, deleteUserById, setUserRole, removeUserRole, type User } from './users'
+import { getAllUsers, deleteUserById, setUserRole, demoteUserToUserRole, type User } from './users'
 import {userRolesType} from '~stzUser/constants'
 
 // Client-side server functions that call the server functions
@@ -36,7 +36,7 @@ export const useSetUserRole = createServerFn({ method: 'POST' })
     return await setUserRole(data, request.headers)
   })
 
-export const useRemoveUserRole = createServerFn({ method: 'POST' })
+export const useDemoteUserToUserRole = createServerFn({ method: 'POST' })
   .validator((data: { userId: string }) => data)
   .handler(async ({ data }) => {
     // Get request context for authentication
@@ -45,7 +45,7 @@ export const useRemoveUserRole = createServerFn({ method: 'POST' })
       throw new Error('Request headers not available')
     }
     
-    return await removeUserRole(data, request.headers)
+    return await demoteUserToUserRole(data, request.headers)
   })
 
 // Re-export the User type for convenience

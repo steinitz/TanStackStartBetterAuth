@@ -53,5 +53,9 @@ temp/
 sqlite.db
 count.txt
 
+# Development notes
+ToDo.md
+BuilderSuggestions.md
+
 # Reference directory (contains external git repos)
 reference/

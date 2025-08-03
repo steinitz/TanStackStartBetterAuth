@@ -92,3 +92,7 @@ npx @better-auth/cli migrate --config stzUser/lib/auth.ts
 ## Contributing
 
 This project follows modern development practices with modular architecture, comprehensive testing, and type-safe development. See the documentation links above for detailed implementation guides.
+
+### Reference Directory
+
+The `reference/` directory contains shared code snippets, documentation, and development notes. This directory is intentionally excluded from git (see `.gitignore`) but is explicitly excluded from the build in `vite.config.ts`. When working on a fresh checkout, you may create this directory locally for storing temporary code examples and project notes.

@@ -75,7 +75,11 @@ export const SignIn = () => {
   }
 
   const handleSignIn = async (event: SyntheticEvent<HTMLFormElement>) => {
-    const fields = sharedFormSubmission(event);
+    const formFields = sharedFormSubmission(event);
+    const fields: SignInData = {
+      email: formFields.email as string,
+      password: formFields.password as string
+    };
     const isValid = validateFormFields(fields)
 
     if (isValid) {

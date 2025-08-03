@@ -4,11 +4,10 @@ import { sendTestEmail } from '~stzUser/lib/mail-utilities'
 import { updateCount } from '~/lib/count'
 import { useLoaderData, useRouter } from '@tanstack/react-router'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { getCount } from '~/lib/count'
 import { admin, useSession } from '~stzUser/lib/auth-client'
-import { UserManagement } from '~stzUser/components/Other/UserManagement'
-import { useGetAllUsers, type User } from '~stzUser/lib/users-client'
+import { Link } from '@tanstack/react-router'
 import { CSSProperties } from 'react'
 
 type DetailsItemsStyleAttributeType = {
@@ -26,8 +25,7 @@ export const DeveloperTools = ({
   const [count, setCount] = useState(0)
   const router = useRouter()
   const { data: session } = useSession()
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const detailsRef = useRef<HTMLDetailsElement>(null)
 
 
   useEffect(() => {
@@ -42,25 +40,43 @@ export const DeveloperTools = ({
       .catch(console.error);
   }, [])
 
-  // Load users data when component mounts or session changes
+  // Auto-close developer tools on click outside and route changes
   useEffect(() => {
-    const loadUsers = async () => {
-      if (!session?.user) return // Only load if user is signed in
-
-      setIsLoadingUsers(true)
-      try {
-        const usersData = await useGetAllUsers()
-        setUsers(usersData || [])
-      } catch (error) {
-        console.error('Error loading users:', error)
-        setUsers([])
-      } finally {
-        setIsLoadingUsers(false)
+    const closeDetails = () => {
+      if (detailsRef.current && detailsRef.current.open) {
+        detailsRef.current.open = false
       }
     }
 
-    loadUsers()
-  }, [session?.user?.id, session?.user?.role]) // Reload when user or role changes
+    const handleClickOutside = (event: MouseEvent) => {
+      if (detailsRef.current && detailsRef.current.open && !detailsRef.current.contains(event.target as Node)) {
+        detailsRef.current.open = false
+      }
+    }
+
+    // Close on route changes using native browser events
+    let currentUrl = window.location.href
+    const handleRouteChange = () => {
+      if (window.location.href !== currentUrl) {
+        currentUrl = window.location.href
+        closeDetails()
+      }
+    }
+
+    // Listen for both popstate (back/forward) and any URL changes
+    window.addEventListener('popstate', closeDetails)
+    const urlCheckInterval = setInterval(handleRouteChange, 100)
+
+    document.addEventListener('click', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('popstate', closeDetails)
+      clearInterval(urlCheckInterval)
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [])
+
+
 
   const detailsItemsStyle: CSSProperties = {
     display: 'flex',
@@ -113,7 +129,7 @@ export const DeveloperTools = ({
 
   return (
     <>
-      <details>
+      <details ref={detailsRef}>
         <summary>Developer Tools</summary>
         <div style={detailsItemsStyle}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -129,20 +145,15 @@ export const DeveloperTools = ({
               <button type="button" onClick={testListUsers}>
                 Test Admin Privilege
               </button>
+              <Spacer orientation={'horizontal'} />
+              {session?.user && (
+                <Link to="/auth/users">
+                  <button type="button">
+                    View Users
+                  </button>
+                </Link>
+              )}
             </div>
-
-            <Spacer orientation={'vertical'} />
-
-            {session?.user && (
-              <div>
-                <h3>User Management</h3>
-                {isLoadingUsers ? (
-                  <p>Loading users...</p>
-                ) : (
-                  <UserManagement users={users} />
-                )}
-              </div>
-            )}
           </div>
 
           </div>

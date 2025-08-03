@@ -14,6 +14,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
+import { Route as AuthUsersRouteImport } from './routes/auth/users'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSetNewPasswordRouteImport } from './routes/auth/setNewPassword'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
   id: '/auth/verify-email',
   path: '/auth/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthUsersRoute = AuthUsersRouteImport.update({
+  id: '/auth/users',
+  path: '/auth/users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSignupRoute = AuthSignupRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/auth/users': typeof AuthUsersRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
 }
 export interface FileRoutesByTo {
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/auth/users': typeof AuthUsersRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
 }
 export interface FileRoutesById {
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/auth/setNewPassword': typeof AuthSetNewPasswordRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/auth/users': typeof AuthUsersRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
 }
 export interface FileRouteTypes {
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/auth/setNewPassword'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/users'
     | '/auth/verify-email'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/auth/setNewPassword'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/users'
     | '/auth/verify-email'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/auth/setNewPassword'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/users'
     | '/auth/verify-email'
   fileRoutesById: FileRoutesById
 }
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   AuthSetNewPasswordRoute: typeof AuthSetNewPasswordRoute
   AuthSigninRoute: typeof AuthSigninRoute
   AuthSignupRoute: typeof AuthSignupRoute
+  AuthUsersRoute: typeof AuthUsersRoute
   AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
 }
 export interface FileServerRoutesByFullPath {
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/verify-email'
       fullPath: '/auth/verify-email'
       preLoaderRoute: typeof AuthVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/users': {
+      id: '/auth/users'
+      path: '/auth/users'
+      fullPath: '/auth/users'
+      preLoaderRoute: typeof AuthUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/signup': {
@@ -268,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSetNewPasswordRoute: AuthSetNewPasswordRoute,
   AuthSigninRoute: AuthSigninRoute,
   AuthSignupRoute: AuthSignupRoute,
+  AuthUsersRoute: AuthUsersRoute,
   AuthVerifyEmailRoute: AuthVerifyEmailRoute,
 }
 export const routeTree = rootRouteImport

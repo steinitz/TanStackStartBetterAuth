@@ -48,7 +48,7 @@ form header {
 /*
 These don't fix the not-centered headers
 header {
-    text-align: center;
+  text-align: center;
 }
 
 header a b,

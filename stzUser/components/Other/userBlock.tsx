@@ -15,7 +15,7 @@ export const adjustVerticalLocationStyle = (fineAdjustment=0) => {
   }
 }
 
-const navLinkStyle = {
+export const navLinkStyle = {
   ...adjustVerticalLocationStyle(),
   marginRight: '21px',
   whiteSpace: 'nowrap',

@@ -1,5 +1,5 @@
 import {Link} from "@tanstack/react-router";
-import {UserBlock} from "~stzUser/components/Other/userBlock";
+import {UserBlock, navLinkStyle} from "~stzUser/components/Other/userBlock";
 import {Spacer} from "~stzUtils/components/Spacer";
 
 export const Header = () => {
@@ -32,15 +32,7 @@ export const Header = () => {
       <Spacer orientation={'horizontal'} space={1}/>
       <Link
         to="/contact"
-        style={{
-          textDecoration: 'none',
-          color: 'var(--color-text)',
-          padding: '8px 16px',
-          borderRadius: '4px',
-          transition: 'background-color 0.2s',
-          alignSelf: 'center',
-          marginRight: '16px',
-        }}
+        style={navLinkStyle}
         activeProps={{
           style: {
             backgroundColor: 'var(--color-accent)',

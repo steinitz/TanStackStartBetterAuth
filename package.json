@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && echo '\nTo start the production server, use: pnpm start:prod'",
+    "start:prod": "node bootstrap.env.mjs",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run"

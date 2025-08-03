@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from '@tanstack/react-router'
-import { getCount } from '~/lib/count'
+import { clientEnv } from '~stzUser/lib/env'
 
 import {MainLayout} from '~/components/MainLayout'
 
@@ -70,6 +70,11 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__ENV = ${JSON.stringify(clientEnv)};`,
+          }}
+        />
         <MainLayout>{children}</MainLayout>
         <Scripts />
       </body>

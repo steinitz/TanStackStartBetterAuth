@@ -5,7 +5,7 @@ import {type SyntheticEvent, useState} from "react";
 import {useSession} from "~stzUser/lib/auth-client";
 import {sendEmail} from "~stzUser/lib/mail-utilities";
 import {ContactSent} from '~stzUser/components/Other/ContactSent';
-import {clientEnv} from '~stzUser/lib/env';
+import { clientEnv } from '~stzUser/lib/env';
 
 // TypeScript - suggested by Valibot docs, and comes in handy later
 type ContactData = {
@@ -30,8 +30,10 @@ const ContactSchema = v.object({
   message: v.pipe(v.string(), v.nonEmpty('please type a message')),
 });
 
-const from = clientEnv.SMTP_FROM_ADDRESS;
+const fromAddress = clientEnv.SMTP_FROM_ADDRESS;
 const companyName = clientEnv.COMPANY_NAME;
+
+console.log({clientEnv});
 
 export const ContactForm = ({
   heading = "Contact Us",
@@ -94,8 +96,8 @@ export const ContactForm = ({
       
       const result = await sendEmail({
         data: {
-          to: from,
-          from,
+          to: fromAddress,
+          from: fromAddress,
           subject: `Contact form for ${companyName}`,
           text: `${message(false)}`,
           html: `<p>${message(true)}</p>`,

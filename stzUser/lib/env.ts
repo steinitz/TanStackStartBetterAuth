@@ -38,11 +38,21 @@ if (isServer()) {
 }
 
 // Client-safe environment variables (exposed to browser)
-export const clientEnv: ClientEnv = {
-  APP_NAME: process.env.APP_NAME || 'TanStack Start with Better Auth',
-  SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS,
-  COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',
-}
+export const clientEnv: ClientEnv = isServer() 
+  ? {
+      APP_NAME: process.env.APP_NAME || 'TanStack Start with Better Auth',
+      SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS,
+      COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',
+    }
+  : (typeof window !== 'undefined' && window.__ENV) 
+    ? window.__ENV
+    : {
+        APP_NAME: 'TanStack Start with Better Auth',
+        SMTP_FROM_ADDRESS: undefined,
+        COMPANY_NAME: 'Your Company',
+      }
+
+console.log({clientEnv});
 
 // Extend window interface for client-side access
 declare global {

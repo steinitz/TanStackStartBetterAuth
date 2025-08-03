@@ -8,8 +8,7 @@ export const Route = createFileRoute('/contact')({
 function ContactPage() {
   return (
     <div>
-      <h1>Contact Us</h1>
-      <ContactForm />
+      <ContactForm heading="We'd like to hear from you" />
     </div>
   )
 }

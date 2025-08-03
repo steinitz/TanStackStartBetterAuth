@@ -113,8 +113,11 @@ Utility component for consistent vertical or horizontal spacing.
 **Usage:**
 ```tsx
 import { Spacer } from '~stzUtils/components/Spacer'
+// defaults: vertical orientation, space 1.5rem
+<Spacer />
 
-<Spacer size={24} direction="vertical" />
+// custom space and direction 
+<Spacer size={24} direction="horizontal" />
 ```
 
 ### Styles

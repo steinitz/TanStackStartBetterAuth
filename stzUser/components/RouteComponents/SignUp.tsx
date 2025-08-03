@@ -72,21 +72,21 @@ export const SignUp = () => {
         onSuccess: async (ctx) => {
           console.log('signup.email - onSuccess', {ctx})
           setSuccess(true)
-          
+
           // WORKAROUND: Manually send verification email since sendOnSignUp is disabled due to bug
-           // See: https://github.com/better-auth/better-auth/issues/2538
-           try {
-             await sendVerificationEmail({
-                email: fields.email,
-                callbackURL: '/'
-              })
-             console.log('Manual verification email sent successfully')
-           } catch (error) {
-             console.error('Error sending verification email:', error)
-           }
-           // window.location.href = routeStrings.signin
-         },
-         onError: (ctx) => {
+          // See: https://github.com/better-auth/better-auth/issues/2538
+          try {
+            await sendVerificationEmail({
+              email: fields.email,
+              callbackURL: '/'
+            })
+            console.log('Manual verification email sent successfully')
+          } catch (error) {
+            console.error('Error sending verification email:', error)
+          }
+          // window.location.href = routeStrings.signin
+        },
+        onError: (ctx) => {
           console.log('signup.email - onError', {ctxError: ctx.error.message})
         },
       },
@@ -145,8 +145,7 @@ export const SignUp = () => {
           <p>We've sent an email-confirmation link to</p>
           <p style={{marginLeft: '4rem'}}>{email}</p>
           <p>Please check your email inbox and follow the instructions</p>
-          <Spacer space={1} />
-          <Spacer />
+          <Spacer space={3} />
           <div style={{textAlign: "right"}}>
             <button
               type="submit"
@@ -156,7 +155,6 @@ export const SignUp = () => {
             </button>
           </div>
         </form>
-
       }
     </section>
   )

@@ -68,7 +68,7 @@ export const SignIn = () => {
             alert(ctx.error.message)
           }
           console.log({ctxError: ctx.error.message})
-       },
+        },
       }
     )
     console.log({data, error})
@@ -80,7 +80,6 @@ export const SignIn = () => {
 
     if (isValid) {
       await doSignIn(fields)
-      navigate({to: '/'})
     }
   }
 

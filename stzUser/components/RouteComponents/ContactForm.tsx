@@ -6,6 +6,7 @@ import {useSession} from "~stzUser/lib/auth-client";
 import {sendEmail} from "~stzUser/lib/mail-utilities";
 import {ContactSent} from '~stzUser/components/Other/ContactSent';
 import { clientEnv } from '~stzUser/lib/env';
+import { Spacer } from "~stzUtils/components/Spacer";
 
 // TypeScript - suggested by Valibot docs, and comes in handy later
 type ContactData = {
@@ -36,7 +37,7 @@ const companyName = clientEnv.COMPANY_NAME;
 console.log({clientEnv});
 
 export const ContactForm = ({
-  heading = "Contact Us",
+  heading,
   subheading,
   submitButtonText = "Send",
   successMessage,
@@ -121,7 +122,12 @@ export const ContactForm = ({
     <section className={className}>
       {!messageSent ? (
         <>
-          {heading && <h1 style={{textAlign: 'center'}}>{heading}</h1>}
+          {heading && 
+            <>
+              <h1 style={{textAlign: 'center'}}>{heading}</h1>
+              <Spacer />
+            </>
+          }
           {subheading && <p style={{textAlign: 'center'}}>{subheading}</p>}
           <form onSubmit={sendMessage}>
           <label>Name

@@ -150,6 +150,7 @@ export function UserManagement({users}) {
                   type="checkbox"
                   checked={adminUsers.has(user.id)}
                   onChange={() => handleAdminToggle(user.id)}
+                  onClick={(e) => e.stopPropagation()}
                   style={{ marginRight: '-0px', marginLeft: '-21px' }}
                 />
                 Admin
@@ -165,7 +166,10 @@ export function UserManagement({users}) {
           const user = row.original
           return (
             <button
-              onClick={() => handleDeleteUser(user.id, user.name || user.email)}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDeleteUser(user.id, user.name || user.email)
+              }}
               style={{
                 backgroundColor: "var(--color-error)",
                 borderColor: "var(--color-error)",
@@ -226,7 +230,23 @@ export function UserManagement({users}) {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map(row => (
-                  <tr key={row.id}>
+                  <tr 
+                    key={row.id}
+                    onClick={() => {
+                      const user = row.original
+                      alert(`Clicked on user: ${user.name || user.email}\nID: ${user.id}\nEmail: ${user.email}\nRole: ${adminUsers.has(user.id) ? userRoles.admin : userRoles.user}\nEmail Verified: ${user.emailVerified ? 'Yes' : 'No'}`)
+                    }}
+                    style={{
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
+                  >
                     {row.getVisibleCells().map(cell => (
                       <td
                         key={cell.id}

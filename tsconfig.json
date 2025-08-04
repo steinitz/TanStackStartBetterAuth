@@ -12,5 +12,8 @@
       "~stzUtils/*": ["./stzUtils/*"],
       "~stzUser/*": ["./stzUser/*"]
     }
-  }
+  },
+  "exclude": [
+    "reference/**/*"
+  ]
 }

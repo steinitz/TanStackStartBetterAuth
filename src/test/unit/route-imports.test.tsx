@@ -53,18 +53,18 @@ describe('Route Import Tests', () => {
 
   it('should import index route without errors', async () => {
     expect(async () => {
-      await import('../routes/index')
+      await import('~/routes/index')
     }).not.toThrow()
   })
 
   it('should import signin route without errors', async () => {
     expect(async () => {
-      await import('../routes/auth/signin')
+      await import('~/routes/auth/signin')
     }).not.toThrow()
   })
 
   it('should import and render index route component', async () => {
-    const indexModule = await import('../routes/index')
+    const indexModule = await import('~/routes/index')
     const RouteConfig = indexModule.Route
     
     // Verify the route was created
@@ -81,7 +81,7 @@ describe('Route Import Tests', () => {
   })
 
   it('should import and render signin route component', async () => {
-    const signinModule = await import('../routes/auth/signin')
+    const signinModule = await import('~/routes/auth/signin')
     const RouteConfig = signinModule.Route
     
     // Verify the route was created
@@ -98,7 +98,7 @@ describe('Route Import Tests', () => {
   })
 
   it('should handle loader function in index route', async () => {
-    const indexModule = await import('../routes/index')
+    const indexModule = await import('~/routes/index')
     const RouteConfig = indexModule.Route
     
     // Verify the loader exists

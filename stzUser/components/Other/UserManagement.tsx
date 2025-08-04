@@ -3,7 +3,7 @@ import { Spacer } from '~stzUtils/components/Spacer'
 import { useState, useEffect, useMemo } from 'react'
 import { admin, useSession } from '~stzUser/lib/auth-client'
 import { userRoles, userRolesType } from '~stzUser/constants'
-import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table'
+import { useReactTable, getCoreRowModel, getSortedRowModel, createColumnHelper, flexRender } from '@tanstack/react-table'
 
 export function UserManagement({users}) {
   const {data: session} = useSession()
@@ -11,6 +11,7 @@ export function UserManagement({users}) {
   const signedInUserHasAdminRole = signedInUser?.role === userRoles.admin
 
   const [adminUsers, setAdminUsers] = useState<Set<string>>(new Set())
+  const [sorting, setSorting] = useState([])
   const columnHelper = createColumnHelper<User>()
 
   const handleDeleteUser = async (userId: string, userName: string) => {
@@ -85,18 +86,32 @@ export function UserManagement({users}) {
     columnHelper.accessor('name', {
       header: 'Name',
       cell: info => <strong>{info.getValue() || 'No name'}</strong>,
+      enableSorting: true,
     }),
     columnHelper.accessor('email', {
       header: 'Email',
       cell: info => info.getValue(),
+      enableSorting: true,
     }),
     columnHelper.accessor('createdAt', {
       header: 'Joined',
       cell: info => `Joined: ${new Date(info.getValue()).toLocaleDateString('en-US')}`,
+      enableSorting: true,
+      sortingFn: (rowA, rowB) => {
+        const dateA = new Date(rowA.getValue('createdAt'))
+        const dateB = new Date(rowB.getValue('createdAt'))
+        return dateA.getTime() - dateB.getTime()
+      },
     }),
     columnHelper.accessor('emailVerified', {
       header: 'Status',
       cell: info => info.getValue() ? 'Verified' : 'Unverified',
+      enableSorting: true,
+      sortingFn: (rowA, rowB) => {
+        const valueA = rowA.getValue('emailVerified')
+        const valueB = rowB.getValue('emailVerified')
+        return valueA === valueB ? 0 : valueA ? 1 : -1
+      },
     }),
     ...(signedInUserHasAdminRole ? [
       columnHelper.display({
@@ -192,7 +207,12 @@ export function UserManagement({users}) {
   const table = useReactTable({
     data: users,
     columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   })
 
   return (
@@ -214,15 +234,43 @@ export function UserManagement({users}) {
                           padding: '8px',
                           textAlign: 'left',
                           borderBottom: '2px solid var(--color-border)',
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
+                          cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                          userSelect: 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onClick={header.column.getToggleSortingHandler()}
+                        onMouseEnter={(e) => {
+                          if (header.column.getCanSort()) {
+                            e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary, #f5f5f5)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
                         }}
                       >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                          {header.column.getCanSort() && (
+                            <span style={{ 
+                               fontSize: '14px', 
+                               opacity: 0.6,
+                               fontWeight: 'normal',
+                               minWidth: '12px',
+                               textAlign: 'center'
+                             }}>
+                               {{
+                                 asc: '↑',
+                                 desc: '↓',
+                               }[header.column.getIsSorted() as string] ?? '↕'}
+                             </span>
+                          )}
+                        </div>
                       </th>
                     ))}
                   </tr>

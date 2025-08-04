@@ -52,7 +52,7 @@ export const clientEnv: ClientEnv = isServer()
         COMPANY_NAME: 'Your Company',
       }
 
-console.log({clientEnv});
+// console.log({clientEnv});
 
 // Extend window interface for client-side access
 declare global {

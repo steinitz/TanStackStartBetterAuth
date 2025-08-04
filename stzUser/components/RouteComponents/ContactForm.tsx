@@ -34,8 +34,6 @@ const ContactSchema = v.object({
 const fromAddress = clientEnv.SMTP_FROM_ADDRESS;
 const companyName = clientEnv.COMPANY_NAME;
 
-console.log({clientEnv});
-
 export const ContactForm = ({
   heading,
   subheading,

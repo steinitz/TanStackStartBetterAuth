@@ -63,7 +63,7 @@ export const auth = betterAuth({
     // WORKAROUND: Set to false due to Better Auth bug where sendOnSignUp affects email change verification
     // See: https://github.com/better-auth/better-auth/issues/2538
     // This should be true for proper security, but causes email change verification to fail
-    requireEmailVerification: false,
+    requireEmailVerification: true,
     sendResetPassword: async (
       { user, url }
     ) => {
@@ -82,7 +82,7 @@ export const auth = betterAuth({
     // including email change verification. Should be true for signup verification.
     // See: https://github.com/better-auth/better-auth/issues/2538
     sendOnSignUp: false,
-    autoSignInAfterVerification: true,
+    autoSignInAfterVerification: false,
     sendVerificationEmail: async ({
       user,
       url,

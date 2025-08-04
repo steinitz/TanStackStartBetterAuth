@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {FormFieldError} from "~stzUtils/components/FormFieldError";
-import { ValidatedInput } from "~stzUser/components/Other/ValidatedInput";
+import { ValidatedInput } from "~stzUtils/components/ValidatedInput";
 import { fieldLabelSubtext } from "~stzUtils/components/styles";
 
 // Type for validation errors - consistent across the application
@@ -30,7 +30,9 @@ export function PasswordInput({validationIssue}) {
       </div>
       <input
         style={{
-          width: 'calc(100% - 1.6rem)', // why do I need to repeat this from mvp.css?
+          // width: 'calc(100% - 1.6rem)', // why do I need to repeat this from mvp.css?
+          fontWeight: shouldShowPassword ? 'normal' : 'bold',
+          letterSpacing: shouldShowPassword ? 'normal' : '.25rem',
         }}
         type={shouldShowPassword ? 'text' : 'password'}
         name="password"
@@ -80,7 +82,7 @@ export const EmailInput = ({validationErrors, defaultValue}: {
     fieldName="email"
     defaultValue={defaultValue}
     validationErrors={validationErrors}
-   />
+  />
 }
 
 export const UsernameInput = ({validationErrors, defaultValue}: {

@@ -1,4 +1,4 @@
-import { useDeleteUserById, useSetUserRole, useDemoteUserToUserRole, type User } from '~stzUser/lib/users-client'
+import { useDeleteUserById, useSetUserRole, useDemoteUserToUserRole, useUpdateEmailVerificationStatus, type User } from '~stzUser/lib/users-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useState, useEffect, useMemo } from 'react'
 import { admin, useSession } from '~stzUser/lib/auth-client'
@@ -50,6 +50,24 @@ export function UserManagement({users}) {
     } catch (error) {
       console.error('Error updating admin role:', error)
       alert('Failed to update admin role')
+    }
+  }
+
+  const handleEmailVerificationToggle = async (userId: string) => {
+    if (!selectedUser || selectedUser.id !== userId) return
+    
+    const newEmailVerified = !selectedUser.emailVerified
+    
+    try {
+      await useUpdateEmailVerificationStatus({ data: { userId, emailVerified: newEmailVerified } })
+      
+      // Update the selected user state to reflect the change immediately
+      setSelectedUser({ ...selectedUser, emailVerified: newEmailVerified })
+      
+      console.log('Email verification status updated for user:', userId, 'Verified:', newEmailVerified)
+    } catch (error) {
+      console.error('Error updating email verification status:', error)
+      alert('Failed to update email verification status')
     }
   }
 
@@ -156,8 +174,16 @@ export function UserManagement({users}) {
 
   ], [adminUsers, signedInUserHasAdminRole, handleAdminToggle, handleDeleteUser, copyUserId])
 
+  // Create computed users data that incorporates selectedUser updates
+  const tableData = useMemo(() => {
+    if (!selectedUser) return users
+    return users.map(user => 
+      user.id === selectedUser.id ? selectedUser : user
+    )
+  }, [users, selectedUser])
+
   const table = useReactTable({
-    data: users,
+    data: tableData,
     columns,
     state: {
       sorting,
@@ -174,8 +200,8 @@ export function UserManagement({users}) {
         {users.length === 0 ? (
           <p>No users registered yet.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', margin: '0 auto' }}>
+            <table style={{ borderCollapse: 'collapse' }}>
               <thead>
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
@@ -277,8 +303,22 @@ export function UserManagement({users}) {
                 <div>
                   <p><strong>Email:</strong> {selectedUser.email}</p>
                   <p><strong>ID:</strong> {selectedUser.id}</p>
-                  <p><strong>Email Verified:</strong> {selectedUser.emailVerified ? 'Yes' : 'No'}</p>
                 </div>
+
+                {signedInUserHasAdminRole && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: 'fit-content', marginTop: '-10px'}}>
+                    <label htmlFor="email-verified-checkbox" style={{ whiteSpace: 'nowrap', margin: '0px', marginTop: '-3px'}}>
+                      Email Verified
+                    </label>
+                    <input
+                      type="checkbox"
+                      id="email-verified-checkbox"
+                      checked={selectedUser.emailVerified}
+                      onChange={() => handleEmailVerificationToggle(selectedUser.id)}
+                      style={{ margin: '0' }}
+                    />
+                  </div>
+                )}
 
                 {signedInUserHasAdminRole && (
                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start',  width: 'fit-content', marginTop: '-10px'}}>

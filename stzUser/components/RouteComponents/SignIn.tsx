@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import {type SyntheticEvent, useState} from 'react'
 import {Link, useNavigate} from '@tanstack/react-router'
-import {signIn} from '~stzUser/lib/auth-client'
+import {signIn, sendVerificationEmail} from '~stzUser/lib/auth-client'
 import {PasswordInput} from "~stzUtils/components/InputFields";
 import {FormFieldError} from "~stzUtils/components/FormFieldError";
 import {niceValidationIssues, sharedFormSubmission} from "~stzUser/lib/form";
@@ -60,9 +60,19 @@ export const SignIn = () => {
           console.log('signin.email - onSuccess', {ctx})
           window.location.href = '/' // TanStack navigation doesn't work here
         },
-        onError: (ctx) => {
+        onError: async (ctx) => {
           if(ctx.error.status === 403) {
-            alert("Please check your email inbox for a link to verify your email address")
+            // Send verification email for existing unverified users
+            try {
+              await sendVerificationEmail({
+                email: email,
+                callbackURL: '/'
+              })
+              alert(`Your account needs email verification. We've sent a new verification email to ${email}. Please check your inbox (and spam folder) and click the verification link to complete sign-in.`)
+            } catch (error) {
+              console.error('Error sending verification email:', error)
+              alert(`Your account needs email verification. Please check your email inbox for a verification link, or try signing up again.`)
+            }
           }
           else {
             alert(ctx.error.message)

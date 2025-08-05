@@ -75,7 +75,6 @@ export const SignUp = () => {
 
           // WORKAROUND: Manually send verification email since sendOnSignUp is disabled due to bug
           // See: https://github.com/better-auth/better-auth/issues/2538
-          /*
           try {
             await sendVerificationEmail({
               email: fields.email,
@@ -85,7 +84,6 @@ export const SignUp = () => {
           } catch (error) {
             console.error('Error sending verification email:', error)
           }
-          */
           // window.location.href = routeStrings.signin
         },
         onError: (ctx) => {

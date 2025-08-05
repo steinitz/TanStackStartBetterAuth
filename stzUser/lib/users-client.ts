@@ -2,7 +2,7 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { getWebRequest } from '@tanstack/react-start/server'
-import { getAllUsers, deleteUserById, setUserRole, demoteUserToUserRole, type User } from './users'
+import { getAllUsers, deleteUserById, setUserRole, demoteUserToUserRole, updateEmailVerificationStatus, type User } from './users'
 import {userRolesType} from '~stzUser/constants'
 
 // Client-side server functions that call the server functions
@@ -56,6 +56,18 @@ export const useDemoteUserToUserRole = createServerFn({ method: 'POST' })
     }
     
     return await demoteUserToUserRole(data, request.headers)
+  })
+
+export const useUpdateEmailVerificationStatus = createServerFn({ method: 'POST' })
+  .validator((data: { userId: string; emailVerified: boolean }) => data)
+  .handler(async ({ data }) => {
+    // Get request context for authentication
+    const request = getWebRequest()
+    if (!request?.headers) {
+      throw new Error('Request headers not available')
+    }
+    
+    return await updateEmailVerificationStatus(data, request.headers)
   })
 
 // Re-export the User type for convenience

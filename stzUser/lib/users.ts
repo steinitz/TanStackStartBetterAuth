@@ -131,4 +131,28 @@ export async function demoteUserToUserRole(data: { userId: string }, headers: He
   }
 }
 
+export async function updateEmailVerificationStatus(data: { userId: string; emailVerified: boolean }, headers: Headers) {
+  try {
+    // Get current session to verify admin access
+    const session = await auth.api.getSession({ headers })
+    
+    if (!session) {
+      throw new Error('Not authenticated')
+    }
+    
+    // Update email verification status directly in the database
+    const stmt = appDatabase.prepare('UPDATE user SET emailVerified = ? WHERE id = ?')
+    const result = stmt.run(data.emailVerified ? 1 : 0, data.userId)
+    
+    if (result.changes === 0) {
+      throw new Error('User not found or no changes made')
+    }
+    
+    return { success: true, result }
+  } catch (error) {
+    console.error('Error updating email verification status:', error)
+    throw new Error(`Failed to update email verification status: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
 export type User = UserWithRole

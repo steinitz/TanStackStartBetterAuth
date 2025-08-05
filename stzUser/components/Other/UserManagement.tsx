@@ -12,6 +12,7 @@ export function UserManagement({users}) {
 
   const [adminUsers, setAdminUsers] = useState<Set<string>>(new Set())
   const [sorting, setSorting] = useState([])
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const columnHelper = createColumnHelper<User>()
 
   const handleDeleteUser = async (userId: string, userName: string) => {
@@ -152,56 +153,7 @@ export function UserManagement({users}) {
         )
       },
     }),
-    ...(signedInUserHasAdminRole ? [
-      columnHelper.display({
-        id: 'adminToggle',
-        header: 'Admin',
-        cell: ({ row }) => {
-          const user = row.original
-          return (
-            <div style={{ marginBottom: '-17px' }}>
-              <label style={{ display: 'flex', fontSize: '13px' }}>
-                <input
-                  type="checkbox"
-                  checked={adminUsers.has(user.id)}
-                  onChange={() => handleAdminToggle(user.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ marginRight: '-0px', marginLeft: '-21px' }}
-                />
-                Admin
-              </label>
-            </div>
-          )
-        },
-      }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => {
-          const user = row.original
-          return (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDeleteUser(user.id, user.name || user.email)
-              }}
-              style={{
-                backgroundColor: "var(--color-error)",
-                borderColor: "var(--color-error)",
-                paddingTop: '0px',
-                paddingLeft: '3px',
-                paddingRight: '3px',
-                fontSize: '12px',
-                marginBottom: '-10px',
-                height: '21px',
-              }}
-            >
-              Delete
-            </button>
-          )
-        },
-      })
-    ] : []),
+
   ], [adminUsers, signedInUserHasAdminRole, handleAdminToggle, handleDeleteUser, copyUserId])
 
   const table = useReactTable({
@@ -257,18 +209,18 @@ export function UserManagement({users}) {
                                 header.getContext()
                               )}
                           {header.column.getCanSort() && (
-                            <span style={{ 
-                               fontSize: '14px', 
-                               opacity: 0.6,
-                               fontWeight: 'normal',
-                               minWidth: '12px',
-                               textAlign: 'center'
-                             }}>
-                               {{
-                                 asc: '↑',
-                                 desc: '↓',
-                               }[header.column.getIsSorted() as string] ?? '↕'}
-                             </span>
+                            <span style={{
+                              fontSize: '14px',
+                              opacity: 0.6,
+                              fontWeight: 'normal',
+                              minWidth: '12px',
+                              textAlign: 'center'
+                            }}>
+                              {{
+                                asc: '↑',
+                                desc: '↓',
+                              }[header.column.getIsSorted() as string] ?? '↕'}
+                            </span>
                           )}
                         </div>
                       </th>
@@ -278,22 +230,22 @@ export function UserManagement({users}) {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map(row => (
-                  <tr 
+                  <tr
                     key={row.id}
-                    onClick={() => {
+                    onClick={signedInUserHasAdminRole ? () => {
                       const user = row.original
-                      alert(`Clicked on user: ${user.name || user.email}\nID: ${user.id}\nEmail: ${user.email}\nRole: ${adminUsers.has(user.id) ? userRoles.admin : userRoles.user}\nEmail Verified: ${user.emailVerified ? 'Yes' : 'No'}`)
-                    }}
+                      setSelectedUser(user)
+                    } : undefined}
                     style={{
-                      cursor: 'pointer',
+                      cursor: signedInUserHasAdminRole ? 'pointer' : 'default',
                       transition: 'background-color 0.2s ease'
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={signedInUserHasAdminRole ? (e) => {
                       e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'
-                    }}
-                    onMouseLeave={(e) => {
+                    } : undefined}
+                    onMouseLeave={signedInUserHasAdminRole ? (e) => {
                       e.currentTarget.style.backgroundColor = 'transparent'
-                    }}
+                    } : undefined}
                   >
                     {row.getVisibleCells().map(cell => (
                       <td
@@ -312,6 +264,61 @@ export function UserManagement({users}) {
               </tbody>
             </table>
           </div>
+        )}
+        
+        {selectedUser && (
+          <>
+            <Spacer />
+            <section>
+              <h3>Edit User {selectedUser.name || selectedUser.email}</h3>
+              <Spacer space={0} />
+              
+              <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                <div>
+                  <p><strong>Email:</strong> {selectedUser.email}</p>
+                  <p><strong>ID:</strong> {selectedUser.id}</p>
+                  <p><strong>Email Verified:</strong> {selectedUser.emailVerified ? 'Yes' : 'No'}</p>
+                </div>
+
+                {signedInUserHasAdminRole && (
+                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start',  width: 'fit-content', marginTop: '-10px'}}>
+                     <label htmlFor="admin-role-checkbox" style={{ whiteSpace: 'nowrap', margin: '0px', marginTop: '-3px'}}>
+                       Admin Role
+                     </label>
+                     <input
+                       type="checkbox"
+                       id="admin-role-checkbox"
+                       checked={adminUsers.has(selectedUser.id)}
+                       onChange={() => handleAdminToggle(selectedUser.id)}
+                       style={{ margin: '0' }}
+                     />
+                  </div>
+                )}
+
+                <div style={{display: 'flex', gap: '1rem'}}>
+                {signedInUserHasAdminRole && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteUser(selectedUser.id, selectedUser.name || selectedUser.email)}
+                    style={{
+                      backgroundColor: "var(--color-error)",
+                      borderColor: "var(--color-error)"
+                    }}
+                  >
+                    Delete User
+                  </button>
+                )}
+
+                <button
+                     type="button"
+                     onClick={() => setSelectedUser(null)}
+                   >
+                     Close
+                   </button>
+                 </div>
+               </div>
+            </section>
+          </>
         )}
       </section>
     </main>

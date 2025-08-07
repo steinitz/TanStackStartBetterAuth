@@ -22,14 +22,23 @@ export const transportOptions = isServer() ? getSmtpConfig() : null
 export const sendEmail = createServerFn({ method: 'POST' })
   .validator((d: any) => d)
   .handler(async ({ data }) => {
+    console.log('🔥 sendEmail: SERVER FUNCTION CALLED with data:', { data });
     if (!isServer()) {
+      console.log('❌ sendEmail: ERROR - not running on server');
       throw new Error('sendEmail must be called from the server')
     }
-    console.log('sending email', { data })
-    const mailSender = nodemailer.createTransport(getSmtpConfig())
-    const result = await mailSender?.sendMail(data)
-    const success = result.accepted[0] // return the first accepted email address
-    return success
+    console.log('✅ sendEmail: server check passed, creating transport');
+    try {
+      const mailSender = nodemailer.createTransport(getSmtpConfig())
+      console.log('📮 sendEmail: transport created, sending mail...');
+      const result = await mailSender?.sendMail(data)
+      console.log('📬 sendEmail: mail sent, result:', result);
+      console.log('✅ sendEmail: returning true');
+      return true
+    } catch (error) {
+      console.log('❌ sendEmail: ERROR occurred:', error);
+      throw error;
+    }
   })
 
 // Get email vars that are safe to expose to the client

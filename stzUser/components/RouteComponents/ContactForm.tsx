@@ -70,12 +70,15 @@ export const ContactForm = ({
 
   // sends the contact message
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
+    console.log('🚀 ContactForm: sendMessage called');
     const fields = sharedFormSubmission(event);
+    console.log('📝 ContactForm: form fields extracted:', fields);
     setName(fields.name as string);
     setEmail(fields.email as string);
     setMessage(fields.message as string);
 
     const isValid = validateFormFields(fields);
+    console.log('✅ ContactForm: validation result:', isValid);
     if (isValid) {
       const message = (isHTML: boolean) => {
         let lineBreak = '\n';
@@ -93,6 +96,8 @@ export const ContactForm = ({
           ${fields.message}`;
       };
       
+      console.log('📧 ContactForm: calling sendEmail to:', fromAddress, 'subject:', `Contact form for ${companyName}`);
+      
       const result = await sendEmail({
         data: {
           to: fromAddress,
@@ -102,11 +107,15 @@ export const ContactForm = ({
           html: `<p>${message(true)}</p>`,
         }
       });
+      
+      console.log('📬 ContactForm: sendEmail result:', result);
 
       if (result) {
+        console.log('✅ ContactForm: email sent successfully, setting messageSent to true');
         setMessageSent(true);
         onSuccess?.();
       } else {
+        console.log('❌ ContactForm: email failed to send');
         alert(`Message failed to send.`);
       }
     }

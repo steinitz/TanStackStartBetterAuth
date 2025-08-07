@@ -40,6 +40,9 @@ lerna-debug.log*
 coverage/
 *.lcov
 
+# Test output directories
+test-results/
+
 # Optional caches
 .npm
 .eslintcache

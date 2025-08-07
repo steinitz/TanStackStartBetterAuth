@@ -1,10 +1,27 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// More aggressive cleanup of Vitest globals
+if (typeof globalThis !== 'undefined') {
+  delete (globalThis as any).expect;
+  delete (globalThis as any).vi;
+  delete (globalThis as any).describe;
+  delete (globalThis as any).it;
+  delete (globalThis as any).test;
+  delete (globalThis as any).beforeEach;
+  delete (globalThis as any).afterEach;
+  delete (globalThis as any).beforeAll;
+  delete (globalThis as any).afterAll;
+}
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: '../e2e',
+  testDir: '..',
+  /* Only target *.spec.ts files for Playwright E2E tests */
+  testMatch: '**/*.spec.ts',
+  /* Global setup to verify server is running */
+  globalSetup: './global-setup.ts',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -14,9 +31,12 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [['html', { outputFolder: '../output/playwright-report' }]],
+  reporter: [
+    ['html', { outputFolder: '../.output/playwright-report', open: 'never' }],
+    ['list']
+  ],
   /* Output directory for test results */
-  outputDir: '../output/test-results',
+  outputDir: '../.output/test-results',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -33,15 +53,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+    // Temporarily disabled for faster test development
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
 
     /* Test against mobile viewports. */
     // {

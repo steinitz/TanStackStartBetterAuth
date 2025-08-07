@@ -80,6 +80,9 @@ pnpm dev              # Start development server
 pnpm build            # Build for production (includes start instructions)
 pnpm start:prod       # Start production server with proper env loading
 
+# Type Checking
+pnpm typecheck        # Run TypeScript type checking
+
 # Testing
 pnpm test             # Run tests
 pnpm test:ui          # Run tests with UI

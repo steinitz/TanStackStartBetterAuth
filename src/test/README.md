@@ -206,8 +206,8 @@ Comprehensive email functionality testing using Ethereal Email:
 
 **Status**: Currently moved to reference/ directory while resolving Ethereal email interception issues.
 
-### `e2e/EMAIL_TESTING.md`
-Comprehensive documentation for email testing setup and strategies:
+### `e2e/README.md`
+Comprehensive documentation for E2E testing including email testing setup and strategies:
 
 **Coverage:**
 - **Ethereal Email Setup**: Complete guide for test email configuration

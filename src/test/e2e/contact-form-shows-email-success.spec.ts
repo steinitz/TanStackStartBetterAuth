@@ -28,7 +28,7 @@ test.describe('Contact Form Success Message', () => {
           console.log('🔄 Found sendEmail request to:', url);
           const postDataJson = JSON.parse(postData ?? '');
           console.log('📦 POST data from:', `${postDataJson.data.from ?? 'undefined'}, to: ${postDataJson.data.to ?? 'undefined'}`);
-          // Intercept and mock the sendEmail response to prevent actual email sending
+          // Mock the sendEmail response to prevent actual email sending
           await route.fulfill({
             status: 200,
             contentType: 'application/json',

@@ -13,11 +13,12 @@ test.describe('Contact Form Success Message', () => {
     });
     
     // Set up request interception to identify sendEmail calls
-    const serverRequestRoutePartialString = '_serverFn';
-    await page.route(`**/${serverRequestRoutePartialString}**`, async (route, request) => {
+    const serverRequestRoutePrefix = '_serverFn';
+    await page.route(`**/${serverRequestRoutePrefix}/**`, async (route, request) => {
+    // await page.route(`*/**`, async (route, request) => {
       const url = request.url();
       const method = request.method();
-       
+
       if (method === 'POST') {
         console.log('📡 POST request to:', url);
         const postData = request.postData();
@@ -27,10 +28,20 @@ test.describe('Contact Form Success Message', () => {
           console.log('🔄 Found sendEmail request to:', url);
           const postDataJson = JSON.parse(postData ?? '');
           console.log('📦 POST data from:', `${postDataJson.data.from ?? 'undefined'}, to: ${postDataJson.data.to ?? 'undefined'}`);
+          // Intercept and mock the sendEmail response to prevent actual email sending
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, message: 'Email sent successfully (mocked)', result: true })
+          });
+        } 
+        else {
+          await route.continue();
         }
       }
-      // Continue with the original request (no interception)
-      await route.continue();
+      else {
+        await route.continue();
+      }
     });
 
     // Navigate to contact page

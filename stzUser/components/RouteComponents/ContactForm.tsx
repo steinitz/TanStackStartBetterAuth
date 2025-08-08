@@ -5,8 +5,8 @@ import {type SyntheticEvent, useState} from "react";
 import {useSession} from "~stzUser/lib/auth-client";
 import {sendEmail} from "~stzUser/lib/mail-utilities";
 import {ContactSent} from '~stzUser/components/Other/ContactSent';
-import { clientEnv } from '~stzUser/lib/env';
-import { Spacer } from "~stzUtils/components/Spacer";
+import {clientEnv} from '~stzUser/lib/env';
+import {Spacer} from "~stzUtils/components/Spacer";
 
 // TypeScript - suggested by Valibot docs, and comes in handy later
 type ContactData = {
@@ -70,15 +70,12 @@ export const ContactForm = ({
 
   // sends the contact message
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
-    console.log('🚀 ContactForm: sendMessage called');
     const fields = sharedFormSubmission(event);
-    console.log('📝 ContactForm: form fields extracted:', fields);
     setName(fields.name as string);
     setEmail(fields.email as string);
     setMessage(fields.message as string);
 
     const isValid = validateFormFields(fields);
-    console.log('✅ ContactForm: validation result:', isValid);
     if (isValid) {
       const message = (isHTML: boolean) => {
         let lineBreak = '\n';
@@ -107,9 +104,9 @@ export const ContactForm = ({
           html: `<p>${message(true)}</p>`,
         }
       });
-      
-      console.log('📬 ContactForm: sendEmail result:', result);
 
+      console.log ({result})
+      
       if (result) {
         console.log('✅ ContactForm: email sent successfully, setting messageSent to true');
         setMessageSent(true);

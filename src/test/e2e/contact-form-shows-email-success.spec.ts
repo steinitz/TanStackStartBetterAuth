@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import {contactSentConfirmationH1Default} from '~stzUser/components/Other/ContactSent';
 
 test.describe('Contact Form Success Message', () => {
   test('should show success message after form submission', async ({ page }) => {
@@ -12,25 +13,22 @@ test.describe('Contact Form Success Message', () => {
     });
     
     // Set up request interception to identify sendEmail calls
-    await page.route('**/*', async (route, request) => {
+    const serverRequestRoutePartialString = '_serverFn';
+    await page.route(`**/${serverRequestRoutePartialString}**`, async (route, request) => {
       const url = request.url();
       const method = request.method();
-      
+       
       if (method === 'POST') {
         console.log('📡 POST request to:', url);
         const postData = request.postData();
-        if (postData) {
-          const postDataJson = JSON.parse(postData);
-          console.log('📦 POST data from:', `${postDataJson.data.from}, to: ${postDataJson.data.to}`);
-        }
         
         // Check for sendEmail in URL or POST data
         if ((postData && postData.includes('sendEmail')) || url.includes('sendEmail')) {
           console.log('🔄 Found sendEmail request to:', url);
-          // console.log('📦 Full POST data:', postData);
+          const postDataJson = JSON.parse(postData ?? '');
+          console.log('📦 POST data from:', `${postDataJson.data.from ?? 'undefined'}, to: ${postDataJson.data.to ?? 'undefined'}`);
         }
       }
-      
       // Continue with the original request (no interception)
       await route.continue();
     });
@@ -47,22 +45,32 @@ test.describe('Contact Form Success Message', () => {
     await page.fill('input[name="email"]', 'test@example.com');
     await page.fill('textarea[name="message"]', 'This is a test message from Playwright.');
 
-    console.log('📝 Form filled, submitting...');
+    // read back the values before submission
+    // note adding this made the route interception work
+    // maybe a timing error?
+    const name = await page.inputValue('input[name="name"]')
+    const email = await page.inputValue('input[name="email"]')
+    const message = await page.inputValue('textarea[name="message"]')
+
+    console.log('form values before submission', {name, email, message});
 
     // Add form submission event listener
     await page.evaluate(() => {
       const form = document.querySelector('form');
       if (form) {
         form.addEventListener('submit', (e) => {
-          console.log('🎯 FORM SUBMIT EVENT FIRED!', e);
+          console.log('🎯 form submit event fired', e);
         });
       }
     });
 
-    const timeoutSeconds = 21;
+    const timeoutSeconds = 13;
 
     // Submit the form
-    console.log('📝 Form filled, submitting...');
+    console.log(' waiting for form button enabled after validation');
+    await expect(page.getByRole('button')).toBeEnabled({timeout: timeoutSeconds * 1000});
+
+    console.log('form submit button enabled: clicking');
     await page.click('button[type="submit"]');
 
     // Wait for any network activity to complete
@@ -72,7 +80,7 @@ test.describe('Contact Form Success Message', () => {
     console.log('📄 After submission h1 text:', await page.locator('h1').textContent());
 
     // Wait for and verify the success message
-    await expect(page.locator('h1')).toContainText("We've sent your message to our support team", {timeout: timeoutSeconds * 1000});
+    await expect(page.locator('h1')).toContainText(contactSentConfirmationH1Default, {timeout: timeoutSeconds * 1000});
 
     // Email verification removed for simplified test
     

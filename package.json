@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "config": {
-    "playwright": "playwright test --config=src/test/e2e/config/playwright.config.ts"
+    "playwright": "playwright test --config=stzUser/test/e2e/config/playwright.config.ts"
   },
   "scripts": {
     "dev": "vite dev",

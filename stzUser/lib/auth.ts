@@ -89,8 +89,13 @@ export const auth = betterAuth({
     },
       request
     ) => {
-      // console.log('auth.sendVerificationEmail request', { request })
-      // console.log('auth.sendVerificationEmail url', { url })
+      // Email verification data is available here:
+      // - user: contains email and id
+      // - url: the verification URL
+      // - text/html: the email content
+
+      // console.log('🔗 Email verification URL:', url);
+
       if (!mailSender) {
         console.error('Better Auth email verification: no mail sender');
         return

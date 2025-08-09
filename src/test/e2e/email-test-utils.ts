@@ -236,4 +236,26 @@ export const createMockEmailServer = () => {
 };
 
 // Export types for use in tests
+/**
+ * Creates a unique test user email using timestamp to prevent duplicate user issues
+ * @returns A unique test email address
+ */
+export function newTestUser(): string {
+  const timestamp = Date.now();
+  return `test${timestamp}@example.com`;
+}
+
+/**
+ * Creates a test user object with unique email
+ * @param name Optional name for the test user
+ * @returns Test user object with unique email
+ */
+export function createTestUser(name: string = 'Test User') {
+  return {
+    name,
+    email: newTestUser(),
+    password: 'TestPassword123!'
+  };
+}
+
 export type { EtherealTestAccount, TestEmailMessage };

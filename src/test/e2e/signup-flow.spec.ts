@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { newTestUser } from './email-test-utils';
 
 test.describe('Signup Flow', () => {
   test('should complete signup flow and show success message', async ({ page }) => {
@@ -11,36 +12,53 @@ test.describe('Signup Flow', () => {
       console.log('🚨 Page error:', error.message);
     });
     
-    // Set up request interception to identify email-related calls
-    const serverRequestRoutePrefix = '_serverFn';
-    await page.route(`**/${serverRequestRoutePrefix}/**`, async (route, request) => {
+    // Set up request interception to capture verification URL from sendVerificationEmail
+    let verificationUrl = null;
+    const serverRequestRoutePrefix = '_serverFn'
+    // await page.route(`**/${serverRequestRoutePrefix}/**`, async (route, request) => {
+    await page.route(`**/*`, async (route, request) => {
       const url = request.url();
       const method = request.method();
 
       if (method === 'POST') {
         console.log('📡 POST request to:', url);
         const postData = request.postData();
+        console.log('📦 POST data preview:', postData?.substring(0, 200));
         
-        // Check for email-related requests (signup or verification email)
-        if ((postData && (postData.includes('sendVerificationEmail') || postData.includes('signUp'))) || 
-            url.includes('sendVerificationEmail') || url.includes('signUp')) {
-          console.log('🔄 Found email-related request to:', url);
+        // Check for sendEmail in URL or POST data
+        if ((postData && postData.includes('sendEmail')) || url.includes('sendEmail')) {
+          console.log('🔄 Found sendEmail request to:', url);
+          const postDataJson = JSON.parse(postData ?? '');
+          console.log('📦 POST data:', postDataJson);
           
-          // Log request details
-          if (postData) {
-            try {
-              const postDataJson = JSON.parse(postData);
-              console.log('📦 POST data:', postDataJson);
-            } catch (e) {
-              console.log('📦 POST data (raw):', postData);
+          // Extract verification URL from email content
+          if (postDataJson.data) {
+            const emailData = postDataJson.data;
+            console.log('📧 Email data:', emailData);
+            
+            // Look for verification URL in email text or HTML
+            if (emailData.text) {
+              const urlMatch = emailData.text.match(/http[s]?:\/\/[^\s]+verify-email[^\s]*/i);
+              if (urlMatch) {
+                verificationUrl = urlMatch[0];
+                console.log('🔗 Captured verification URL from email text:', verificationUrl);
+              }
+            }
+            
+            if (!verificationUrl && emailData.html) {
+              const urlMatch = emailData.html.match(/href=["']?(http[s]?:\/\/[^\s"']+verify-email[^\s"']*)["']?/i);
+              if (urlMatch) {
+                verificationUrl = urlMatch[1];
+                console.log('🔗 Captured verification URL from email HTML:', verificationUrl);
+              }
             }
           }
           
-          // Mock the email-related response to prevent actual email sending
+          // Mock the sendEmail response to prevent actual email sending
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify({ success: true, message: 'Email operation successful (mocked)', result: true })
+            body: JSON.stringify({ success: true, message: 'Email sent successfully (mocked)', result: true })
           });
         } 
         else {
@@ -63,8 +81,7 @@ test.describe('Signup Flow', () => {
     await expect(page.locator('input[name="email"]')).toBeVisible();
 
     // Generate unique email to avoid conflicts
-    const timestamp = Date.now();
-    const uniqueEmail = `testuser${timestamp}@example.com`;
+    const uniqueEmail = newTestUser();
     
     // Fill out the signup form
     await page.fill('input[name="email"]', uniqueEmail);

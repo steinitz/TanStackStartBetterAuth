@@ -25,14 +25,14 @@ Ethereal Email is a fake SMTP service that:
 ### 1. Automatic Test Account Creation
 ```typescript
 // Creates a temporary Ethereal account automatically
-const testAccount = await EmailTestUtils.createTestAccount();
+const testAccount = await EmailTester.createTestAccount();
 // Returns: { user: 'test123@ethereal.email', pass: 'abc123', smtp: {...}, web: 'https://ethereal.email/...' }
 ```
 
 ### 2. Test Email Sending
 ```typescript
 // Sends email to Ethereal instead of real recipients
-const result = await EmailTestUtils.sendTestEmail({
+const result = await EmailTester.sendTestEmail({
   to: 'user@example.com',
   from: 'noreply@yourapp.com',
   subject: 'Test Email',
@@ -51,13 +51,13 @@ Each test run provides a unique URL where you can view all captured emails in a 
 
 ## Files Overview
 
-### `utils.ts`
+### `utils/EmailTester.ts`
 Core utilities for Ethereal Email testing:
-- **`EmailTestUtils.createTestAccount()`** - Creates temporary Ethereal account
-- **`EmailTestUtils.sendTestEmail()`** - Sends emails to Ethereal for testing
-- **`EmailTestUtils.getSentEmails()`** - Retrieves all sent emails in current session
-- **`EmailTestUtils.verifyEmailSent()`** - Verifies emails were sent with specific criteria
-- **`EmailTestUtils.cleanup()`** - Cleans up test session
+- **`EmailTester.createTestAccount()`** - Creates temporary Ethereal account
+- **`EmailTester.sendTestEmail()`** - Sends emails to Ethereal for testing
+- **`EmailTester.getSentEmails()`** - Retrieves all sent emails in current session
+- **`EmailTester.verifyEmailSent()`** - Verifies emails were sent with specific criteria
+- **`EmailTester.cleanup()`** - Cleans up test session
 
 ### `contact-form-email.spec.ts`
 Comprehensive E2E tests for contact form email functionality:
@@ -125,7 +125,7 @@ When tests run, you'll see output like:
 ```typescript
 test.beforeAll(async () => {
   // Creates temporary Ethereal account for this test session
-  await EmailTestUtils.createTestAccount();
+  await EmailTester.createTestAccount();
 });
 ```
 
@@ -135,7 +135,7 @@ test.beforeAll(async () => {
 await page.route('**/api/**', async (route) => {
   if (request.url().includes('sendEmail')) {
     // Redirects to Ethereal instead of production SMTP
-    const emailResult = await EmailTestUtils.sendTestEmail(postData.data);
+    const emailResult = await EmailTester.sendTestEmail(postData.data);
     await route.fulfill({ status: 200, body: JSON.stringify(result) });
   }
 });
@@ -152,7 +152,7 @@ await page.click('button[type="submit"]');
 ### 4. Email Verification
 ```typescript
 // Verify email was captured by Ethereal
-const sentEmails = EmailTestUtils.getSentEmails();
+const sentEmails = EmailTester.getSentEmails();
 expect(sentEmails).toHaveLength(1);
 expect(sentEmails[0].envelope.to).toContain('support@yourapp.com');
 ```
@@ -185,7 +185,7 @@ test('should send contact form email', async () => {
 ### Email Content Verification
 ```typescript
 // Verify specific email content
-const emails = EmailTestUtils.getEmailsTo('user@example.com');
+const emails = EmailTester.getEmailsTo('user@example.com');
 expect(emails[0].previewUrl).toBeTruthy();
 
 // You can also store email content during interception

@@ -77,13 +77,13 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
   // Pipe server output to console with prefixes
   if (serverProcess.stdout) {
     serverProcess.stdout.on('data', (data) => {
-      console.log(`[DEV SERVER] ${data.toString().trim()}`);
+      console.log(`[dev server] ${data.toString().trim()}`);
     });
   }
   
   if (serverProcess.stderr) {
     serverProcess.stderr.on('data', (data) => {
-      console.error(`[DEV SERVER ERROR] ${data.toString().trim()}`);
+      console.error(`[dev server error] ${data.toString().trim()}`);
     });
   }
 

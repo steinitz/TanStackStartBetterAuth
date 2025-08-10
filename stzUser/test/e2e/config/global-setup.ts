@@ -1,5 +1,5 @@
 import { FullConfig } from '@playwright/test';
-import { ensureServerRunning } from '../server-check';
+import { ensureServerRunning } from 'stzUser/test/e2e/utils/server-check';
 
 // Global setup that automatically starts dev server if not running
 async function globalSetup(config: FullConfig) {

@@ -9,7 +9,7 @@ This directory contains the "pure foundation" authentication components and util
   - `auth-client.ts` - Better-Auth client configuration
   - `database.ts` - Database setup
   - `form.tsx` - Form utilities and validation helpers
-  - `utils.ts` - General utility functions
+  - `EmailTestUtils.ts` - General utility functions
 
 - **`components/`** - Reusable UI components
   - `SignIn.tsx` - Sign-in form component

@@ -1,5 +1,5 @@
+import type {Transporter} from 'nodemailer';
 import nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
 
 // Ethereal Email test account interface
 interface EtherealTestAccount {
@@ -35,7 +35,7 @@ interface TestEmailMessage {
 }
 
 // Email testing utility class
-export class EmailTestUtils {
+export class EmailTester {
   private static testAccount: EtherealTestAccount | null = null;
   private static transporter: Transporter | null = null;
   private static sentEmails: TestEmailMessage[] = [];
@@ -79,7 +79,7 @@ export class EmailTestUtils {
     }
 
     const testAccount = await this.createTestAccount();
-    
+
     this.transporter = nodemailer.createTransport({
       host: testAccount.smtp.host,
       port: testAccount.smtp.port,
@@ -106,10 +106,10 @@ export class EmailTestUtils {
     html?: string;
   }): Promise<TestEmailMessage> {
     const transporter = await this.createTestTransport();
-    
+
     try {
       const info = await transporter.sendMail(emailData);
-      
+
       const testMessage: TestEmailMessage = {
         messageId: info.messageId,
         envelope: info.envelope,
@@ -118,7 +118,7 @@ export class EmailTestUtils {
       };
 
       this.sentEmails.push(testMessage);
-      
+
       console.log('✅ Test email sent:', {
         messageId: testMessage.messageId,
         to: emailData.to,
@@ -151,7 +151,7 @@ export class EmailTestUtils {
    * Finds emails by recipient
    */
   static getEmailsTo(recipient: string): TestEmailMessage[] {
-    return this.sentEmails.filter(email => 
+    return this.sentEmails.filter(email =>
       email.envelope.to.includes(recipient)
     );
   }
@@ -160,7 +160,7 @@ export class EmailTestUtils {
    * Finds emails by sender
    */
   static getEmailsFrom(sender: string): TestEmailMessage[] {
-    return this.sentEmails.filter(email => 
+    return this.sentEmails.filter(email =>
       email.envelope.from === sender
     );
   }
@@ -206,9 +206,9 @@ export class EmailTestUtils {
     // Note: This is a basic verification. In a real implementation,
     // you might want to fetch the actual email content from Ethereal
     // or store more details when sending emails.
-    
+
     const emails = this.getSentEmails();
-    
+
     return emails.some(email => {
       if (criteria.to && !email.envelope.to.includes(criteria.to)) {
         return false;
@@ -229,7 +229,7 @@ export const createMockEmailServer = () => {
     async sendEmail(data: any) {
       // Instead of using the production email server,
       // use our Ethereal test utilities
-      const result = await EmailTestUtils.sendTestEmail(data.data);
+      const result = await EmailTester.sendTestEmail(data.data);
       return result.envelope.to[0]; // Return first recipient to match production behavior
     }
   };
@@ -260,34 +260,3 @@ export function createTestUser(name: string = 'Test User') {
 
 export type { EtherealTestAccount, TestEmailMessage };
 
-/**
- * Function to detect if we're running under Playwright tests
- * Checks various environment variables and conditions that indicate test execution
- */
-export function isPlaywrightRunning(): boolean {
-  const isTest = !!(
-    process.env.NODE_ENV === 'test' ||           // Traditional test environment
-    process.env.PLAYWRIGHT_TEST_BASE_URL ||      // Playwright sets this when using baseURL
-    process.env.PWTEST_SKIP_TEST_OUTPUT ||       // Playwright internal variable
-    process.env.CI ||                            // Common in CI environments where Playwright runs
-    process.env.PLAYWRIGHT ||                    // Custom variable we can set
-    process.env.PLAYWRIGHT_RUNNING ||            // Custom flag we can set
-    (typeof globalThis !== 'undefined' && 
-     globalThis.process?.env?.npm_lifecycle_event?.includes('test')) || // npm test scripts
-    // Check if we're in a development server that was likely started by tests
-    (
-      process.env.NODE_ENV === 'development' && 
-      process.env.npm_lifecycle_event === 'dev' &&
-      process.argv.some(arg => arg.includes('playwright') || arg.includes('test'))
-    )
-  )
-  
-  // Optional debug logging (uncomment if needed for troubleshooting)
-  // console.log('🔍 Environment check:', {
-  //   NODE_ENV: process.env.NODE_ENV,
-  //   PLAYWRIGHT_RUNNING: process.env.PLAYWRIGHT_RUNNING,
-  //   isPlaywrightDetected: isTest
-  // });
-  
-  return isTest;
-}

@@ -17,10 +17,12 @@ src/test/
 │   ├── config/
 │   │   ├── playwright.config.ts # Playwright E2E test configuration
 │   │   └── global-setup.ts      # Global test setup and utilities
+│   ├── utils/
+│   │   ├── EmailTester.ts       # Ethereal Email testing utilities
+│   │   ├── isPlaywrightRunning.ts # Playwright detection utility
+│   │   └── server-check.ts      # Development server utilities
 │   ├── contact-form-shows-email-success.spec.ts # Contact form email functionality tests
 │   ├── smoke-navigation.spec.ts # E2E navigation and functionality tests
-│   ├── utils.ts                 # Test utilities including Ethereal Email and Playwright detection
-│   ├── server-check.ts          # Development server utilities
 │   └── README.md                # Email testing documentation
 ├── output/
 │   ├── playwright-report/ # E2E test reports (auto-generated)
@@ -124,7 +126,7 @@ Provides utilities for testing TanStack Router components with proper context se
 
 ## Test Utilities
 
-### `e2e/server-check.ts`
+### `e2e/utils/server-check.ts`
 Development server management utilities:
 
 **Functions:**
@@ -220,14 +222,14 @@ Comprehensive documentation for E2E testing including email testing setup and st
 - **Automated Testing**: Programmatic email content validation
 - **Developer Friendly**: Easy setup and maintenance
 
-### `e2e/utils.ts`
+### `e2e/utils/EmailTester.ts`
 Utility library for Ethereal Email testing:
 
 **Core Functions:**
-- `EmailTestUtils.createTestAccount()` - Creates temporary Ethereal accounts
-- `EmailTestUtils.sendTestEmail()` - Sends emails to test environment
-- `EmailTestUtils.getSentEmails()` - Retrieves captured emails for verification
-- `EmailTestUtils.verifyEmailSent()` - Validates email sending with criteria
+- `EmailTester.createTestAccount()` - Creates temporary Ethereal accounts
+- `EmailTester.sendTestEmail()` - Sends emails to test environment
+- `EmailTester.getSentEmails()` - Retrieves captured emails for verification
+- `EmailTester.verifyEmailSent()` - Validates email sending with criteria
 
 **Benefits:**
 - **Zero Configuration**: Automatic test account creation

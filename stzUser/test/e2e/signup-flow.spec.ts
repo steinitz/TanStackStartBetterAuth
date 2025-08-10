@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { newTestUser } from './utils';
+import { newTestUser } from '~stzUser/test/e2e/utils/EmailTester';
 
 test.describe('Signup Flow', () => {
   test('should complete signup flow and show success message', async ({ page }) => {
@@ -7,11 +7,11 @@ test.describe('Signup Flow', () => {
     page.on('console', msg => {
       console.log(`🖥️ Browser console [${msg.type()}]:`, msg.text());
     });
-    
+
     page.on('pageerror', error => {
       console.log('🚨 Page error:', error.message);
     });
-    
+
     // Set up request interception to capture verification URL from sendVerificationEmail
     let verificationUrl = null;
     const serverRequestRoutePrefix = '_serverFn'
@@ -24,18 +24,18 @@ test.describe('Signup Flow', () => {
         console.log('📡 POST request to:', url);
         const postData = request.postData();
         console.log('📦 POST data preview:', postData?.substring(0, 200));
-        
+
         // Check for sendEmail in URL or POST data
         if ((postData && postData.includes('sendEmail')) || url.includes('sendEmail')) {
           console.log('🔄 Found sendEmail request to:', url);
           const postDataJson = JSON.parse(postData ?? '');
           console.log('📦 POST data:', postDataJson);
-          
+
           // Extract verification URL from email content
           if (postDataJson.data) {
             const emailData = postDataJson.data;
             console.log('📧 Email data:', emailData);
-            
+
             // Look for verification URL in email text or HTML
             if (emailData.text) {
               const urlMatch = emailData.text.match(/http[s]?:\/\/[^\s]+verify-email[^\s]*/i);
@@ -44,7 +44,7 @@ test.describe('Signup Flow', () => {
                 console.log('🔗 Captured verification URL from email text:', verificationUrl);
               }
             }
-            
+
             if (!verificationUrl && emailData.html) {
               const urlMatch = emailData.html.match(/href=["']?(http[s]?:\/\/[^\s"']+verify-email[^\s"']*)["']?/i);
               if (urlMatch) {
@@ -53,14 +53,14 @@ test.describe('Signup Flow', () => {
               }
             }
           }
-          
+
           // Mock the sendEmail response to prevent actual email sending
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify({ success: true, message: 'Email sent successfully (mocked)', result: true })
           });
-        } 
+        }
         else {
           await route.continue();
         }
@@ -75,14 +75,14 @@ test.describe('Signup Flow', () => {
 
     // Debug: Log current page state
     console.log('📄 Current page title:', await page.title());
-    
+
     // Check if we're on the signup page by looking for the form
     await expect(page.locator('form')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
 
     // Generate unique email to avoid conflicts
     const uniqueEmail = newTestUser();
-    
+
     // Fill out the signup form
     await page.fill('input[name="email"]', uniqueEmail);
     await page.fill('input[name="name"]', 'Test User');
@@ -123,15 +123,15 @@ test.describe('Signup Flow', () => {
 
     // Wait for and verify the success message
     await expect(page.locator('h1')).toContainText('Account Created', {timeout: timeoutSeconds * 1000});
-    
+
     // Verify the success message content
     await expect(page.getByText('We\'ve sent an email-confirmation link to')).toBeVisible();
     await expect(page.getByText(uniqueEmail)).toBeVisible();
     await expect(page.getByText('Please check your email inbox and follow the instructions')).toBeVisible();
-    
+
     // Verify the OK button is present
     await expect(page.getByRole('button', { name: 'Ok' })).toBeVisible();
-    
+
     console.log('✅ Signup flow test completed successfully');
   });
 });

@@ -8,7 +8,8 @@ import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
 import { appDatabase } from "./database"
-import { isPlaywrightRunning } from "../test/e2e/utils"
+
+import {isPlaywrightRunning} from "~stzUser/test/e2e/utils/isPlaywrightRunning";
 // import { getEnvVar } from "./env"
 
 const from = process.env.SMTP_FROM_ADDRESS
@@ -96,7 +97,7 @@ export const auth = betterAuth({
       // - text/html: the email content
 
       // console.log('🔗 Email verification URL:', url);
-      
+
       // Add Playwright detection logging for signup flow debugging
       if (isPlaywrightRunning()) {
         console.log('🎭 Playwright test detected - skipping email verification send');

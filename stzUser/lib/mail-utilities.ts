@@ -1,7 +1,8 @@
 import nodemailer from "nodemailer"
 import { createServerFn } from "@tanstack/react-start"
 import { isServer, getEnvVar } from './env'
-import { isPlaywrightRunning } from '../test/e2e/utils'
+
+import {isPlaywrightRunning} from "~stzUser/test/e2e/utils/isPlaywrightRunning";
 
 // Validate SMTP configuration
 function getSmtpConfig() {
@@ -45,7 +46,7 @@ export const sendEmail = createServerFn({ method: 'POST' })
       debugLog && console.log('📬 sendEmail: mail sent, result:', result);
       debugLog && console.log('✅ sendEmail: returning true');
       return true
-    } 
+    }
     catch (error) {
         console.error('❌ sendEmail: ERROR occurred:', error);
         throw error;

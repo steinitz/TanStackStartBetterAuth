@@ -8,6 +8,7 @@ import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
 import { appDatabase } from "./database"
+import { isPlaywrightRunning } from "../test/utils"
 // import { getEnvVar } from "./env"
 
 const from = process.env.SMTP_FROM_ADDRESS
@@ -95,6 +96,16 @@ export const auth = betterAuth({
       // - text/html: the email content
 
       // console.log('🔗 Email verification URL:', url);
+      
+      // Add Playwright detection logging for signup flow debugging
+      if (isPlaywrightRunning()) {
+        console.log('🎭 Playwright detected in signup flow - email verification triggered');
+        console.log('📧 Email verification details:', {
+          userEmail: user.email,
+          userId: user.id,
+          verificationUrl: url
+        });
+      }
 
       if (!mailSender) {
         console.error('Better Auth email verification: no mail sender');

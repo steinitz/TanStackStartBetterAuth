@@ -1,17 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// More aggressive cleanup of Vitest globals
-if (typeof globalThis !== 'undefined') {
-  delete (globalThis as any).expect;
-  delete (globalThis as any).vi;
-  delete (globalThis as any).describe;
-  delete (globalThis as any).it;
-  delete (globalThis as any).test;
-  delete (globalThis as any).beforeEach;
-  delete (globalThis as any).afterEach;
-  delete (globalThis as any).beforeAll;
-  delete (globalThis as any).afterAll;
-}
+// Email handling uses isPlaywrightRunning() detection instead of NODE_ENV=test
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -85,10 +74,5 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+  /* Manual server management - start 'pnpm dev' separately for full server log visibility */
 });

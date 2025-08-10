@@ -19,7 +19,7 @@ src/test/
 │   │   └── global-setup.ts      # Global test setup and utilities
 │   ├── contact-form-shows-email-success.spec.ts # Contact form email functionality tests
 │   ├── smoke-navigation.spec.ts # E2E navigation and functionality tests
-│   ├── email-test-utils.ts      # Ethereal Email testing utilities
+│   ├── utils.ts                 # Test utilities including Ethereal Email and Playwright detection
 │   └── EMAIL_TESTING.md         # Email testing documentation
 ├── output/
 │   ├── playwright-report/ # E2E test reports (auto-generated)
@@ -221,7 +221,7 @@ Comprehensive documentation for E2E testing including email testing setup and st
 - **Automated Testing**: Programmatic email content validation
 - **Developer Friendly**: Easy setup and maintenance
 
-### `e2e/email-test-utils.ts`
+### `utils.ts`
 Utility library for Ethereal Email testing:
 
 **Core Functions:**

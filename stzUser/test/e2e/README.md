@@ -51,7 +51,7 @@ Each test run provides a unique URL where you can view all captured emails in a 
 
 ## Files Overview
 
-### `email-test-utils.ts`
+### `../utils.ts`
 Core utilities for Ethereal Email testing:
 - **`EmailTestUtils.createTestAccount()`** - Creates temporary Ethereal account
 - **`EmailTestUtils.sendTestEmail()`** - Sends emails to Ethereal for testing

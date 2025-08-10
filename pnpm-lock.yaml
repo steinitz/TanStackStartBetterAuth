@@ -29,9 +29,6 @@ importers:
       better-sqlite3:
         specifier: ^12.2.0
         version: 12.2.0
-      dotenv:
-        specifier: ^17.2.0
-        version: 17.2.1
       kysely:
         specifier: ^0.28.3
         version: 0.28.3
@@ -81,6 +78,9 @@ importers:
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
+      dotenv:
+        specifier: ^17.2.0
+        version: 17.2.1
       jsdom:
         specifier: ^26.1.0
         version: 26.1.0

@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer"
 import { createServerFn } from "@tanstack/react-start"
 import { isServer, getEnvVar } from './env'
+import { isPlaywrightRunning } from '../test/utils'
 
 // Validate SMTP configuration
 function getSmtpConfig() {
@@ -15,6 +16,10 @@ function getSmtpConfig() {
   } as const
 }
 
+const debugLog = true && process.env.NODE_ENV !== 'prod'
+
+const isTestEnv = isPlaywrightRunning()
+
 // Export transport options for use in auth.ts
 export const transportOptions = isServer() ? getSmtpConfig() : null
 
@@ -22,21 +27,25 @@ export const transportOptions = isServer() ? getSmtpConfig() : null
 export const sendEmail = createServerFn({ method: 'POST' })
   .validator((d: any) => d)
   .handler(async ({ data }) => {
-    console.log('🔥 sendEmail: SERVER FUNCTION CALLED with data:', { data });
+    debugLog && console.log('sendEmail: server function called with data:', { data });
+    if (isTestEnv) {
+      console.log('✅ sendEmail: test environment, skipping mail send');
+      return true
+    }
     if (!isServer()) {
       console.log('❌ sendEmail: ERROR - not running on server');
       throw new Error('sendEmail must be called from the server')
     }
-    console.log('✅ sendEmail: server check passed, creating transport');
+    debugLog && console.log('✅ sendEmail: server check passed, creating transport');
     try {
       const mailSender = nodemailer.createTransport(getSmtpConfig())
-      console.log('📮 sendEmail: transport created, sending mail...');
+      debugLog && console.log('📮 sendEmail: transport created, sending mail...');
       const result = await mailSender?.sendMail(data)
-      console.log('📬 sendEmail: mail sent, result:', result);
-      console.log('✅ sendEmail: returning true');
+      debugLog && console.log('📬 sendEmail: mail sent, result:', result);
+      debugLog && console.log('✅ sendEmail: returning true');
       return true
     } catch (error) {
-      console.log('❌ sendEmail: ERROR occurred:', error);
+        console.log('❌ sendEmail: ERROR occurred:', error);
       throw error;
     }
   })

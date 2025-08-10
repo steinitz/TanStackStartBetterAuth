@@ -29,6 +29,7 @@ export function getOptionalEnvVar(name: string, defaultValue?: string): string |
 type ClientEnv = {
   APP_NAME: string
   SMTP_FROM_ADDRESS: string | undefined
+  SUPPORT_EMAIL_ADDRESS: string | undefined
   COMPANY_NAME: string
 }
 
@@ -42,6 +43,7 @@ export const clientEnv: ClientEnv = isServer()
   ? {
       APP_NAME: process.env.APP_NAME || 'TanStack Start with Better Auth',
       SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS,
+      SUPPORT_EMAIL_ADDRESS: process.env.SUPPORT_EMAIL_ADDRESS,
       COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',
     }
   : (typeof window !== 'undefined' && window.__ENV) 
@@ -49,6 +51,7 @@ export const clientEnv: ClientEnv = isServer()
     : {
         APP_NAME: 'TanStack Start with Better Auth',
         SMTP_FROM_ADDRESS: undefined,
+        SUPPORT_EMAIL_ADDRESS: undefined,
         COMPANY_NAME: 'Your Company',
       }
 

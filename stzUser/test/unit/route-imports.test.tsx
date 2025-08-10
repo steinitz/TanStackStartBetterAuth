@@ -46,7 +46,7 @@ describe('Route Import Tests', () => {
     mockUseLoaderData.mockReturnValue({
       count: 42,
       users: [
-        { id: '1', name: 'Test User', email: 'test@example.com' },
+        { id: '1', name: 'Test User', email: process.env.SMTP_REPLY_TO_ADDRESS },
       ],
     })
   })

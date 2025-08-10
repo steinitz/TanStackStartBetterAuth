@@ -1,7 +1,7 @@
 export const companyName: string = 'TanStack Start App'
 
-// Support email for the application
-export const supportEmail: string = 'support@example.com'
+// Support email for the application - don't use this, use process.env.SMTP_REPLY_TO_ADDRESS
+// export const supportEmail: string = 'support@example.com'
 
 // Uses:
 // reset-password.$token route to identify no default email

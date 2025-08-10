@@ -53,7 +53,7 @@ test.describe('Contact Form Success Message', () => {
 
     // Fill out the contact form
     await page.fill('input[name="name"]', 'Test User');
-    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="email"]', 'playwright-test@ethereal.email');
     await page.fill('textarea[name="message"]', 'This is a test message from Playwright.');
 
     // read back the values before submission

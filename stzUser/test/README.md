@@ -20,7 +20,8 @@ src/test/
 │   ├── contact-form-shows-email-success.spec.ts # Contact form email functionality tests
 │   ├── smoke-navigation.spec.ts # E2E navigation and functionality tests
 │   ├── utils.ts                 # Test utilities including Ethereal Email and Playwright detection
-│   └── EMAIL_TESTING.md         # Email testing documentation
+│   ├── server-check.ts          # Development server utilities
+│   └── README.md                # Email testing documentation
 ├── output/
 │   ├── playwright-report/ # E2E test reports (auto-generated)
 │   └── test-results/      # E2E test artifacts (auto-generated)
@@ -29,8 +30,6 @@ src/test/
 │   ├── test-utils.tsx     # TanStack Router testing utilities
 │   ├── routes.test.tsx    # Simple component smoke tests
 │   └── route-imports.test.tsx # Route import and rendering tests
-└── utils/
-    └── server-check.ts    # Development server utilities
 ```
 
 ## Quick Start
@@ -125,7 +124,7 @@ Provides utilities for testing TanStack Router components with proper context se
 
 ## Test Utilities
 
-### `utils/server-check.ts`
+### `e2e/server-check.ts`
 Development server management utilities:
 
 **Functions:**
@@ -221,7 +220,7 @@ Comprehensive documentation for E2E testing including email testing setup and st
 - **Automated Testing**: Programmatic email content validation
 - **Developer Friendly**: Easy setup and maintenance
 
-### `utils.ts`
+### `e2e/utils.ts`
 Utility library for Ethereal Email testing:
 
 **Core Functions:**

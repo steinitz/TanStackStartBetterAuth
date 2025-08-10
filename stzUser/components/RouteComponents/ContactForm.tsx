@@ -32,6 +32,7 @@ const ContactSchema = v.object({
 });
 
 const fromAddress = clientEnv.SMTP_FROM_ADDRESS;
+const supportAddress = clientEnv.SUPPORT_EMAIL_ADDRESS || clientEnv.SMTP_FROM_ADDRESS;
 const companyName = clientEnv.COMPANY_NAME;
 
 export const ContactForm = ({
@@ -93,11 +94,11 @@ export const ContactForm = ({
           ${fields.message}`;
       };
       
-      console.log('📧 ContactForm: calling sendEmail to:', fromAddress, 'subject:', `Contact form for ${companyName}`);
+      console.log('📧 ContactForm: calling sendEmail to:', supportAddress, 'subject:', `Contact form for ${companyName}`);
       
       const result = await sendEmail({
         data: {
-          to: fromAddress,
+          to: supportAddress,
           from: fromAddress,
           subject: `Contact form for ${companyName}`,
           text: `${message(false)}`,

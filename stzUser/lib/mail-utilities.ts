@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer"
 import { createServerFn } from "@tanstack/react-start"
 import { isServer, getEnvVar } from './env'
-import { isPlaywrightRunning } from '../test/utils'
+import { isPlaywrightRunning } from '../test/e2e/utils'
 
 // Validate SMTP configuration
 function getSmtpConfig() {
@@ -18,8 +18,6 @@ function getSmtpConfig() {
 
 const debugLog = true && process.env.NODE_ENV !== 'prod'
 
-const isTestEnv = isPlaywrightRunning()
-
 // Export transport options for use in auth.ts
 export const transportOptions = isServer() ? getSmtpConfig() : null
 
@@ -28,12 +26,15 @@ export const sendEmail = createServerFn({ method: 'POST' })
   .validator((d: any) => d)
   .handler(async ({ data }) => {
     debugLog && console.log('sendEmail: server function called with data:', { data });
-    if (isTestEnv) {
+
+    // handle email differently if running an E2E test
+    if (isPlaywrightRunning()) {
       console.log('✅ sendEmail: test environment, skipping mail send');
       return true
     }
+
     if (!isServer()) {
-      console.log('❌ sendEmail: ERROR - not running on server');
+      console.warn('❌ sendEmail: ERROR - not running on server');
       throw new Error('sendEmail must be called from the server')
     }
     debugLog && console.log('✅ sendEmail: server check passed, creating transport');
@@ -44,9 +45,10 @@ export const sendEmail = createServerFn({ method: 'POST' })
       debugLog && console.log('📬 sendEmail: mail sent, result:', result);
       debugLog && console.log('✅ sendEmail: returning true');
       return true
-    } catch (error) {
-        console.log('❌ sendEmail: ERROR occurred:', error);
-      throw error;
+    } 
+    catch (error) {
+        console.error('❌ sendEmail: ERROR occurred:', error);
+        throw error;
     }
   })
 
@@ -57,6 +59,7 @@ export const getEmailEnvironmentVars = createServerFn({ method: 'POST' })
     return {
       from: getEnvVar('SMTP_FROM_ADDRESS'),
       companyName: getEnvVar('COMPANY_NAME'),
+      supportEmailAddress: getEnvVar('SUPPORT_EMAIL_ADDRESS'),
     }
   })
 
@@ -65,7 +68,7 @@ export const testMessage = () => {
   if (!isServer()) {
     throw new Error('testMessage must be called from the server')
   }
-  const fromAddress = getEnvVar('SMTP_FROM_ADDRESS')
+  const fromAddress = getEnvVar('SUPPORT_EMAIL_ADDRESS')
   return {
     from: fromAddress,
     to: fromAddress,

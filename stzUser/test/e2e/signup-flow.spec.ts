@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { newTestUser } from '../utils';
+import { newTestUser } from './utils';
 
 test.describe('Signup Flow', () => {
   test('should complete signup flow and show success message', async ({ page }) => {

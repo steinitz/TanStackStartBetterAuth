@@ -242,7 +242,7 @@ export const createMockEmailServer = () => {
  */
 export function newTestUser(): string {
   const timestamp = Date.now();
-  return `test${timestamp}@example.com`;
+  return `test${timestamp}@ethereal.email`;
 }
 
 /**
@@ -275,9 +275,11 @@ export function isPlaywrightRunning(): boolean {
     (typeof globalThis !== 'undefined' && 
      globalThis.process?.env?.npm_lifecycle_event?.includes('test')) || // npm test scripts
     // Check if we're in a development server that was likely started by tests
-    (process.env.NODE_ENV === 'development' && 
-     process.env.npm_lifecycle_event === 'dev' &&
-     process.argv.some(arg => arg.includes('playwright') || arg.includes('test')))
+    (
+      process.env.NODE_ENV === 'development' && 
+      process.env.npm_lifecycle_event === 'dev' &&
+      process.argv.some(arg => arg.includes('playwright') || arg.includes('test'))
+    )
   )
   
   // Optional debug logging (uncomment if needed for troubleshooting)

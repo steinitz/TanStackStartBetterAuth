@@ -254,7 +254,7 @@ export class EmailTester {
   }
 
   /**
-   * Verifies that an email was sent with specific criteria
+   * Verifies that an email matching the given criteria was sent
    */
   static verifyEmailSent(criteria: {
     to?: string;
@@ -263,23 +263,66 @@ export class EmailTester {
     textContains?: string;
     htmlContains?: string;
   }): boolean {
-    // Note: This is a basic verification. In a real implementation,
-    // you might want to fetch the actual email content from Ethereal
-    // or store more details when sending emails.
-
-    const emails = this.getSentEmails();
-
-    return emails.some(email => {
-      if (criteria.to && !email.envelope.to.includes(criteria.to)) {
-        return false;
-      }
-      if (criteria.from && email.envelope.from !== criteria.from) {
-        return false;
-      }
-      // For subject and content verification, you'd need to store or fetch
-      // the actual email content. This is a simplified version.
+    return this.sentEmails.some(email => {
+      if (criteria.to && !email.envelope.to.includes(criteria.to)) return false;
+      if (criteria.from && email.envelope.from !== criteria.from) return false;
+      if (criteria.subject && !email.subject.includes(criteria.subject)) return false;
+      if (criteria.textContains && !email.text.includes(criteria.textContains)) return false;
+      if (criteria.htmlContains && email.html && !email.html.includes(criteria.htmlContains)) return false;
       return true;
     });
+  }
+
+  /**
+   * Extracts verification links from an email
+   * Looks for URLs containing common verification patterns
+   */
+  static extractVerificationLinks(email: TestEmailMessage): string[] {
+    const links: string[] = [];
+    const urlRegex = /https?:\/\/[^\s<>"]+/g;
+    
+    // Extract from text content
+    const textUrls = email.text.match(urlRegex) || [];
+    links.push(...textUrls);
+    
+    // Extract from HTML content if available
+    if (email.html) {
+      const htmlUrls = email.html.match(urlRegex) || [];
+      links.push(...htmlUrls);
+    }
+    
+    // Filter for verification-like URLs
+    const verificationLinks = links.filter(url => 
+      url.includes('verify') || 
+      url.includes('confirm') || 
+      url.includes('activate') ||
+      url.includes('token=') ||
+      url.includes('code=')
+    );
+    
+    // Remove duplicates
+    return [...new Set(verificationLinks)];
+  }
+
+  /**
+   * Gets verification links from the most recent email to a specific recipient
+   */
+  static getVerificationLinksForUser(email: string): string[] {
+    const userEmails = this.getEmailsTo(email);
+    if (userEmails.length === 0) {
+      return [];
+    }
+    
+    const latestEmail = userEmails[userEmails.length - 1];
+    return this.extractVerificationLinks(latestEmail);
+  }
+
+  /**
+   * Gets the first verification link from the most recent email to a user
+   */
+  static getFirstVerificationLink(email: string): string | null {
+    const links = this.getVerificationLinksForUser(email);
+    return links.length > 0 ? links[0] : null;
   }
 }
 

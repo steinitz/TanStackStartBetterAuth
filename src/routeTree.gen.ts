@@ -21,6 +21,7 @@ import { Route as AuthSetNewPasswordRouteImport } from './routes/auth/setNewPass
 import { Route as AuthRequestPasswordResetRouteImport } from './routes/auth/requestPasswordReset'
 import { Route as AuthProfileRouteImport } from './routes/auth/profile'
 import { Route as AuthForRouteTroubleshootingRouteImport } from './routes/auth/forRouteTroubleshooting'
+import { ServerRoute as ApiTestEnvServerRouteImport } from './routes/api/test-env'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -77,6 +78,11 @@ const AuthForRouteTroubleshootingRoute =
     path: '/auth/forRouteTroubleshooting',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiTestEnvServerRoute = ApiTestEnvServerRouteImport.update({
+  id: '/api/test-env',
+  path: '/api/test-env',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -172,24 +178,28 @@ export interface RootRouteChildren {
   AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
 }
 export interface FileServerRoutesByFullPath {
+  '/api/test-env': typeof ApiTestEnvServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
 }
 export interface FileServerRoutesByTo {
+  '/api/test-env': typeof ApiTestEnvServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  '/api/test-env': typeof ApiTestEnvServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/auth/$'
+  fullPaths: '/api/test-env' | '/api/auth/$'
   fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/auth/$'
-  id: '__root__' | '/api/auth/$'
+  to: '/api/test-env' | '/api/auth/$'
+  id: '__root__' | '/api/test-env' | '/api/auth/$'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  ApiTestEnvServerRoute: typeof ApiTestEnvServerRoute
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
 }
 
@@ -269,6 +279,13 @@ declare module '@tanstack/react-router' {
 }
 declare module '@tanstack/react-start/server' {
   interface ServerFileRoutesByPath {
+    '/api/test-env': {
+      id: '/api/test-env'
+      path: '/api/test-env'
+      fullPath: '/api/test-env'
+      preLoaderRoute: typeof ApiTestEnvServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -295,6 +312,7 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiTestEnvServerRoute: ApiTestEnvServerRoute,
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
 }
 export const serverRouteTree = rootServerRouteImport

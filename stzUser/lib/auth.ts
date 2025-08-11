@@ -10,6 +10,7 @@ import { routeStrings } from "~/constants"
 import { appDatabase } from "./database"
 
 import {isPlaywrightRunning} from "~stzUser/test/e2e/utils/isPlaywrightRunning";
+import { EmailTester } from "~stzUser/test/e2e/utils/EmailTester";
 // import { getEnvVar } from "./env"
 
 const from = process.env.SMTP_FROM_ADDRESS
@@ -99,14 +100,33 @@ export const auth = betterAuth({
       // console.log('🔗 Email verification URL:', url);
 
       // Add Playwright detection logging for signup flow debugging
+      console.log('🔍 sendVerificationEmail called, isPlaywrightRunning():', isPlaywrightRunning());
       if (isPlaywrightRunning()) {
-        console.log('🎭 Playwright test detected - skipping email verification send');
-        console.log('📧 Email verification details (not sent):', {
+        console.log('🎭 Playwright test detected - using EmailTester for verification email');
+        
+        let subject: string = verifyEmailSubject
+        let text: string = `${verifyEmailInstructions} ${user.email} 
+        
+        ${verifyEmailLinkText}
+        ${url}`
+
+        let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
+                            <a href=${url}>${verifyEmailLinkText}</a>`
+
+        await EmailTester.sendTestEmail({
+          to: user.email,
+          from: from || 'test@example.com',
+          subject,
+          text,
+          html,
+        });
+        
+        console.log('📧 Email verification sent via EmailTester:', {
           userEmail: user.email,
           userId: user.id,
           verificationUrl: url
         });
-        return; // Skip actual email sending during tests
+        return; // Skip production email sending during tests
       }
 
       if (!mailSender) {

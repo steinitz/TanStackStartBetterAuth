@@ -32,6 +32,10 @@ interface TestEmailMessage {
   };
   response: string;
   previewUrl?: string;
+  // Store the actual email content for URL extraction
+  subject: string;
+  text: string;
+  html?: string;
 }
 
 /**
@@ -167,6 +171,10 @@ export class EmailTester {
         envelope: info.envelope,
         response: info.response,
         previewUrl: nodemailer.getTestMessageUrl(info) || undefined,
+        // Store the email content for URL extraction
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
       };
 
       this.sentEmails.push(testMessage);

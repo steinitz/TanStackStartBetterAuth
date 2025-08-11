@@ -71,32 +71,37 @@ pnpm test:all
 
 ## Server Management
 
-Playwright automatically handles development server lifecycle for E2E tests:
+Playwright automatically handles development server lifecycle for E2E tests with robust environment variable management:
 
 ### How It Works
-- **Automatic Server Detection**: Playwright checks if a server is already running on `http://localhost:3000`
-- **Smart Reuse**: If you have `pnpm dev` running manually, Playwright will reuse that server
-- **Auto-Start**: If no server is detected, Playwright starts one with `pnpm dev`
-- **Clean Shutdown**: Playwright only stops servers it started, leaving your manual dev server untouched
+- **Environment Validation**: Tests verify the server is running with `.env.test` environment variables
+- **Smart Server Detection**: Checks if a compatible test server is already running on `http://localhost:3000`
+- **Automatic Startup**: If no test-configured server is detected, starts one with `pnpx dotenv-cli -e .env.test -- pnpm dev`
+- **Environment Enforcement**: Prevents tests from running against servers without proper test environment
+- **Clean Shutdown**: Only stops servers it started, preserving your manual dev servers
 
-### Configuration
-The Playwright configuration is located at `src/test/e2e/config/playwright.config.ts`:
+### Environment Variable System
+Tests now use a dedicated `.env.test` file with `PLAYWRIGHT_RUNNING=true` to ensure proper test environment:
 
-```typescript
-webServer: {
-  command: 'pnpm dev',
-  url: 'http://localhost:3000',
-  reuseExistingServer: !process.env.CI,  // Reuse in local dev, fresh in CI
-  timeout: 120 * 1000,  // 2 minutes for server startup
-}
+```bash
+# .env.test
+PLAYWRIGHT_RUNNING=true
+# ... other test-specific environment variables
 ```
 
+### Configuration
+The server management is handled by `server-check.ts` utilities:
+- **`ensureServerRunning()`** - Starts server with `.env.test` if needed
+- **`checkServerTestEnvironment()`** - Validates running servers use test environment
+- **`isPlaywrightRunning()`** - Simple detection based on `PLAYWRIGHT_RUNNING` environment variable
+
 ### Benefits
-✅ **No Port Conflicts**: Works seamlessly with existing dev servers  
-✅ **Development Friendly**: Run tests while developing without server conflicts  
-✅ **CI Optimized**: Always starts fresh servers in CI environments  
-✅ **Zero Configuration**: Just run tests - server management is automatic  
-✅ **Smart Detection**: Automatically detects and reuses running development servers
+✅ **Test Environment Isolation**: Ensures tests always run with proper test configuration  
+✅ **Environment Variable Propagation**: Reliable loading of `.env.test` variables  
+✅ **Development Friendly**: Reuses compatible servers, starts new ones when needed  
+✅ **CI Optimized**: Always starts fresh servers with test environment in CI  
+✅ **Error Prevention**: Blocks tests from running against misconfigured servers  
+✅ **Zero Configuration**: Automatic environment detection and server management
 
 # Unit Testing
 
@@ -127,19 +132,20 @@ Provides utilities for testing TanStack Router components with proper context se
 ## Test Utilities
 
 ### `e2e/utils/server-check.ts`
-Development server management utilities:
+Development server management utilities with environment validation:
 
 **Functions:**
+- **`ensureServerRunning()`**: Starts development server with `.env.test` environment if needed
+- **`checkServerTestEnvironment()`**: Validates running servers have proper test environment variables
 - **Server Detection**: Automated checking for running development servers
-- **Port Management**: Smart port availability and conflict resolution
-- **Health Checks**: Server readiness validation for test execution
-- **Environment Setup**: Development environment preparation utilities
+- **Environment Validation**: Ensures servers are running with `PLAYWRIGHT_RUNNING=true`
 
 **Benefits:**
-- **Test Reliability**: Ensures stable server state before test execution
+- **Environment Isolation**: Guarantees tests run with proper test configuration
+- **Test Reliability**: Prevents tests from running against misconfigured servers
 - **Development Workflow**: Seamless integration with existing dev servers
-- **CI/CD Support**: Automated server management in continuous integration
-- **Error Prevention**: Proactive detection of server-related test issues
+- **CI/CD Support**: Automated server management with environment validation
+- **Error Prevention**: Proactive detection of environment and server issues
 
 # E2E Testing
 

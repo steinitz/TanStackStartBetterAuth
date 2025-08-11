@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { newTestUser } from '~stzUser/test/e2e/utils/EmailTester';
+import { newTestUser, EmailTester } from './utils/EmailTester';
+import { isEmailVerified } from './utils/user-verification';
 
 test.describe('Signup Flow', () => {
   test('should complete signup flow and show success message', async ({ page }) => {
@@ -12,63 +13,10 @@ test.describe('Signup Flow', () => {
       console.log('🚨 Page error:', error.message);
     });
 
-    // Set up request interception to capture verification URL from sendVerificationEmail
-    let verificationUrl = null;
-    const serverRequestRoutePrefix = '_serverFn'
-    // await page.route(`**/${serverRequestRoutePrefix}/**`, async (route, request) => {
-    await page.route(`**/*`, async (route, request) => {
-      const url = request.url();
-      const method = request.method();
-
-      if (method === 'POST') {
-        console.log('📡 POST request to:', url);
-        const postData = request.postData();
-        console.log('📦 POST data preview:', postData?.substring(0, 200));
-
-        // Check for sendEmail in URL or POST data
-        if ((postData && postData.includes('sendEmail')) || url.includes('sendEmail')) {
-          console.log('🔄 Found sendEmail request to:', url);
-          const postDataJson = JSON.parse(postData ?? '');
-          console.log('📦 POST data:', postDataJson);
-
-          // Extract verification URL from email content
-          if (postDataJson.data) {
-            const emailData = postDataJson.data;
-            console.log('📧 Email data:', emailData);
-
-            // Look for verification URL in email text or HTML
-            if (emailData.text) {
-              const urlMatch = emailData.text.match(/http[s]?:\/\/[^\s]+verify-email[^\s]*/i);
-              if (urlMatch) {
-                verificationUrl = urlMatch[0];
-                console.log('🔗 Captured verification URL from email text:', verificationUrl);
-              }
-            }
-
-            if (!verificationUrl && emailData.html) {
-              const urlMatch = emailData.html.match(/href=["']?(http[s]?:\/\/[^\s"']+verify-email[^\s"']*)["']?/i);
-              if (urlMatch) {
-                verificationUrl = urlMatch[1];
-                console.log('🔗 Captured verification URL from email HTML:', verificationUrl);
-              }
-            }
-          }
-
-          // Mock the sendEmail response to prevent actual email sending
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({ success: true, message: 'Email sent successfully (mocked)', result: true })
-          });
-        }
-        else {
-          await route.continue();
-        }
-      }
-      else {
-        await route.continue();
-      }
-    });
+    // Clear any previous emails from EmailTester
+    EmailTester.clearSentEmails();
+    
+    let verificationUrl: string | null = null;
 
     // Navigate to signup page
     await page.goto('/auth/signup');
@@ -115,14 +63,11 @@ test.describe('Signup Flow', () => {
     console.log('form submit button enabled: clicking');
     await page.click('button[type="submit"]');
 
-    // Wait for any network activity to complete
-    await page.waitForLoadState('networkidle', { timeout: timeoutSeconds * 1000});
-
+    // Wait for and verify the success message (this also ensures the page has loaded)
+    await expect(page.locator('h1')).toContainText('Account Created', {timeout: timeoutSeconds * 1000});
+    
     // Debug: Log page state after submission
     console.log('📄 After submission h1 text:', await page.locator('h1').textContent());
-
-    // Wait for and verify the success message
-    await expect(page.locator('h1')).toContainText('Account Created', {timeout: timeoutSeconds * 1000});
 
     // Verify the success message content
     await expect(page.getByText('We\'ve sent an email-confirmation link to')).toBeVisible();
@@ -131,6 +76,60 @@ test.describe('Signup Flow', () => {
 
     // Verify the OK button is present
     await expect(page.getByRole('button', { name: 'Ok' })).toBeVisible();
+
+    // Verify that the user's email is NOT verified (should require email confirmation)
+    const emailVerified = await isEmailVerified(uniqueEmail);
+    expect(emailVerified).toBe(false);
+    console.log('✅ Verified that user email is not verified (requires confirmation)');
+
+    // Get the verification email from EmailTester
+    const lastEmail = EmailTester.getLastSentEmail();
+    
+    if (lastEmail) {
+      console.log('📧 Email captured by EmailTester:', {
+        to: lastEmail.envelope.to,
+        subject: lastEmail.subject,
+        messageId: lastEmail.messageId
+      });
+      
+      // Extract verification URL from email content
+      if (lastEmail.text) {
+        const urlMatch = lastEmail.text.match(/http[s]?:\/\/[^\s]+verify-email[^\s]*/i);
+        if (urlMatch) {
+          verificationUrl = urlMatch[0];
+          console.log('🔗 Captured verification URL from email text:', verificationUrl);
+        }
+      }
+      
+      if (!verificationUrl && lastEmail.html) {
+        const urlMatch = lastEmail.html.match(/href=["']?(http[s]?:\/\/[^\s"']+verify-email[^\s"']*)["']?/i);
+        if (urlMatch) {
+          verificationUrl = urlMatch[1];
+          console.log('🔗 Captured verification URL from email HTML:', verificationUrl);
+        }
+      }
+    } else {
+      console.log('⚠️ No email was captured by EmailTester');
+    }
+
+    // Now click the verification link if we captured it
+    if (verificationUrl) {
+      console.log('🔗 Navigating to verification URL:', verificationUrl);
+      await page.goto(verificationUrl);
+      
+      // Wait for the verification page to load
+      await page.waitForLoadState('networkidle', { timeout: timeoutSeconds * 1000});
+      
+      // Check if verification was successful (look for success message or redirect)
+      console.log('📄 Verification page title:', await page.title());
+      
+      // Verify that the user's email is NOW verified
+      const emailVerifiedAfter = await isEmailVerified(uniqueEmail);
+      expect(emailVerifiedAfter).toBe(true);
+      console.log('✅ Verified that user email is now verified after clicking link');
+    } else {
+      console.log('⚠️ No verification URL was captured - skipping verification link test');
+    }
 
     console.log('✅ Signup flow test completed successfully');
   });

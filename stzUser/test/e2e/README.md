@@ -59,6 +59,45 @@ Core utilities for Ethereal Email testing:
 - **`EmailTester.verifyEmailSent()`** - Verifies emails were sent with specific criteria
 - **`EmailTester.cleanup()`** - Cleans up test session
 
+### `utils/user-verification.ts`
+User verification and database utilities for E2E testing:
+
+**Functions:**
+- **`findUserByEmail(email: string)`**: Locates user records in the test database
+- **`isUserVerified(email: string)`**: Checks if a user's email is verified
+- **`verifyUserEmail(email: string)`**: Marks a user's email as verified in the database
+- **`getUserVerificationStatus(email: string)`**: Returns detailed verification status
+
+**Database Integration:**
+- **SQLite Connection**: Direct database access for test data manipulation using better-sqlite3
+- **Environment Awareness**: Uses `isPlaywrightRunning()` to ensure test-only execution
+- **Transaction Safety**: Proper database transaction handling
+- **Test Isolation**: Safe operations that don't affect production data
+- **Error Handling**: Comprehensive error management for database operations
+
+**Use Cases:**
+- **Email Verification Testing**: Simulate email verification workflows in signup tests
+- **User State Management**: Set up specific user states for authentication testing
+- **Test Data Preparation**: Create verified users for authentication flow tests
+- **Debugging Support**: Inspect user verification states during test development
+- **Signup Flow Testing**: Complete end-to-end user registration and verification testing
+
+**Usage Example:**
+```typescript
+// In E2E tests - verify user email is not verified after signup
+const emailVerified = await isUserVerified('user@example.com');
+expect(emailVerified).toBe(false);
+
+// Get complete user data for verification
+const user = await findUserByEmail('user@example.com');
+expect(user?.emailVerified).toBe(false);
+
+// Simulate email verification for testing
+await verifyUserEmail('user@example.com');
+const verificationStatus = await getUserVerificationStatus('user@example.com');
+expect(verificationStatus.verified).toBe(true);
+```
+
 ### `contact-form-email.spec.ts`
 Comprehensive E2E tests for contact form email functionality:
 - **Email sending verification** - Confirms emails are sent when form is submitted
@@ -215,6 +254,17 @@ expect(EmailTestUtils.getSentEmails()).toHaveLength(0);
 
 ### Common Issues
 
+**"Error: connect ECONNREFUSED"**
+- The development server isn't running with proper test environment
+- Ensure `.env.test` file exists with `PLAYWRIGHT_RUNNING=true`
+- Start server manually with `pnpx dotenv-cli -e .env.test -- pnpm dev`
+- Check server environment with `checkServerTestEnvironment()`
+
+**"Server running without test environment"**
+- Tests detected a server without `PLAYWRIGHT_RUNNING=true`
+- Stop existing server and restart with `.env.test`: `pnpx dotenv-cli -e .env.test -- pnpm dev`
+- Verify `.env.test` file contains required environment variables
+
 **"Could not create test email account"**
 - Check internet connection
 - Ethereal service might be temporarily unavailable
@@ -229,6 +279,11 @@ expect(EmailTestUtils.getSentEmails()).toHaveLength(0);
 - Ethereal URLs expire after some time
 - Generate fresh test account for new test sessions
 - Check console output for correct URLs
+
+**"Environment variable issues"**
+- Verify `.env.test` file exists in project root
+- Check `isPlaywrightRunning()` returns `true` during tests
+- Ensure `dotenv-cli` is installed: `pnpm add -D dotenv-cli`
 
 ### Debug Tips
 
@@ -245,6 +300,39 @@ test('debug email flow', async ({ page }) => {
   console.log('Web interface:', EmailTestUtils.getWebInterfaceUrl());
 });
 ```
+
+## Server Management
+
+The E2E tests use robust server management with environment variable validation to ensure proper test execution:
+
+### How It Works
+- **Environment Validation**: Verifies servers are running with `.env.test` environment variables
+- **Smart Detection**: Checks if a test-configured server is already running on `http://localhost:3000`
+- **Automatic Startup**: Starts server with `pnpx dotenv-cli -e .env.test -- pnpm dev` if needed
+- **Environment Enforcement**: Prevents tests from running against misconfigured servers
+- **Clean Shutdown**: Only stops servers it started, preserving manual dev servers
+
+### Environment Variable System
+Tests require a dedicated `.env.test` file with `PLAYWRIGHT_RUNNING=true`:
+
+```bash
+# .env.test
+PLAYWRIGHT_RUNNING=true
+# ... other test-specific environment variables
+```
+
+### Server Utilities
+Server management is handled by `utils/server-check.ts`:
+- **`ensureServerRunning()`** - Starts server with `.env.test` if needed
+- **`checkServerTestEnvironment()`** - Validates running servers use test environment
+- **`isPlaywrightRunning()`** - Simple detection: `process.env.PLAYWRIGHT_RUNNING === 'true'`
+
+### Benefits
+- **Test Environment Isolation**: Guarantees proper test configuration
+- **Environment Variable Propagation**: Reliable loading of `.env.test` variables
+- **Development Friendly**: Reuses compatible servers, starts new ones when needed
+- **CI Optimized**: Always starts fresh servers with test environment
+- **Error Prevention**: Blocks tests from running against wrong environment
 
 ## Integration with CI/CD
 

@@ -34,7 +34,59 @@ interface TestEmailMessage {
   previewUrl?: string;
 }
 
-// Email testing utility class
+/**
+ * EmailTester - Ethereal Email testing utility class
+ * 
+ * PURPOSE:
+ * Provides email testing for E2E tests without sending real emails.
+ * Uses Ethereal Email (fake SMTP service) to capture and inspect emails.
+ * 
+ * PRACTICAL USAGE EXAMPLE:
+ * ```typescript
+ * // In your E2E test:
+ * test('contact form sends email', async ({ page }) => {
+ *   // 1. Create test account (once per test session)
+ *   await EmailTester.createTestAccount();
+ *   
+ *   // 2. Fill and submit contact form
+ *   await page.fill('[name="email"]', 'user@example.com');
+ *   await page.fill('[name="message"]', 'Test message');
+ *   await page.click('button[type="submit"]');
+ *   
+ *   // 3. Verify email was "sent" (captured by Ethereal)
+ *   const emails = EmailTester.getSentEmails();
+ *   expect(emails).toHaveLength(1);
+ *   expect(emails[0].envelope.to).toContain('support@yourapp.com');
+ *   
+ *   // 4. Optional: View email in browser
+ *   console.log('View email:', emails[0].previewUrl);
+ * });
+ * ```
+ * 
+ * SERVER-TEST INTEGRATION (Singleton Pattern):
+ * EmailTester uses static methods and properties, making it a singleton that both
+ * your server code and test assertions can access. During testing:
+ * 
+ * 1. Server-side: Replace your production email transport with EmailTester.sendTestEmail()
+ * 2. Test-side: Use EmailTester.getSentEmails() to verify emails were sent
+ * 3. Both share the same static sentEmails array for seamless integration
+ * 
+ * Example server integration:
+ * ```typescript
+ * // In your email service:
+ * if (process.env.NODE_ENV === 'test') {
+ *   await EmailTester.sendTestEmail(emailData);
+ * } else {
+ *   await productionTransporter.sendMail(emailData);
+ * }
+ * ```
+ * 
+ * EMAIL DATABASE FEATURE:
+ * The class maintains a "database" of sent emails (getSentEmails, getEmailsTo, etc.)
+ * This is designed for future theoretical needs where tests might need to verify
+ * multiple emails or complex email workflows. For most current testing scenarios,
+ * simply checking that an email was sent is sufficient.
+ */
 export class EmailTester {
   private static testAccount: EtherealTestAccount | null = null;
   private static transporter: Transporter | null = null;

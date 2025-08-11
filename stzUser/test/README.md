@@ -18,7 +18,7 @@ src/test/
 │   │   ├── playwright.config.ts # Playwright E2E test configuration
 │   │   └── global-setup.ts      # Global test setup and utilities
 │   ├── utils/
-│   │   ├── EmailTester.ts       # Ethereal Email testing utilities
+│   │   ├── EmailTester.ts       # Ethereal Email testing class
 │   │   ├── isPlaywrightRunning.ts # Playwright detection utility
 │   │   └── server-check.ts      # Development server utilities
 │   ├── contact-form-shows-email-success.spec.ts # Contact form email functionality tests
@@ -223,7 +223,7 @@ Comprehensive documentation for E2E testing including email testing setup and st
 - **Developer Friendly**: Easy setup and maintenance
 
 ### `e2e/utils/EmailTester.ts`
-Utility library for Ethereal Email testing:
+Class for Ethereal Email testing:
 
 **Core Functions:**
 - `EmailTester.createTestAccount()` - Creates temporary Ethereal accounts

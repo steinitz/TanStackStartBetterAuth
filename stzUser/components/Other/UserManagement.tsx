@@ -3,6 +3,7 @@ import {Spacer} from '~stzUtils/components/Spacer'
 import {useState, useEffect, useMemo} from 'react'
 import {admin, useSession} from '~stzUser/lib/auth-client'
 import {userRoles, userRolesType} from '~stzUser/constants'
+import {testConstants} from '~stzUser/test/constants'
 import {useReactTable, getCoreRowModel, getSortedRowModel, createColumnHelper, flexRender} from '@tanstack/react-table'
 
 // takes a database date and formats it as 5 Aug 25
@@ -42,6 +43,33 @@ export function UserManagement({users}) {
         console.error('Error deleting user:', error)
         // Show the specific error message from the server
         const errorMessage = error instanceof Error ? error.message : 'Failed to delete user'
+        alert(errorMessage)
+      }
+    }
+  }
+
+  const handleCleanTestUsers = async () => {
+    const testUsers = users.filter(user => 
+      user.name === testConstants.defaultUserName && 
+      (user.email.endsWith('@example.com') || user.email.endsWith(`@${testConstants.defaultUserDomain}`))
+    )
+
+    if (testUsers.length === 0) {
+      alert('No test users found to delete.')
+      return
+    }
+
+    if (confirm(`Are you sure you want to delete ${testUsers.length} test user(s)? This action cannot be undone.\n\nUsers to be deleted:\n${testUsers.map(u => `• ${u.name} (${u.email})`).join('\n')}`)) {
+      try {
+        // Delete users in sequence to avoid overwhelming the server
+        for (const user of testUsers) {
+          await useDeleteUserById({data: user.id})
+        }
+        // Refresh the page to show updated user list
+        window.location.reload()
+      } catch (error) {
+        console.error('Error deleting test users:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete test users'
         alert(errorMessage)
       }
     }
@@ -290,7 +318,27 @@ export function UserManagement({users}) {
   return (
     <main>
       <section>
-        <h3>Registered Users ({users.length})</h3>
+        <div style={{display: 'flex', justifyContent: 'center', gap: '2rem'}}>
+          <h3>Registered Users ({users.length})</h3>
+          {signedInUserHasAdminRole && (
+            <>
+              <div style={{marginBottom: '1rem'}}>
+                <button
+                  type="button"
+                  onClick={handleCleanTestUsers}
+                  style={{
+                    backgroundColor: "var(--color-warning, #ff9800)",
+                    borderColor: "var(--color-warning, #ff9800)",
+                    fontSize: '0.9rem',
+                    padding: '0.5rem 1rem'
+                  }}
+                >
+                  Clean Test Users
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <Spacer space={0} />
         {users.length === 0 ? (
           <p>No users registered yet.</p>

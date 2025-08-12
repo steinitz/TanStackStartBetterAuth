@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { EmailTester } from './utils/EmailTester';
+import { testConstants } from '~stzUser/test/constants';
 import { getUserByEmail, isEmailVerified } from './utils/user-verification';
 
 test.describe('Email Verification Link Extraction', () => {
@@ -25,7 +26,7 @@ test.describe('Email Verification Link Extraction', () => {
     // Fill out signup form with test email
     await page.fill('[name="email"]', testEmail);
     await page.fill('[name="password"]', 'TestPassword123!');
-    await page.fill('[name="name"]', 'Test User');
+    await page.fill('[name="name"]', testConstants.defaultUserName);
     
     // Submit signup form
     await page.click('button[type="submit"]');

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { newTestUser, EmailTester } from './utils/EmailTester';
+import { testConstants } from '~stzUser/test/constants';
 import { isEmailVerified } from './utils/user-verification';
 
 test.describe('Signup Flow', () => {
@@ -21,8 +22,6 @@ test.describe('Signup Flow', () => {
     // Navigate to signup page
     await page.goto('/auth/signup');
 
-
-
     // Check if we're on the signup page by looking for the form
     await expect(page.locator('form')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
@@ -32,7 +31,7 @@ test.describe('Signup Flow', () => {
 
     // Fill out the signup form
     await page.fill('input[name="email"]', uniqueEmail);
-    await page.fill('input[name="name"]', 'Test User');
+    await page.fill('input[name="name"]', testConstants.defaultUserName);
     await page.fill('input[name="password"]', 'TestPassword123!');
 
     // Read back the values before submission
@@ -40,8 +39,6 @@ test.describe('Signup Flow', () => {
     const email = await page.inputValue('input[name="email"]');
     const name = await page.inputValue('input[name="name"]');
     const password = await page.inputValue('input[name="password"]');
-
-
 
     // Add form submission event listener
     await page.evaluate(() => {
@@ -61,8 +58,6 @@ test.describe('Signup Flow', () => {
 
     // Wait for and verify the success message (this also ensures the page has loaded)
     await expect(page.locator('h1')).toContainText('Account Created', {timeout: timeoutSeconds * 1000});
-    
-
 
     // Verify the success message content
     await expect(page.getByText('We\'ve sent an email-confirmation link to')).toBeVisible();
@@ -76,17 +71,13 @@ test.describe('Signup Flow', () => {
     const emailVerified = await isEmailVerified(uniqueEmail);
     expect(emailVerified).toBe(false);
 
-
     // Get the verification email from EmailTester
     const lastEmail = EmailTester.getLastSentEmail();
     
     if (lastEmail) {
-
-      
       // Extract verification URL using EmailTester's built-in method
       verificationUrl = EmailTester.getFirstVerificationLink(uniqueEmail);
       if (verificationUrl) {
-
       }
     } else {
       console.warn('⚠️ No email was captured by EmailTester');
@@ -94,22 +85,15 @@ test.describe('Signup Flow', () => {
 
     // Now click the verification link if we captured it
     if (verificationUrl) {
-
       await page.goto(verificationUrl);
       
       // Wait for the verification page to load
       await page.waitForLoadState('networkidle', { timeout: timeoutSeconds * 1000});
-      
-
-      
       // Verify that the user's email is NOW verified
       const emailVerifiedAfter = await isEmailVerified(uniqueEmail);
       expect(emailVerifiedAfter).toBe(true);
-
     } else {
       console.warn('⚠️ No verification URL was captured - skipping verification link test');
     }
-
-
   });
 });

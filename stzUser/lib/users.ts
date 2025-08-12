@@ -65,7 +65,7 @@ export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
 }
 
 export async function deleteUserById(userId: string, headers: Headers) {
-  console.log('userId', userId)
+  console.log('deleteUserById', userId)
   
   try {
     // Get current session

@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { testConstants } from '~stzUser/test/constants';
 
 // Ethereal Email test account interface
 interface EtherealTestAccount {
@@ -397,7 +398,7 @@ export const createMockEmailServer = () => {
  */
 export function newTestUser(): string {
   const timestamp = Date.now();
-  return `test${timestamp}@ethereal.email`;
+  return `test${timestamp}@${testConstants.defaultUserDomain}`;
 }
 
 /**
@@ -405,7 +406,7 @@ export function newTestUser(): string {
  * @param name Optional name for the test user
  * @returns Test user object with unique email
  */
-export function createTestUser(name: string = 'Test User') {
+export function createTestUser(name: string = testConstants.defaultUserName) {
   return {
     name,
     email: newTestUser(),

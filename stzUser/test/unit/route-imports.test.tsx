@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
+import { testConstants } from '~stzUser/test/constants';
 
 // Mock all external dependencies before importing route components
 vi.mock('~stzUser/lib/users-client', () => ({
@@ -46,7 +47,7 @@ describe('Route Import Tests', () => {
     mockUseLoaderData.mockReturnValue({
       count: 42,
       users: [
-        { id: '1', name: 'Test User', email: process.env.SMTP_REPLY_TO_ADDRESS },
+        { id: '1', name: testConstants.defaultUserName, email: process.env.SMTP_REPLY_TO_ADDRESS },
       ],
     })
   })

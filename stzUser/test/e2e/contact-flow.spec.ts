@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {contactSentConfirmationH1Default} from '~stzUser/components/Other/ContactSent';
+import { testConstants } from '~stzUser/test/constants';
 
 test.describe('Contact Form Success Message', () => {
   test('should show success message after form submission', async ({ page }) => {
@@ -52,8 +53,8 @@ test.describe('Contact Form Success Message', () => {
     console.log('📄 Current h1 text:', await page.locator('h1').textContent());
 
     // Fill out the contact form
-    await page.fill('input[name="name"]', 'Test User');
-    await page.fill('input[name="email"]', 'playwright-test@ethereal.email');
+    await page.fill('input[name="name"]', testConstants.defaultUserName);
+    await page.fill('input[name="email"]', `playwright-test@${testConstants.defaultUserDomain}`);
     await page.fill('textarea[name="message"]', 'This is a test message from Playwright.');
 
     // read back the values before submission

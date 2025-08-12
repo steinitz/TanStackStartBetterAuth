@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { testConstants } from '~stzUser/test/constants';
 import React from 'react'
 
 // Mock the user management functions
@@ -32,7 +33,7 @@ vi.mock('@tanstack/react-router', () => ({
     useLoaderData: () => ({
       count: 5,
       users: [
-        { id: '1', name: 'Test User', email: 'test@example.com' },
+        { id: '1', name: testConstants.defaultUserName, email: 'test@example.com' },
       ],
     }),
   })),

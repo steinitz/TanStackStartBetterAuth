@@ -95,21 +95,10 @@ test.describe('Signup Flow', () => {
         console.log('  HTML:', lastEmail.html);
       }
       
-      // Extract verification URL from email content
-      if (lastEmail.text) {
-        const urlMatch = lastEmail.text.match(/http[s]?:\/\/[^\s]+verify-email[^\s]*/i);
-        if (urlMatch) {
-          verificationUrl = urlMatch[0];
-          console.log('🔗 Captured verification URL from email text:', verificationUrl);
-        }
-      }
-      
-      if (!verificationUrl && lastEmail.html) {
-        const urlMatch = lastEmail.html.match(/href=["']?(http[s]?:\/\/[^\s"']+verify-email[^\s"']*)["']?/i);
-        if (urlMatch) {
-          verificationUrl = urlMatch[1];
-          console.log('🔗 Captured verification URL from email HTML:', verificationUrl);
-        }
+      // Extract verification URL using EmailTester's built-in method
+      verificationUrl = EmailTester.getFirstVerificationLink(uniqueEmail);
+      if (verificationUrl) {
+        console.log('🔗 Captured verification URL:', verificationUrl);
       }
     } else {
       console.log('⚠️ No email was captured by EmailTester');

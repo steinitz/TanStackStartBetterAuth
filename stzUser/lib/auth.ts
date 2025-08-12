@@ -97,10 +97,7 @@ export const auth = betterAuth({
       // - url: the verification URL
       // - text/html: the email content
 
-      // console.log('🔗 Email verification URL:', url);
-
-      // Add Playwright detection logging for signup flow debugging
-      console.log('🔍 sendVerificationEmail called, isPlaywrightRunning():', isPlaywrightRunning());
+      // Check if we're in a Playwright test environment
       if (isPlaywrightRunning()) {
         console.log('🎭 Playwright test detected - using EmailTester for verification email');
         
@@ -121,11 +118,7 @@ export const auth = betterAuth({
           html,
         });
         
-        console.log('📧 Email verification sent via EmailTester:', {
-          userEmail: user.email,
-          userId: user.id,
-          verificationUrl: url
-        });
+
         return; // Skip production email sending during tests
       }
 

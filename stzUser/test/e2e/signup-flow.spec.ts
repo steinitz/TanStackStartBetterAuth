@@ -86,11 +86,14 @@ test.describe('Signup Flow', () => {
     const lastEmail = EmailTester.getLastSentEmail();
     
     if (lastEmail) {
-      console.log('📧 Email captured by EmailTester:', {
-        to: lastEmail.envelope.to,
-        subject: lastEmail.subject,
-        messageId: lastEmail.messageId
-      });
+      // Log the email body content for debugging
+      console.log('📧 Email body content:');
+      if (lastEmail.text) {
+        console.log('  Text:', lastEmail.text);
+      }
+      if (lastEmail.html) {
+        console.log('  HTML:', lastEmail.html);
+      }
       
       // Extract verification URL from email content
       if (lastEmail.text) {

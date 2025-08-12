@@ -1,5 +1,8 @@
 import type {Transporter} from 'nodemailer';
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 // Ethereal Email test account interface
 interface EtherealTestAccount {
@@ -67,13 +70,14 @@ interface TestEmailMessage {
  * });
  * ```
  * 
- * SERVER-TEST INTEGRATION (Singleton Pattern):
- * EmailTester uses static methods and properties, making it a singleton that both
- * your server code and test assertions can access. During testing:
+ * SERVER-TEST INTEGRATION (Cross-Process Storage):
+ * EmailTester uses static methods with file-based storage, enabling both
+ * your server code and test assertions to access the same email data across
+ * separate JavaScript processes. During testing:
  * 
  * 1. Server-side: Replace your production email transport with EmailTester.sendTestEmail()
  * 2. Test-side: Use EmailTester.getSentEmails() to verify emails were sent
- * 3. Both share the same static sentEmails array for seamless integration
+ * 3. Both share email data through temporary file storage for cross-process access
  * 
  * Example server integration:
  * ```typescript
@@ -95,6 +99,33 @@ export class EmailTester {
   private static testAccount: EtherealTestAccount | null = null;
   private static transporter: Transporter | null = null;
   private static sentEmails: TestEmailMessage[] = [];
+  private static emailsFilePath: string = path.join(os.tmpdir(), 'playwright-test-emails.json');
+
+  /**
+   * Reads emails from the shared file system
+   */
+  private static readEmailsFromFile(): TestEmailMessage[] {
+    try {
+      if (fs.existsSync(this.emailsFilePath)) {
+        const data = fs.readFileSync(this.emailsFilePath, 'utf8');
+        return JSON.parse(data);
+      }
+    } catch (error) {
+      console.warn('Failed to read emails from file:', error);
+    }
+    return [];
+  }
+
+  /**
+   * Writes emails to the shared file system
+   */
+  private static writeEmailsToFile(emails: TestEmailMessage[]): void {
+    try {
+      fs.writeFileSync(this.emailsFilePath, JSON.stringify(emails, null, 2));
+    } catch (error) {
+      console.error('Failed to write emails to file:', error);
+    }
+  }
 
   /**
    * Creates a temporary Ethereal Email test account
@@ -177,7 +208,13 @@ export class EmailTester {
         html: emailData.html,
       };
 
+      // Store in memory for backward compatibility
       this.sentEmails.push(testMessage);
+      
+      // Also store in file system for cross-process access
+      const allEmails = this.readEmailsFromFile();
+      allEmails.push(testMessage);
+      this.writeEmailsToFile(allEmails);
 
       console.log('✅ Test email sent:', {
         messageId: testMessage.messageId,
@@ -195,42 +232,56 @@ export class EmailTester {
 
   /**
    * Gets all emails sent during the current test session
+   * Reads from file system to support cross-process access
    */
   static getSentEmails(): TestEmailMessage[] {
-    return [...this.sentEmails];
+    const fileEmails = this.readEmailsFromFile();
+    // Merge with in-memory emails for backward compatibility
+    const allEmails = [...this.sentEmails, ...fileEmails];
+    // Remove duplicates based on messageId
+    const uniqueEmails = allEmails.filter((email, index, arr) => 
+      arr.findIndex(e => e.messageId === email.messageId) === index
+    );
+    return uniqueEmails;
   }
 
   /**
    * Gets the most recently sent email
+   * Uses file system to support cross-process access
    */
   static getLastSentEmail(): TestEmailMessage | null {
-    return this.sentEmails.length > 0 ? this.sentEmails[this.sentEmails.length - 1] : null;
+    const allEmails = this.getSentEmails();
+    return allEmails.length > 0 ? allEmails[allEmails.length - 1] : null;
   }
 
   /**
    * Finds emails by recipient
+   * Uses file system to support cross-process access
    */
   static getEmailsTo(recipient: string): TestEmailMessage[] {
-    return this.sentEmails.filter(email =>
+    return this.getSentEmails().filter(email =>
       email.envelope.to.includes(recipient)
     );
   }
 
   /**
    * Finds emails by sender
+   * Uses file system to support cross-process access
    */
   static getEmailsFrom(sender: string): TestEmailMessage[] {
-    return this.sentEmails.filter(email =>
+    return this.getSentEmails().filter(email =>
       email.envelope.from === sender
     );
   }
 
   /**
    * Clears the sent emails cache (useful between tests)
+   * Clears both memory and file system storage
    */
   static clearSentEmails(): void {
     this.sentEmails = [];
-    console.log('🧹 Cleared sent emails cache');
+    this.writeEmailsToFile([]);
+    console.log('🧹 Cleared sent emails cache (memory and file)');
   }
 
   /**
@@ -255,6 +306,7 @@ export class EmailTester {
 
   /**
    * Verifies that an email matching the given criteria was sent
+   * Uses file system to support cross-process access
    */
   static verifyEmailSent(criteria: {
     to?: string;
@@ -263,7 +315,7 @@ export class EmailTester {
     textContains?: string;
     htmlContains?: string;
   }): boolean {
-    return this.sentEmails.some(email => {
+    return this.getSentEmails().some(email => {
       if (criteria.to && !email.envelope.to.includes(criteria.to)) return false;
       if (criteria.from && email.envelope.from !== criteria.from) return false;
       if (criteria.subject && !email.subject.includes(criteria.subject)) return false;

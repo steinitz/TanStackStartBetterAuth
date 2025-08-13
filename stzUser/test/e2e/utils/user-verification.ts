@@ -1,4 +1,6 @@
 import { appDatabase } from '~stzUser/lib/database';
+import { newTestUser } from './EmailTester';
+import { testConstants } from '~stzUser/test/constants';
 
 /**
  * Utility functions for checking user verification status in E2E tests
@@ -66,5 +68,35 @@ export async function getUserByEmail(email: string): Promise<{
   } catch (error) {
     console.error('Error getting user by email:', error);
     return null;
+  }
+}
+
+/**
+ * Create a verified test user directly in the database
+ * Bypasses the signup flow for test independence
+ * @param options - Optional user data overrides
+ * @returns The created user's email address
+ */
+export async function createVerifiedTestUser(options?: {
+  name?: string;
+  email?: string;
+}): Promise<string> {
+  const email = options?.email || newTestUser();
+  const name = options?.name || testConstants.defaultUserName;
+  
+  try {
+    // Insert user directly into database with emailVerified = 1
+    const stmt = appDatabase.prepare(`
+      INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt)
+      VALUES (?, ?, ?, 1, datetime('now'), datetime('now'))
+    `);
+    
+    const userId = crypto.randomUUID();
+    stmt.run(userId, name, email);
+    
+    return email;
+  } catch (error) {
+    console.error('Error creating verified test user:', error);
+    throw error;
   }
 }

@@ -41,6 +41,31 @@ export const auth = betterAuth({
       sendChangeEmailVerification: async (
         { user, newEmail, url }
       ) => {
+        // Check if we're in a Playwright test environment
+        if (isPlaywrightRunning()) {
+          console.log('🎭 Playwright test detected - using EmailTester for change email verification');
+          
+          let subject: string = verifyChangeEmailSubject
+          let text: string = `${verifyChangeEmailInstructions} ${newEmail} 
+          
+          ${verifyChangeEmailLinkText}
+          ${url}`
+
+          let html: string = `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
+                              <br />
+                              <a href=${url}>${verifyChangeEmailLinkText}</a>`
+
+          await EmailTester.sendTestEmail({
+            to: newEmail, // Send to the new email address, not the old one
+            from: from || 'test@example.com',
+            subject,
+            text,
+            html,
+          });
+          
+          return; // Skip production email sending during tests
+        }
+
         // Send verification email to the NEW email address for email changes
         if (!mailSender) return
         await mailSender.sendMail({

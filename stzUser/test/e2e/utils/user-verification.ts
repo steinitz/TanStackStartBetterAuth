@@ -1,6 +1,7 @@
 import { appDatabase } from '~stzUser/lib/database';
 import { newTestUser } from './EmailTester';
 import { testConstants } from '~stzUser/test/constants';
+import { signUp } from '~stzUser/lib/auth-client';
 
 /**
  * Utility functions for checking user verification status in E2E tests
@@ -72,27 +73,47 @@ export async function getUserByEmail(email: string): Promise<{
 }
 
 /**
- * Create a verified test user directly in the database
- * Bypasses the signup flow for test independence
+ * Create a verified test user using the signup flow
+ * Uses signUp.email followed by manual email verification
  * @param options - Optional user data overrides
  * @returns The created user's email address
  */
 export async function createVerifiedTestUser(options?: {
   name?: string;
   email?: string;
+  password?: string;
 }): Promise<string> {
   const email = options?.email || newTestUser();
   const name = options?.name || testConstants.defaultUserName;
+  const password = options?.password || testConstants.defaultPassword;
   
   try {
-    // Insert user directly into database with emailVerified = 1
+    // Create user using Better Auth signup
+    const { data, error } = await signUp.email({
+      email,
+      name,
+      password,
+    });
+    
+    if (error) {
+      console.error('Error creating test user via signup:', error);
+      throw new Error(`Signup failed: ${error.message}`);
+    }
+    
+    if (!data?.user?.id) {
+      throw new Error('Signup succeeded but no user ID returned');
+    }
+    
+    // Manually verify the email in the database
     const stmt = appDatabase.prepare(`
-      INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt)
-      VALUES (?, ?, ?, 1, datetime('now'), datetime('now'))
+      UPDATE user SET emailVerified = 1 WHERE id = ?
     `);
     
-    const userId = crypto.randomUUID();
-    stmt.run(userId, name, email);
+    const result = stmt.run(data.user.id);
+    
+    if (result.changes === 0) {
+      throw new Error('Failed to verify email - user not found in database');
+    }
     
     return email;
   } catch (error) {

@@ -97,7 +97,9 @@ export async function createVerifiedTestUser(options?: {
     
     if (error) {
       console.error('Error creating test user via signup:', error);
-      throw new Error(`Signup failed: ${error.message}`);
+      console.error('Error type:', typeof error);
+      console.error('Error keys:', Object.keys(error));
+      throw new Error(`Signup failed: ${JSON.stringify(error)}`);
     }
     
     if (!data?.user?.id) {

@@ -122,31 +122,6 @@ export const auth = betterAuth({
       // - url: the verification URL
       // - text/html: the email content
 
-      // Check if we're in a Playwright test environment
-      if (isPlaywrightRunning()) {
-        console.log('🎭 Playwright test detected - using EmailTester for verification email');
-        
-        let subject: string = verifyEmailSubject
-        let text: string = `${verifyEmailInstructions} ${user.email} 
-        
-        ${verifyEmailLinkText}
-        ${url}`
-
-        let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
-                            <a href=${url}>${verifyEmailLinkText}</a>`
-
-        await EmailTester.sendTestEmail({
-          to: user.email,
-          from: from || 'test@example.com',
-          subject,
-          text,
-          html,
-        });
-        
-
-        return; // Skip production email sending during tests
-      }
-
       if (!mailSender) {
         console.error('Better Auth email verification: no mail sender');
         return
@@ -155,23 +130,50 @@ export const auth = betterAuth({
       // only send the email if it's not a change email request
       // this is fragile but works for now because the url includes 'callbackURL=/auth/profile'
       const isEmailChange = request?.url.includes(routeStrings.profile)
-      if (!isEmailChange) {
-        let subject: string = verifyEmailSubject
-        let text: string = `${verifyEmailInstructions} ${user.email} 
-        
-        ${verifyEmailLinkText}
-        ${url}`
+      if (!isEmailChange || isPlaywrightRunning()) {
+        // Check if we're in a Playwright test environment
+        if (isPlaywrightRunning()) {
+          console.log('🎭 Playwright test detected - using EmailTester for verification email');
+          
+          let subject: string = verifyEmailSubject
+          let text: string = `${verifyEmailInstructions} ${user.email} 
+          
+          ${verifyEmailLinkText}
+          ${url}`
 
-        let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
-                            <a href=${url}>${verifyEmailLinkText}</a>`
+          let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
+                              <a href=${url}>${verifyEmailLinkText}</a>`
 
-        await mailSender.sendMail({
-          to: user.email,
-          from,
-          subject,
-          text,
-          html,
-        })
+          await EmailTester.sendTestEmail({
+            to: user.email,
+            from: from || 'test@example.com',
+            subject,
+            text,
+            html,
+          });
+          
+
+          return; // Skip production email sending during tests
+        }
+
+        if (!isEmailChange) {
+          let subject: string = verifyEmailSubject
+          let text: string = `${verifyEmailInstructions} ${user.email} 
+          
+          ${verifyEmailLinkText}
+          ${url}`
+
+          let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
+                              <a href=${url}>${verifyEmailLinkText}</a>`
+
+          await mailSender.sendMail({
+            to: user.email,
+            from,
+            subject,
+            text,
+            html,
+          })
+        }
       }
     }
   },

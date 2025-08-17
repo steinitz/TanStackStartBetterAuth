@@ -67,13 +67,25 @@ test.describe('Change Email Flow', () => {
     
     // Step 2: Navigate to profile and initiate email change
     await page.goto('http://localhost:3000/auth/profile');
-    await page.fill('input[type="email"]', newEmailAddress);
-    await page.click('button[type="submit"]');
     
-    // console.log(`🔄 Email change initiated: ${originalEmailAddress} → ${newEmailAddress}`);
+    // Verify form elements exist before interacting with them
+    await expect(page.locator('[data-testid="profile-form"]')).toBeVisible();
+    await expect(page.locator('[data-testid="save-changes-button"]')).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    
+    // Listen for console messages to debug form submission
+    page.on('console', msg => {
+      if (msg.text().includes('profile.handleSaveChanges') || msg.text().includes('changeEmail')) {
+        console.log('🔍 Browser console:', msg.text());
+      }
+    });
+    
+    await page.fill('input[type="email"]', newEmailAddress);
+    console.log(`🔄 Email change initiated: ${originalEmailAddress} → ${newEmailAddress}`);
+    await page.click('[data-testid="save-changes-button"]');
     
     // Step 3: Wait for email change processing
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
     
     // Try multiple selectors to find the dialog
     const dialogVisible = await page.locator('dialog').isVisible().catch(() => false);

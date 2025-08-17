@@ -64,32 +64,61 @@ export const Profile = () => {
   ) => {
     const fields = sharedFormSubmission(event)
     const newEmail = fields.email as string
-    console.log('profile.handleSaveChanges: newEmail', newEmail)
-
     const isValid = validateFormFields(fields as ProfileData)
-    console.log('profile.handleSaveChanges: isValid', isValid)
 
     if (isValid) {
       if (fields.email !== email) {
         // note: BetterAuth supports email confirmation for changing email.
         setShouldShowEmailChangeSpinner(true)
         setNewEmailAddress((newEmail))
-        const {data, error} = await changeEmail({
-          newEmail,
-          callbackURL: routeStrings.profile
-        })
-        console.log('profile.handleSaveChanges', {data, error})
+        
+         let data, error;
+         try {
+           console.log('profile.handleSaveChanges: About to await changeEmail...')
+           const result = await changeEmail({
+             newEmail,
+             callbackURL: routeStrings.profile
+           })
+           console.log('profile.handleSaveChanges: changeEmail returned:', result)
+           data = result.data
+           error = result.error
+         } catch (e) {
+           console.log('profile.handleSaveChanges: changeEmail threw exception:', e)
+           error = { message: `Network error: ${e?.message || 'Unknown error'}` }
+           data = null
+         }
+        console.log('profile.handleSaveChanges: changeEmail COMPLETED')
+        console.log('profile.handleSaveChanges: changeEmail raw response - data:', data)
+        console.log('profile.handleSaveChanges: changeEmail raw response - error:', error)
+        console.log('profile.handleSaveChanges: changeEmail data type:', typeof data)
+        console.log('profile.handleSaveChanges: changeEmail error type:', typeof error)
+        
         if (error) {
-          console.log('handleSaveChanges', {error})
+          console.log('profile.handleSaveChanges: ERROR BRANCH - error detected')
+          console.log('profile.handleSaveChanges: error object details:', error)
+          console.log('profile.handleSaveChanges: error.message:', error.message)
           alert('Error changing email address')
           setEmailChangeError(error.message as string)
         } else {
+          console.log('profile.handleSaveChanges: SUCCESS BRANCH - no error')
+          console.log('profile.handleSaveChanges: opening confirmation dialog')
+          console.log('profile.handleSaveChanges: dialog ref:', checkForEmailChangeLinkConfirmationDialogRef.current)
           checkForEmailChangeLinkConfirmationDialogRef.current.setIsOpen(true)
         }
+        
+        console.log('profile.handleSaveChanges: setting spinner to false')
         setShouldShowEmailChangeSpinner(false)
+        console.log('profile.handleSaveChanges: EMAIL CHANGE PROCESS COMPLETE')
+      } else {
+        console.log('profile.handleSaveChanges: NO EMAIL CHANGE - emails are the same')
       }
+    } else {
+      console.log('profile.handleSaveChanges: VALIDATION FAILED - not proceeding')
     }
+    console.log('profile.handleSaveChanges: FUNCTION EXIT')
   }
+  // The comment below seems wrong - sendVerificationEmail email sending is disabled for change email...
+  // TODO: Clarify and cleanup
 
   // COMMENTED OUT: No longer needed since sendChangeEmailVerification is disabled
   // The unified sendVerificationEmail handles email change verification directly
@@ -143,6 +172,7 @@ export const Profile = () => {
       <section>
         {session?.user ?
           <form
+            data-testid="profile-form"
             onSubmit={handleSaveChanges}
             // style={{maxWidth: '350px'}}
           >
@@ -174,6 +204,7 @@ export const Profile = () => {
               </button>
               <Spacer orientation="horizontal" space={1}/>
               <button
+                data-testid="save-changes-button"
                 type="submit"
               >
                 Save Changes

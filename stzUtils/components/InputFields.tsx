@@ -50,6 +50,7 @@ const InputField = ({
   defaultValue,
   validationErrors,
   tooltip,
+  type,
 }: {
   fieldLabel: string,
   subtext?: string,
@@ -57,6 +58,7 @@ const InputField = ({
   defaultValue?: string
   validationErrors: ValidationErrors
   tooltip?: string
+  type?: string
 }) => {
   const hasTooltip = !!tooltip && tooltip.length > 0;
   return <div className={hasTooltip ? 'tooltip' : ''}>
@@ -66,6 +68,7 @@ const InputField = ({
         fieldName={fieldName}
         validationErrors={validationErrors}
         defaultValue={defaultValue}
+        type={type}
       />
     </label>
     <span className={hasTooltip ? 'tooltiptext' : ''}>
@@ -82,6 +85,7 @@ export const EmailInput = ({validationErrors, defaultValue}: {
     fieldName="email"
     defaultValue={defaultValue}
     validationErrors={validationErrors}
+    type="email"
   />
 }
 

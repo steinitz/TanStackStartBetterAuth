@@ -17,11 +17,12 @@ export const errorMessageFor = (fieldName: string, validationErrors: ValidationE
 export function ValidatedInput(props: {
   fieldName: string,
   validationErrors: ValidationErrors,
-  defaultValue?: string
+  defaultValue?: string,
+  type?: string
 }) {
   return <>
     <input
-      type="text"
+      type={props.type || "text"}
       name={props.fieldName}
       defaultValue={props.defaultValue}
     />

@@ -2,21 +2,9 @@ import { test, expect } from '@playwright/test';
 import { createVerifiedTestUser, isEmailVerified } from './utils/user-verification';
 import { testConstants } from '~stzUser/test/constants';
 import { EmailTester } from './utils/EmailTester';
+import { signInUser } from './utils/testActions';
 import type { Page } from '@playwright/test';
 
-/**
- * Helper function to authenticate a user
- * Reusable for multiple test flows (change email, change password, etc.)
- */
-async function authenticateUser(page: Page, email: string, password: string): Promise<void> {
-  await page.goto('http://localhost:3000/auth/signin');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', password);
-  await page.click('button[type="submit"]');
-  
-  // Wait for navigation to complete
-  await page.waitForTimeout(1000);
-}
 
 /**
  * Helper function to find email by subject fragment
@@ -67,12 +55,15 @@ test.describe('Change Email Flow', () => {
     const originalEmailAddress = await createVerifiedTestUser();
     const newEmailAddress = `new-${originalEmailAddress}`;
     
-    // Verify initial state
-    expect(await isEmailVerified(originalEmailAddress)).toBe(true);
+    // Verify initial state - manually check email verification status
+    // NOTE: Better Auth may not require email verification for address changes 
+    // if the user's original email address is not verified
+    const isOriginalEmailVerified = await isEmailVerified(originalEmailAddress);
+    expect(isOriginalEmailVerified).toBe(true);
     console.log(`✅ Test user created: ${originalEmailAddress}`);
     
-    // Step 1: Authenticate user
-    await authenticateUser(page, originalEmailAddress, testConstants.defaultPassword);
+    // Step 1: Sign in user
+    await signInUser(page, originalEmailAddress, testConstants.defaultPassword);
     
     // Step 2: Navigate to profile and initiate email change
     await page.goto('http://localhost:3000/auth/profile');
@@ -99,10 +90,35 @@ test.describe('Change Email Flow', () => {
     
     // console.log(`✅ Email change flow initiated for: ${newEmailAddress}`);
     
-    // Step 4: Verify email change verification was sent
-    const verificationEmail = findEmailBySubject([newEmailAddress, originalEmailAddress]);
+    // Step 4: Verify email change verification was sent ONLY to new address
+    const allSentEmails = EmailTester.getSentEmails();
     
-    // Fail test if no verification email found - this indicates a real problem
+    // DEBUG: Log all sent emails to understand what's happening
+    console.log('📧 All sent emails during test:', allSentEmails.map(email => ({
+      to: email.envelope.to,
+      subject: email.subject
+    })));
+    
+    // Find emails sent to the new email address
+    const newEmailVerifications = allSentEmails.filter(email => 
+      email.envelope.to.includes(newEmailAddress) && 
+      email.subject.toLowerCase().includes('verify')
+    );
+    
+    // Find emails sent to the original email address
+    const oldEmailVerifications = allSentEmails.filter(email => 
+      email.envelope.to.includes(originalEmailAddress) && 
+      email.subject.toLowerCase().includes('verify')
+    );
+    
+    console.log(`📊 Email verification counts: new=${newEmailVerifications.length}, old=${oldEmailVerifications.length}`);
+    
+    // REGRESSION TEST: Verify fragile auth.ts logic works correctly
+    // Only new email address should receive verification email, old email address should NOT
+    expect(newEmailVerifications.length).toBe(1);
+    expect(oldEmailVerifications.length).toBe(0);
+    
+    const verificationEmail = newEmailVerifications[0];
     expect(verificationEmail).toBeTruthy();
     
     // console.log('✅ Verification email found:', {

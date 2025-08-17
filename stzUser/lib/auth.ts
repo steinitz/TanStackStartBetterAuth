@@ -4,6 +4,7 @@ import { reactStartCookies } from "better-auth/react-start"
 import { admin } from "better-auth/plugins"
 import { createAccessControl } from "better-auth/plugins/access"
 import { adminAc } from "better-auth/plugins/admin/access"
+import { oneTimeToken } from "better-auth/plugins/one-time-token"
 import nodemailer, { type Transport } from "nodemailer"
 import { transportOptions } from "../../stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
@@ -32,7 +33,6 @@ const mailSender = transportOptions ? nodemailer.createTransport(transportOption
 
 // Article about setting up User Roles - https://www.answeroverflow.com/m/1360090099764826232
 
-
 export const auth = betterAuth({
   database: appDatabase,
   user: {
@@ -41,6 +41,8 @@ export const auth = betterAuth({
       sendChangeEmailVerification: async (
         { user, newEmail, url }
       ) => {
+        console.log('🔧 sendChangeEmailVerification called:', { user: user.email, newEmail, url });
+        console.log('🔧 DEBUG: This function should send email to NEW address:', newEmail);
         // Check if we're in a Playwright test environment
         if (isPlaywrightRunning()) {
           console.log('🎭 Playwright test detected - using EmailTester for change email verification');
@@ -129,8 +131,11 @@ export const auth = betterAuth({
 
       // only send the email if it's not a change email request
       // this is fragile but works for now because the url includes 'callbackURL=/auth/profile'
+      console.log('🔍 DEBUG: request.url =', request?.url);
+      console.log('🔍 DEBUG: routeStrings.profile =', routeStrings.profile);
       const isEmailChange = request?.url.includes(routeStrings.profile)
-      if (!isEmailChange || isPlaywrightRunning()) {
+      console.log('🔍 DEBUG: isEmailChange =', isEmailChange);
+      if (!isEmailChange) {
         // Check if we're in a Playwright test environment
         if (isPlaywrightRunning()) {
           console.log('🎭 Playwright test detected - using EmailTester for verification email');
@@ -152,28 +157,25 @@ export const auth = betterAuth({
             html,
           });
           
-
           return; // Skip production email sending during tests
         }
 
-        if (!isEmailChange) {
-          let subject: string = verifyEmailSubject
-          let text: string = `${verifyEmailInstructions} ${user.email} 
-          
-          ${verifyEmailLinkText}
-          ${url}`
+        let subject: string = verifyEmailSubject
+        let text: string = `${verifyEmailInstructions} ${user.email} 
+        
+        ${verifyEmailLinkText}
+        ${url}`
 
-          let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
-                              <a href=${url}>${verifyEmailLinkText}</a>`
+        let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
+                            <a href=${url}>${verifyEmailLinkText}</a>`
 
-          await mailSender.sendMail({
-            to: user.email,
-            from,
-            subject,
-            text,
-            html,
-          })
-        }
+        await mailSender.sendMail({
+          to: user.email,
+          from,
+          subject,
+          text,
+          html,
+        })
       }
     }
   },
@@ -192,6 +194,7 @@ export const auth = betterAuth({
         ...adminAc.statements
       })
     }), // Admin plugin for user management
+    oneTimeToken(), // One-time token plugin for email verification testing
     reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 })

@@ -1,4 +1,5 @@
 import {adminClient} from "better-auth/client/plugins";
+import {oneTimeTokenClient} from "better-auth/client/plugins";
 import {createAuthClient} from "better-auth/react";
 
 export const {
@@ -12,10 +13,12 @@ export const {
 	deleteUser,
 	sendVerificationEmail,
 	admin,
+	oneTimeToken,
 } =
 	createAuthClient({
 		baseURL: process.env.BETTER_AUTH_BASE_URL || "http://localhost:3000",
 		plugins: [
 			adminClient(),
+			oneTimeTokenClient(),
 		],
 	});

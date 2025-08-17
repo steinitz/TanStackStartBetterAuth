@@ -23,19 +23,15 @@ export async function checkServerStatus(baseURL: string = 'http://localhost:3000
  * @returns Promise that resolves when server is ready
  */
 export async function ensureServerRunning(baseURL: string = 'http://localhost:3000'): Promise<void> {
-  console.log(`Checking if server is running on ${baseURL}...`);
-
   // First check if server is already running
   if (await checkServerStatus(baseURL)) {
-    console.log('✅ Server is running, checking if it has test environment...');
-
     // Check if the running server is using test environment via API endpoint
     try {
       const response = await fetch(`${baseURL}/api/test-env`);
       if (response.ok) {
         const data = await response.json();
         if (data.isPlaywrightRunning) {
-          console.log('✅ Server is running with test environment (.env.test)');
+          console.log('✅ Development server ready with test environment');
           return;
         }
       }

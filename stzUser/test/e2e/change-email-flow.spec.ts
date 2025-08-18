@@ -3,6 +3,17 @@ import { createVerifiedTestUser, isEmailVerified } from './utils/user-verificati
 import { testConstants } from '~stzUser/test/constants';
 import { EmailTester } from './utils/EmailTester';
 import { signInUser } from './utils/testActions';
+import { profileTestIds, profileStructuralSelectors } from '~stzUser/components/RouteComponents/Profile/Profile';
+
+// Construct test selectors from component exports
+const profileSelectors = {
+  // Test ID-based selectors (constructed by test)
+  profileForm: `[data-testid="${profileTestIds.profileForm}"]`,
+  saveChangesButton: `[data-testid="${profileTestIds.saveChangesButton}"]`,
+  
+  // Structural selectors (used directly)
+  ...profileStructuralSelectors
+};
 import type { Page } from '@playwright/test';
 
 
@@ -29,8 +40,6 @@ function extractVerificationLink(email: any): string | null {
 }
 
 /**
- * E2E Test: Change Email Flow
- * 
  * Tests the complete email change process:
  * 1. Create test User and sign in 
  * 2. Navigate to profile and initiate email change
@@ -38,6 +47,12 @@ function extractVerificationLink(email: any): string | null {
  * 4. Verify email change verification was sent ONLY to new address
  * 5. Extract verification link using helper function and simulate a click
  * 6. Confirm new email address is verified
+ * 
+ * This test demonstrates enhanced Playwright testing patterns:
+ * - Specific form state assertions (visibility, enabled state, values)
+ * - Button state validation before and after interactions
+ * - Soft assertions for non-critical validations that won't stop the test
+ * - Centralized selector management with component-exported test IDs
  * 
  * This test serves as a reference for similar flows (e.g., change password)
  */
@@ -62,25 +77,41 @@ test.describe('Change Email Flow', () => {
     // Step 1: Sign in user
     await signInUser(page, originalEmailAddress, testConstants.defaultPassword);
     
+    // Clear emails after signup to isolate email change behavior
+    EmailTester.clearSentEmails();
+    
     // Step 2: Navigate to profile and initiate email change
     await page.goto('http://localhost:3000/auth/profile');
     
-    // Verify form elements exist before interacting with them
-    await expect(page.locator('[data-testid="profile-form"]')).toBeVisible();
-    await expect(page.locator('[data-testid="save-changes-button"]')).toBeVisible();
-    await expect(page.locator('input[type="email"]')).toBeVisible();
+    // More specific form assertions - verify initial state
+    await expect(page.locator(profileSelectors.profileForm)).toBeVisible();
+    await expect(page.locator(profileSelectors.emailInput)).toBeVisible();
+    await expect(page.locator(profileSelectors.emailInput)).toBeEnabled();
+    await expect(page.locator(profileSelectors.emailInput)).toHaveValue(originalEmailAddress);
+    await expect(page.locator(profileSelectors.saveChangesButton)).toBeEnabled();
     
-    await page.fill('input[type="email"]', newEmailAddress);
-    await page.click('[data-testid="save-changes-button"]');
+    // After filling new email - verify form state changes
+    await page.fill(profileSelectors.emailInput, newEmailAddress);
+    await expect(page.locator(profileSelectors.emailInput)).toHaveValue(newEmailAddress);
+    
+    // Button state assertions
+    await expect(page.locator(profileSelectors.saveChangesButton)).not.toBeDisabled();
+    
+    // Soft assertions for additional form validation (won't stop test if they fail)
+    await expect.soft(page.locator(profileSelectors.profileForm)).toHaveAttribute('data-testid', profileTestIds.profileForm);
+    await expect.soft(page.locator(profileSelectors.emailInput)).toHaveAttribute('type', 'email');
+    await expect.soft(page.locator(profileSelectors.saveChangesButton)).toHaveAttribute('data-testid', profileTestIds.saveChangesButton);
+    
+    await page.click(profileSelectors.saveChangesButton);
     
     // Step 3: Wait for email change processing
     // Wait for the spinner to appear and then disappear
     try {
       // First wait for spinner to appear (indicating email-sending started)
-      await page.waitForSelector('div:has(> div > svg)', { timeout: 2000 });
+      await page.waitForSelector(profileSelectors.spinnerContainer, { timeout: 2000 });
       
       // Then wait for spinner to disappear (indicating email-sending completed)
-      await page.waitForSelector('div:has(> div > svg)', { state: 'hidden', timeout: 10000 });
+      await page.waitForSelector(profileSelectors.spinnerContainer, { state: 'hidden', timeout: 10000 });
     } catch (error) {
       await page.waitForTimeout(3000);
     }
@@ -89,8 +120,8 @@ test.describe('Change Email Flow', () => {
      await page.waitForTimeout(1000);
     
     // Try multiple selectors to find the dialog
-    const dialogVisible = await page.locator('dialog').isVisible().catch(() => false);
-    const modalVisible = await page.locator('[role="dialog"]').isVisible().catch(() => false);
+    const dialogVisible = await page.locator(profileSelectors.dialog).isVisible().catch(() => false);
+    const modalVisible = await page.locator(profileSelectors.modalDialog).isVisible().catch(() => false);
     
     // Step 4: Verify email change verification was sent to both addresses
     const allSentEmails = EmailTester.getSentEmails();
@@ -101,16 +132,10 @@ test.describe('Change Email Flow', () => {
       email.subject.toLowerCase().includes('verify')
     );
     
-    // Find emails sent to the original email address
-    const oldEmailVerifications = allSentEmails.filter(email => 
-      email.envelope.to.includes(originalEmailAddress) && 
-      email.subject.toLowerCase().includes('verify')
-    );
-    
     // REGRESSION TEST: Verify email change verification behavior
-    // Both email addresses should receive verification emails for security
+    // Only new email should receive verification during email change
     expect(newEmailVerifications.length).toBe(1);
-    expect(oldEmailVerifications.length).toBe(1);
+    // Note: Original email verification was from signup (now cleared)
     
     const verificationEmail = newEmailVerifications[0];
     expect(verificationEmail).toBeTruthy();

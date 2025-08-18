@@ -19,6 +19,20 @@ import {routeStrings} from "~/constants";
 
 const didConfirmChangeSearchParam = 'didConfirmChange'
 
+// Test IDs - raw identifiers used in component data-testid attributes
+export const profileTestIds = {
+  profileForm: 'profile-form',
+  saveChangesButton: 'save-changes-button'
+} as const;
+
+// Structural selectors - DOM-based selectors that can't be test IDs
+export const profileStructuralSelectors = {
+  emailInput: 'input[type="email"]',
+  spinnerContainer: 'div:has(> div > svg)',
+  dialog: 'dialog',
+  modalDialog: '[role="dialog"]'
+} as const;
+
 type ProfileData = {
   email: string
 }
@@ -160,7 +174,7 @@ export const Profile = () => {
       <section>
         {session?.user ?
           <form
-            data-testid="profile-form"
+            data-testid={profileTestIds.profileForm}
             onSubmit={handleSaveChanges}
             // style={{maxWidth: '350px'}}
           >
@@ -192,7 +206,7 @@ export const Profile = () => {
               </button>
               <Spacer orientation="horizontal" space={1}/>
               <button
-                data-testid="save-changes-button"
+                data-testid={profileTestIds.saveChangesButton}
                 type="submit"
               >
                 Save Changes

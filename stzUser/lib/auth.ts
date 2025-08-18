@@ -35,6 +35,12 @@ const mailSender = transportOptions ? nodemailer.createTransport(transportOption
 
 export const auth = betterAuth({
   database: appDatabase,
+  logger: {
+    level: 'debug',
+    log: (level, message, ...args) => {
+      console.log(`[Better Auth ${level.toUpperCase()}]`, message, ...args);
+    },
+  },
   user: {
     changeEmail: {
       enabled: true,

@@ -72,21 +72,30 @@ export const Profile = () => {
         setShouldShowEmailChangeSpinner(true)
         setNewEmailAddress((newEmail))
         
-         let data, error;
-         try {
-           console.log('profile.handleSaveChanges: About to await changeEmail...')
-           const result = await changeEmail({
-             newEmail,
-             callbackURL: routeStrings.profile
-           })
-           console.log('profile.handleSaveChanges: changeEmail returned:', result)
-           data = result.data
-           error = result.error
-         } catch (e) {
-           console.log('profile.handleSaveChanges: changeEmail threw exception:', e)
-           error = { message: `Network error: ${e?.message || 'Unknown error'}` }
-           data = null
-         }
+        let data, error;
+        try {
+          console.log('profile.handleSaveChanges: About to await changeEmail...')
+          const result = await changeEmail({
+            newEmail,
+            // notes:
+
+            // 1. logic in stzUser/lib/auth.ts currently uses this callbackURL 
+            // component of the api URL to prevent sendVerificationEmail 
+            // from sending a verification email to the old email address.  
+            // Better Auth provides no clean way to disable this behavior.  
+            // Github issue raised July 2025
+            
+            // 2. this redirect occurs after the user clicks the link in the email
+            callbackURL: routeStrings.profile
+          })
+          console.log('profile.handleSaveChanges: changeEmail returned:', result)
+          data = result.data
+          error = result.error
+        } catch (e) {
+          console.log('profile.handleSaveChanges: changeEmail threw exception:', e)
+          error = {message: `Network error: ${e?.message || 'Unknown error'}`}
+          data = null
+        }
         console.log('profile.handleSaveChanges: changeEmail COMPLETED')
         console.log('profile.handleSaveChanges: changeEmail raw response - data:', data)
         console.log('profile.handleSaveChanges: changeEmail raw response - error:', error)

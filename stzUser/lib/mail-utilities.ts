@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start"
 import { isServer, getEnvVar } from './env'
 
 import {isPlaywrightRunning} from "~stzUser/test/e2e/utils/isPlaywrightRunning";
+import { EmailTester } from "~stzUser/test/e2e/utils/EmailTester"
 
 // Validate SMTP configuration
 function getSmtpConfig() {
@@ -22,28 +23,32 @@ const debugLog = true && process.env.NODE_ENV !== 'prod'
 // Export transport options for use in auth.ts
 export const transportOptions = isServer() ? getSmtpConfig() : null
 
-// Send email server function
+// Send email server function with automatic test/production routing
 export const sendEmail = createServerFn({ method: 'POST' })
   .validator((d: any) => d)
   .handler(async ({ data }) => {
     debugLog && console.log('sendEmail: server function called with data:', { data });
 
-    // handle email differently if running an E2E test
-    if (isPlaywrightRunning()) {
-      console.log('✅ sendEmail: test environment, skipping mail send');
-      return true
-    }
-
     if (!isServer()) {
       console.warn('❌ sendEmail: ERROR - not running on server');
       throw new Error('sendEmail must be called from the server')
     }
-    debugLog && console.log('✅ sendEmail: server check passed, creating transport');
+    
+    debugLog && console.log('✅ sendEmail: server check passed');
+    
     try {
-      const mailSender = nodemailer.createTransport(getSmtpConfig())
-      debugLog && console.log('📮 sendEmail: transport created, sending mail...');
-      const result = await mailSender?.sendMail(data)
-      debugLog && console.log('📬 sendEmail: mail sent, result:', result);
+      // Handle email differently based on environment
+      if (isPlaywrightRunning()) {
+        console.log('✅ sendEmail: test environment, using EmailTester');
+        await EmailTester.sendTestEmail(data)
+      } else {
+        console.log('✅ sendEmail: production environment, using nodemailer');
+        const mailSender = nodemailer.createTransport(getSmtpConfig())
+        debugLog && console.log('📮 sendEmail: transport created, sending mail...');
+        const result = await mailSender?.sendMail(data)
+        debugLog && console.log('📬 sendEmail: mail sent, result:', result);
+      }
+      
       debugLog && console.log('✅ sendEmail: returning true');
       return true
     }

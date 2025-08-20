@@ -4,7 +4,7 @@ import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~stzUser/lib/form";
 import {changeEmail, deleteUser, useSession} from "~stzUser/lib/auth-client";
 import {Spacer} from "~stzUtils/components/Spacer";
-import {EmailInput, PasswordInput} from "~stzUtils/components/InputFields";
+import {EmailInput} from "~stzUtils/components/InputFields";
 import {
   DeleteAccountConfirmationDialog,
 } from "./deleteAccountConfirmationDialog";
@@ -81,6 +81,10 @@ export const Profile = () => {
     const isValid = validateFormFields(fields as ProfileData)
 
     if (isValid) {
+      // Password reset functionality removed from Profile component
+      // Password reset should be handled through a separate "Forgot Password" flow
+      // that uses requestPasswordReset to send an email with a reset token
+      
       if (fields.email !== email) {
         // note: BetterAuth supports email confirmation for changing email.
         setShouldShowEmailChangeSpinner(true)
@@ -187,7 +191,7 @@ export const Profile = () => {
               validationErrors={validationIssues}
               defaultValue={email}
             />
-            <PasswordInput validationIssue={validationIssues.password}/>
+
             <div
               style={{
                 display: "flex",

@@ -6,6 +6,7 @@ import * as v from 'valibot'
 import {forgetPassword} from '~stzUser/lib/auth-client'
 import {Spacer} from "~stzUtils/components/Spacer";
 import {isEmptyString} from "~stzUser/lib/utils";
+import Spinner from "~stzUser/components/Other/Spinner";
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
@@ -22,6 +23,7 @@ const PasswordResetSchema = v.object({
 })
 
 export const RequestPasswordReset = () => {
+  console.log('RequestPasswordReset component rendered')
   const navigate = useNavigate()
 
   const [validationIssues, setValidationIssues] = useState<any>({})
@@ -38,11 +40,15 @@ export const RequestPasswordReset = () => {
   }
 
   const [email, setEmail] = useState('')
+  const [shouldShowSpinner, setShouldShowSpinner] = useState(false)
   const handlePasswordReset = async (
     event: SyntheticEvent<HTMLFormElement>,
   ) => {
+    console.log('handlePasswordReset function called!')
     const fields = sharedFormSubmission(event)
+    console.log('Form fields extracted:', fields)
     const email = fields.email as string
+    console.log('Email field value:', email, 'Type:', typeof email)
     setEmail(email)
     console.log('handlePasswordReset', {email})
 
@@ -50,10 +56,16 @@ export const RequestPasswordReset = () => {
     console.log('handlePasswordReset', {isValid})
 
     if (isValid) {
-      /*const {data, error} = */ await forgetPassword({
-        email,
-        redirectTo: '/auth/setNewPassword',
-      })
+      console.log('Inside if (isValid) block - form validation passed')
+      setShouldShowSpinner(true)
+      try {
+        /*const {data, error} = */ await forgetPassword({
+          email,
+          redirectTo: '/auth/setNewPassword',
+        })
+      } finally {
+        setShouldShowSpinner(false)
+      }
     }
   }
 
@@ -62,7 +74,10 @@ export const RequestPasswordReset = () => {
       <section>
         {isEmptyString(email) ?
           <form onSubmit={handlePasswordReset}>
-            <h1>Password Reset</h1>
+            <div style={{display: "flex", flexDirection: "row", justifyContent: "flex-start"}}>
+              <h1>Password Reset</h1>
+              {shouldShowSpinner && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
+            </div>
             <label>
               Email
               <input

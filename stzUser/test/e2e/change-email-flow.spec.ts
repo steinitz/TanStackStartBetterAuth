@@ -117,7 +117,7 @@ test.describe('Change Email Flow', () => {
     }
     
     // Additional wait to ensure any async operations complete
-     await page.waitForTimeout(1000);
+    await page.waitForTimeout(1000);
     
     // Try multiple selectors to find the dialog
     const dialogVisible = await page.locator(profileSelectors.dialog).isVisible().catch(() => false);

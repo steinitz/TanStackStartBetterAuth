@@ -9,8 +9,6 @@ type ValidationErrors = Record<string, string> | undefined
 // Re-export ValidatedInput for use in other components
 export { ValidatedInput };
 
-// PasswordInput is already exported above via the export function declaration
-
 export function PasswordInput({validationIssue}) {
   const [shouldShowPassword, setShouldShowPassword] = useState(false)
   return (
@@ -81,7 +79,7 @@ export const EmailInput = ({validationErrors, defaultValue}: {
   validationErrors: ValidationErrors, defaultValue?: string
 }) => {
   return <InputField
-    fieldLabel="Email"
+    fieldLabel="Email Address"
     fieldName="email"
     defaultValue={defaultValue}
     validationErrors={validationErrors}

@@ -6,12 +6,11 @@ import { createAccessControl } from "better-auth/plugins/access"
 import { adminAc } from "better-auth/plugins/admin/access"
 import { oneTimeToken } from "better-auth/plugins/one-time-token"
 import nodemailer, { type Transport } from "nodemailer"
-import { transportOptions } from "../../stzUser/lib/mail-utilities"
+import { transportOptions } from "~stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
+import { isPlaywrightRunning } from "~stzUser/test/e2e/utils/isPlaywrightRunning"
+import { EmailTester } from "~stzUser/test/e2e/utils/EmailTester"
 import { appDatabase } from "./database"
-
-import {isPlaywrightRunning} from "~stzUser/test/e2e/utils/isPlaywrightRunning";
-import { EmailTester } from "~stzUser/test/e2e/utils/EmailTester";
 // import { getEnvVar } from "./env"
 
 const from = process.env.SMTP_FROM_ADDRESS
@@ -27,11 +26,20 @@ const verifyChangeEmailInstructions = 'Click the link below to verify your new e
 const verifyChangeEmailLinkText = 'Confirm New Email Address'
 
 // password Reset text
+const passwordResetSubject = 'Reset your password'
 const passwordResetLinkText = 'Click the link to reset your password: '
 
-const mailSender = transportOptions ? nodemailer.createTransport(transportOptions as unknown as Transport) : null
+export { passwordResetSubject }
 
-// Article about setting up User Roles - https://www.answeroverflow.com/m/1360090099764826232
+// Create email transport that automatically handles test vs production environments
+let emailTransport: any = null
+
+async function getEmailTransport() {
+  if (!emailTransport) {
+    emailTransport = nodemailer.createTransport(transportOptions!)
+  }
+  return emailTransport
+}
 
 export const auth = betterAuth({
   database: appDatabase,
@@ -49,45 +57,37 @@ export const auth = betterAuth({
       ) => {
         console.log('🔧 sendChangeEmailVerification called:', { user: user.email, newEmail, url });
         console.log('🔧 DEBUG: This function should send email to NEW address:', newEmail);
-        // Check if we're in a Playwright test environment
+        // Send verification email to the NEW email address for email changes
         if (isPlaywrightRunning()) {
-          console.log('🎭 Playwright test detected - using EmailTester for change email verification');
-          
-          let subject: string = verifyChangeEmailSubject
-          let text: string = `${verifyChangeEmailInstructions} ${newEmail} 
-          
-          ${verifyChangeEmailLinkText}
-          ${url}`
-
-          let html: string = `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
-                              <br />
-                              <a href=${url}>${verifyChangeEmailLinkText}</a>`
-
           await EmailTester.sendTestEmail({
             to: newEmail, // Send to the new email address, not the old one
             from: from || 'test@example.com',
-            subject,
-            text,
-            html,
-          });
+            subject: verifyChangeEmailSubject /* + ' - sendChangeEmailVerification' */,
+            text: `${verifyChangeEmailInstructions} ${newEmail} 
+
+            ${verifyChangeEmailLinkText}
+            ${url}`,
+            html: `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
+            <br />
+            <a href=${url}>${verifyChangeEmailLinkText}</a>`,
+          })
+        } else {
+          const emailSender = await getEmailTransport()
+          if (!emailSender) return
           
-          return; // Skip production email sending during tests
+          await emailSender.sendMail({
+            to: newEmail, // Send to the new email address, not the old one
+            from: from || 'test@example.com',
+            subject: verifyChangeEmailSubject /* + ' - sendChangeEmailVerification' */,
+            text: `${verifyChangeEmailInstructions} ${newEmail} 
+
+            ${verifyChangeEmailLinkText}
+            ${url}`,
+            html: `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
+            <br />
+            <a href=${url}>${verifyChangeEmailLinkText}</a>`,
+          })
         }
-
-        // Send verification email to the NEW email address for email changes
-        if (!mailSender) return
-        await mailSender.sendMail({
-          to: newEmail, // Send to the new email address, not the old one
-          from,
-          subject: verifyChangeEmailSubject /* + ' - sendChangeEmailVerification' */,
-          text: `${verifyChangeEmailInstructions} ${newEmail} 
-
-          ${verifyChangeEmailLinkText}
-          ${url}`,
-          html: `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
-          <br />
-          <a href=${url}>${verifyChangeEmailLinkText}</a>`,
-        })
       }
     },
     deleteUser: {
@@ -103,20 +103,37 @@ export const auth = betterAuth({
     sendResetPassword: async (
       { user, url }
     ) => {
-      if (!mailSender) return
-      await mailSender.sendMail({
-        to: user.email,
-        from,
-        subject: 'Reset your password',
-        text: `${passwordResetLinkText} ${url}`,
-        html: `<p>${passwordResetLinkText} ${url}</p>`,
-      })
+      console.log('🔄 sendResetPassword called for user:', user.email);
+      console.log('🔄 Current time:', new Date().toISOString());
+      
+      if (isPlaywrightRunning()) {
+        await EmailTester.sendTestEmail({
+          to: user.email,
+          from: from || 'test@example.com',
+          subject: passwordResetSubject,
+          text: `${passwordResetLinkText}${url}`,
+          html: `<a href="${url}">${passwordResetLinkText}</a>`,
+        })
+      } else {
+        const emailSender = await getEmailTransport()
+        await emailSender.sendMail({
+          to: user.email,
+          from: from || 'test@example.com',
+          subject: passwordResetSubject,
+          text: `${passwordResetLinkText}${url}`,
+          html: `<a href="${url}">${passwordResetLinkText}</a>`,
+        })
+      }
+    },
+    onPasswordReset: async ({ user }, request) => {
+      console.log('✅ Password reset completed for user:', user.email);
+      console.log('✅ Current time:', new Date().toISOString());
     },
   },
   emailVerification: {
-    // WORKAROUND: Set to false due to Better Auth bug where this setting suppresses ALL email verification
-    // including email change verification. Should be true for signup verification.
+    // WORKAROUND: Set to false due to Better Auth bug where sendOnSignUp affects email change verification
     // See: https://github.com/better-auth/better-auth/issues/2538
+    // This should be true for proper security, but causes email change verification to fail
     sendOnSignUp: true,
     autoSignInAfterVerification: false,
     sendVerificationEmail: async ({
@@ -130,11 +147,6 @@ export const auth = betterAuth({
       // - url: the verification URL
       // - text/html: the email content
 
-      if (!mailSender) {
-        console.error('Better Auth email verification: no mail sender');
-        return
-      }
-
       // only send the email if it's not a change email request
       // this is fragile but works for now because the url includes 'callbackURL=/auth/profile'
       console.log('🔍 DEBUG: request.url =', request?.url);
@@ -142,58 +154,49 @@ export const auth = betterAuth({
       const isEmailChange = request?.url.includes(routeStrings.profile)
       console.log('🔍 DEBUG: isEmailChange =', isEmailChange);
       if (!isEmailChange) {
-        // Check if we're in a Playwright test environment
+        console.log('📧 sendVerificationEmail: sending signup verification email to', user.email);
+        
         if (isPlaywrightRunning()) {
-          console.log('🎭 Playwright test detected - using EmailTester for verification email');
-          
-          let subject: string = verifyEmailSubject
-          let text: string = `${verifyEmailInstructions} ${user.email} 
-          
-          ${verifyEmailLinkText}
-          ${url}`
-
-          let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
-                              <a href=${url}>${verifyEmailLinkText}</a>`
-
           await EmailTester.sendTestEmail({
             to: user.email,
             from: from || 'test@example.com',
-            subject,
-            text,
-            html,
-          });
-          
-          return; // Skip production email sending during tests
+            subject: verifyEmailSubject /* + ' - sendVerificationEmail' */,
+            text: `${verifyEmailInstructions}
+
+${verifyEmailLinkText}
+${url}`,
+            html: `<p>${verifyEmailInstructions}</p>
+            <br />
+            <a href="${url}">${verifyEmailLinkText}</a>`,
+          })
+        } else {
+          const emailSender = await getEmailTransport()
+          if (!emailSender) {
+            console.error('Better Auth email verification: no mail transport');
+            return
+          }
+          await emailSender.sendMail({
+            to: user.email,
+            from: from || 'test@example.com',
+            subject: verifyEmailSubject /* + ' - sendVerificationEmail' */,
+            text: `${verifyEmailInstructions}
+
+${verifyEmailLinkText}
+${url}`,
+            html: `<p>${verifyEmailInstructions}</p>
+            <br />
+            <a href="${url}">${verifyEmailLinkText}</a>`,
+          })
         }
-
-        let subject: string = verifyEmailSubject
-        let text: string = `${verifyEmailInstructions} ${user.email} 
-        
-        ${verifyEmailLinkText}
-        ${url}`
-
-        let html: string = `<p>${verifyEmailInstructions} ${user.email}</P>
-                            <a href=${url}>${verifyEmailLinkText}</a>`
-
-        await mailSender.sendMail({
-          to: user.email,
-          from,
-          subject,
-          text,
-          html,
-        })
+      } else {
+        console.log('🚫 sendVerificationEmail: skipping email for change email request');
       }
-    }
+    },
   },
-
-  // socialProviders: {
-  //    github: {
-  //     // '!' tells the compiler this will be defined, so don't worry
-  //     clientId: process.env.GITHUB_CLIENT_ID!,
-  //     clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-  //    }
-  //},
-
+  // session: {
+  //   expiresIn: 60 * 60 * 24 * 7, // 7 days
+  //   updateAge: 60 * 60 * 24, // 1 day (how often the session expiration is updated)
+  // },
   plugins: [
     admin({
       ac: createAccessControl({

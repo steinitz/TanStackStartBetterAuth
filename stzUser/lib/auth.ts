@@ -5,12 +5,11 @@ import { admin } from "better-auth/plugins"
 import { createAccessControl } from "better-auth/plugins/access"
 import { adminAc } from "better-auth/plugins/admin/access"
 import { oneTimeToken } from "better-auth/plugins/one-time-token"
-import nodemailer, { type Transport } from "nodemailer"
+import nodemailer from "nodemailer"
 import { transportOptions, sendEmail } from "~stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
-import { isPlaywrightRunning } from "~stzUser/test/e2e/utils/isPlaywrightRunning"
-import { EmailTester } from "~stzUser/test/e2e/utils/EmailTester"
 import { appDatabase } from "./database"
+import {verifyEmail} from "~stzUser/lib/auth-client"
 // import { getEnvVar } from "./env"
 
 const from = process.env.SMTP_FROM_ADDRESS
@@ -140,7 +139,19 @@ ${url}`,
           <a href="${url}">${verifyEmailLinkText}</a>`,
         }})
       } else {
-        console.log('🚫 sendVerificationEmail: skipping email for change email request');
+        console.log('🚫 sendVerificationEmail: skipping old-email verification for change-email flow.  Calling verifyEmail directly, maybe for no good reason');
+
+        // Experiment - get the token and verify the email address old email address.
+        // I may have observed the changed email address not being verified but now i'm not sure. 
+        // The following doesn't seem to crash despite being client clode but may not be needed
+        const temp = new URL(url)
+        const searchParams = new URLSearchParams(temp.search)
+        const token = searchParams.get("token") ?? ""
+        await verifyEmail({
+          query: {
+            token 
+          }
+        })
       }
     },
   },

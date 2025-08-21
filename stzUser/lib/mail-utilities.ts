@@ -16,9 +16,9 @@ function getSmtpConfig() {
       pass: getEnvVar('SMTP_PASSWORD'),
     }
   } as const
-}
+} 
 
-const debugLog = true && process.env.NODE_ENV !== 'prod'
+const debugLog = false && process.env.NODE_ENV !== 'prod'
 
 // Export transport options for use in auth.ts
 export const transportOptions = isServer() ? getSmtpConfig() : null

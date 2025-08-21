@@ -45,8 +45,8 @@ function findEmailBySubject(targetEmailAddresses: string[], subjectFragment: str
  * Reusable for password reset flow
  */
 function extractPasswordResetLink(email: any): string | null {
-  // Use existing verification link extraction as password reset links follow similar pattern
-  const resetLinks = EmailTester.extractVerificationLinks(email);
+  // Use existing verification link extraction with 'reset' search string
+  const resetLinks = EmailTester.extractVerificationLinks(email, 'reset');
   return resetLinks.length > 0 ? resetLinks[0] : null;
 }
 
@@ -154,7 +154,7 @@ test.describe('Password Reset Flow', () => {
       return toMatch && subjectMatch;
     });
     // console.log('🎯 Matching emails:', matchingEmails.length);
-    console.log('📧 Matching emails:', matchingEmails.map(e => ({ to: e.envelope?.to, subject: e.subject })));
+    console.log('📧 Matching emails:', matchingEmails.map(e => ({ to: e.envelope?.to, subject: e.subject, body: e.text || e.html || 'No body content' })));
 
     const passwordResetEmail = findEmailBySubject([testEmailAddress]);
     expect(passwordResetEmail).toBeTruthy();

@@ -330,7 +330,7 @@ export class EmailTester {
    * Extracts verification links from an email
    * Looks for URLs containing common verification patterns
    */
-  static extractVerificationLinks(email: TestEmailMessage): string[] {
+  static extractVerificationLinks(email: TestEmailMessage, searchString?: string): string[] {
     const links: string[] = [];
     const urlRegex = /https?:\/\/[^\s<>"]+/g;
     
@@ -344,14 +344,19 @@ export class EmailTester {
       links.push(...htmlUrls);
     }
     
-    // Filter for verification-like URLs
-    const verificationLinks = links.filter(url => 
-      url.includes('verify') || 
-      url.includes('confirm') || 
-      url.includes('activate') ||
-      url.includes('token=') ||
-      url.includes('code=')
-    );
+    // Filter URLs based on search string or default verification patterns
+    const verificationLinks = links.filter(url => {
+      if (searchString) {
+        return url.includes(searchString);
+      }
+      // Default verification patterns
+      return url.includes('verify') || 
+        url.includes('confirm') || 
+        url.includes('activate') ||
+        url.includes('reset') ||
+        url.includes('token=') ||
+        url.includes('code=');
+    });
     
     // Remove duplicates
     return [...new Set(verificationLinks)];
@@ -360,21 +365,21 @@ export class EmailTester {
   /**
    * Gets verification links from the most recent email to a specific recipient
    */
-  static getVerificationLinksForUser(email: string): string[] {
+  static getVerificationLinksForUser(email: string, searchString?: string): string[] {
     const userEmails = this.getEmailsTo(email);
     if (userEmails.length === 0) {
       return [];
     }
     
     const latestEmail = userEmails[userEmails.length - 1];
-    return this.extractVerificationLinks(latestEmail);
+    return this.extractVerificationLinks(latestEmail, searchString);
   }
 
   /**
    * Gets the first verification link from the most recent email to a user
    */
-  static getFirstVerificationLink(email: string): string | null {
-    const links = this.getVerificationLinksForUser(email);
+  static getFirstVerificationLink(email: string, searchString?: string): string | null {
+    const links = this.getVerificationLinksForUser(email, searchString);
     return links.length > 0 ? links[0] : null;
   }
 }

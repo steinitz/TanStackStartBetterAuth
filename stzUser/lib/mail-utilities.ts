@@ -18,7 +18,7 @@ function getSmtpConfig() {
   } as const
 }
 
-const debugLog = true && process.env.NODE_ENV !== 'prod'
+const debugLog = false && process.env.NODE_ENV !== 'prod'
 
 // Export transport options for use in auth.ts
 export const transportOptions = isServer() ? getSmtpConfig() : null
@@ -41,8 +41,9 @@ export const sendEmail = createServerFn({ method: 'POST' })
       if (isPlaywrightRunning()) {
         console.log('✅ sendEmail: test environment, using EmailTester');
         await EmailTester.sendTestEmail(data)
-      } else {
-        console.log('✅ sendEmail: production environment, using nodemailer');
+      } 
+      else {
+        // console.log('✅ sendEmail: production environment, using nodemailer');
         const mailSender = nodemailer.createTransport(getSmtpConfig())
         debugLog && console.log('📮 sendEmail: transport created, sending mail...');
         const result = await mailSender?.sendMail(data)

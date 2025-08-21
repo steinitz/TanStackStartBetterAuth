@@ -123,7 +123,7 @@ export async function createVerifiedTestUser(options?: {
 
       const verificationLinks = EmailTester.extractVerificationLinks(verificationEmail!);
       expect(verificationLinks.length).toBeGreaterThan(0);
-      console.log(`🔗 Found ${verificationLinks.length} verification link(s) in email`);
+      console.log(`🔗 createVerifiedTestUser - found ${verificationLinks.length} verification link(s) in email`);
 
       const verificationUrl = verificationLinks[0];
       const urlParams = new URL(verificationUrl);
@@ -136,20 +136,22 @@ export async function createVerifiedTestUser(options?: {
       });
       expect(verifyResult).toBeTruthy();
 
-      console.log('✅ Email address verified using extracted token from verification email address');
+      console.log('✅ createVerifiedTestUser - email address verified using extracted token from verification email address');
 
         // Confirm verification worked by checking database
         const isVerified = await isEmailVerified(data.user.email);
         expect(isVerified).toBe(true);
-        console.log('✅ Database confirms email address is verified');
-    } catch (tokenErr) {
+        console.log('✅ createVerifiedTestUser- database confirms email address is verified');
+    } 
+    catch (tokenErr) {
       console.error('❌ Token extraction approach failed:', tokenErr);
       // Re-throw to let the test framework handle the assertion failure
       throw tokenErr;
     }
     
     return email;
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error creating verified test user:', error);
     throw error;
   }

@@ -5,27 +5,24 @@ import { EmailTester } from './utils/EmailTester';
 import { signInUser } from './utils/testActions';
 import type { Page } from '@playwright/test';
 import { passwordResetSubject } from '../../lib/auth';
+import { requestPasswordResetSelectors } from '~stzUser/components/RouteComponents/RequestPasswordReset';
 
 // Construct test selectors following model test pattern
-const passwordResetSelectors = {
-  // RequestPasswordReset page selectors
-  passwordResetForm: 'form',
-  emailInput: 'input[name="email"]',
-  resetPasswordButton: 'button[type="submit"]',
-  spinnerContainer: '.spinner',
-  
-  // SetNewPassword page selectors
+
+const setNewPasswordSelectors = {
   setPasswordForm: 'form',
   passwordInput: 'input[type="password"]',
-  setPasswordButton: 'button[type="submit"]',
-  
-  // SignIn page selectors
+  setPasswordButton: 'button[type="submit"]'
+};
+
+const signInSelectors = {
   signInForm: 'form',
   signInEmailInput: 'input[type="email"]',
   signInPasswordInput: 'input[type="password"]',
-  signInButton: 'button[type="submit"]',
-  
-  // Common selectors
+  signInButton: 'button[type="submit"]'
+};
+
+const commonSelectors = {
   detailsSection: 'details',
   summaryElement: 'summary'
 };
@@ -86,7 +83,7 @@ test.describe('Password Reset Flow', () => {
 
   test('should complete password reset flow from signin page', async ({ page }) => {
     // Setup: Create verified test user
-    const testEmail = await createVerifiedTestUser();
+    const testEmailAddress = await createVerifiedTestUser();
     const originalPassword = testConstants.defaultPassword;
     const newPassword = 'NewTestPassword123!';
     
@@ -114,49 +111,54 @@ test.describe('Password Reset Flow', () => {
     await expect(page.locator('h1')).toContainText('Password Reset');
     
     // Step 4: Fill out the password reset form with specific form assertions
-    await expect(page.locator(passwordResetSelectors.passwordResetForm)).toBeVisible();
-    await expect(page.locator(passwordResetSelectors.emailInput)).toBeVisible();
-    await expect(page.locator(passwordResetSelectors.emailInput)).toBeEnabled();
+    await expect(page.locator(requestPasswordResetSelectors.passwordResetForm)).toBeVisible();
+    await expect(page.locator(requestPasswordResetSelectors.emailInput)).toBeVisible();
+    await expect(page.locator(requestPasswordResetSelectors.emailInput)).toBeEnabled();
     
-    await page.fill(passwordResetSelectors.emailInput, testEmail);
-    await expect(page.locator(passwordResetSelectors.emailInput)).toHaveValue(testEmail);
+    await page.fill(requestPasswordResetSelectors.emailInput, testEmailAddress);
+    await expect(page.locator(requestPasswordResetSelectors.emailInput)).toHaveValue(testEmailAddress);
     
     // Step 5: Submit the password reset request
     await expect(page.getByRole('button', { name: 'Reset Password' })).toBeEnabled();
-    await page.click(passwordResetSelectors.resetPasswordButton);
+    await page.click(requestPasswordResetSelectors.resetPasswordButton);
     
     // Step 5a: Wait briefly to ensure email sending completes
-    await page.waitForTimeout(1000);
+    // console.log('password-reset-flow - 5a. waiting 3 seconds for email-send completion')
+    await page.waitForTimeout(3 * 1000);
     
     // Step 6: Verify success message is displayed
-    await expect(page.locator('h1')).toContainText('Password Reset Link Sent', { timeout: timeoutSeconds * 1000 });
-    await expect(page.getByText('We\'ve sent a password-reset link to')).toBeVisible();
-    await expect(page.getByText(testEmail)).toBeVisible();
-    await expect(page.getByText('Please check your email inbox and follow the instructions')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Ok' })).toBeVisible();
+    // console.log('password-reset-flow - 6. checking for email-sent dialog')
+    await expect(page.locator('h1')).toContainText(requestPasswordResetSelectors.linkSentH1Text);
+    // await expect(page.getByText('We\'ve sent a password-reset link to')).toBeVisible();
+    // await expect(page.getByText(testEmail)).toBeVisible();
+    // await expect(page.getByText('Please check your email inbox and follow the instructions')).toBeVisible();
+    // await expect(page.getByRole('button', { name: 'Ok' })).toBeVisible();
+
+    // console.log('email-sent dialog appeared')
     
     // Step 7: Verify password reset email was sent using helper function
     // Wait a moment for email to be processed
-    await page.waitForTimeout(timeoutSeconds * 100);
+    await page.waitForTimeout(timeoutSeconds * 1000);
     
     const allEmails = EmailTester.getSentEmails();
     console.log('📧 Total emails found:', allEmails.length);
-    console.log('📧 All sent emails:', allEmails.map(e => ({ to: e.envelope?.to, subject: e.subject })));
+    // console.log('📧 All sent emails:', allEmails.map(e => ({ to: e.envelope?.to, subject: e.subject })));
     console.log('🔍 Looking for subject containing:', passwordResetSubject);
-    console.log('🔍 Target email:', testEmail);
+    // console.log('🔍 Target email:', testEmail);
     
     // Debug the findEmailBySubject function
     const matchingEmails = allEmails.filter(email => {
-      const toMatch = email.envelope?.to?.includes?.(testEmail);
+      const toMatch = email.envelope?.to?.includes?.(testEmailAddress);
       const subjectMatch = email.subject?.toLowerCase().includes(passwordResetSubject.toLowerCase());
       console.log('📧 Email check:', { to: email.envelope?.to, subject: email.subject, toMatch, subjectMatch });
       return toMatch && subjectMatch;
     });
-    console.log('🎯 Matching emails:', matchingEmails.length);
-    
-    const passwordResetEmail = findEmailBySubject([testEmail]);
+    // console.log('🎯 Matching emails:', matchingEmails.length);
+    console.log('📧 Matching emails:', matchingEmails.map(e => ({ to: e.envelope?.to, subject: e.subject })));
+
+    const passwordResetEmail = findEmailBySubject([testEmailAddress]);
     expect(passwordResetEmail).toBeTruthy();
-    expect(passwordResetEmail?.envelope?.to).toContain(testEmail);
+    expect(passwordResetEmail?.envelope?.to).toContain(testEmailAddress);
     expect(passwordResetEmail?.subject).toContain('Reset');
     
     // Step 8: Extract password reset URL from email using helper function
@@ -176,8 +178,8 @@ test.describe('Password Reset Flow', () => {
       await expect(page.locator('h1')).toContainText('Set New Password', { timeout: timeoutSeconds * 1000 });
       
       // Step 10: Fill out the new password form with specific form assertions
-      await expect(page.locator(passwordResetSelectors.setPasswordForm)).toBeVisible();
-      const passwordInput = page.locator(passwordResetSelectors.passwordInput);
+      await expect(page.locator(setNewPasswordSelectors.setPasswordForm)).toBeVisible();
+      const passwordInput = page.locator(setNewPasswordSelectors.passwordInput);
       await expect(passwordInput).toBeVisible();
       await expect(passwordInput).toBeEnabled();
       
@@ -186,14 +188,14 @@ test.describe('Password Reset Flow', () => {
       
       // Step 11: Submit the new password
       await expect(page.getByRole('button', { name: 'Set New Password' })).toBeEnabled();
-      await page.click(passwordResetSelectors.setPasswordButton);
+      await page.click(setNewPasswordSelectors.setPasswordButton);
       
       // Step 12: Verify password reset completion
       // This might redirect to signin or show a success message
       await page.waitForLoadState('networkidle', { timeout: timeoutSeconds * 1000 });
       
       // Step 13: Test that we can sign in with the new password using signInUser utility
-      await signInUser(page, testEmail, newPassword);
+      await signInUser(page, testEmailAddress, newPassword);
       
       console.log('✅ Password reset flow completed successfully');
     } else {

@@ -8,6 +8,15 @@ import {Spacer} from "~stzUtils/components/Spacer";
 import {isEmptyString} from "~stzUser/lib/utils";
 import Spinner from "~stzUser/components/Other/Spinner";
 
+// Test selectors for E2E testing
+export const requestPasswordResetSelectors = {
+  passwordResetForm: 'form',
+  emailInput: 'input[name="email"]',
+  resetPasswordButton: 'button[type="submit"]',
+  spinnerContainer: '.spinner',
+  linkSentH1Text: 'Password Reset Link Sent',
+};
+
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
   email: string

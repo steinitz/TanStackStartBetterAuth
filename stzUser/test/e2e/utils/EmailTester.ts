@@ -158,78 +158,78 @@ export class EmailTester {
     return this.testAccount;
   }
 
-  /**
-   * Creates a Nodemailer transporter configured for Ethereal Email testing
-   */
-  static async createTestTransport(): Promise<Transporter> {
-    if (this.transporter) {
-      return this.transporter;
-    }
+  // /**
+  //  * Creates a Nodemailer transporter configured for Ethereal Email testing
+  //  */
+  // static async createTestTransport(): Promise<Transporter> {
+  //   if (this.transporter) {
+  //     return this.transporter;
+  //   }
 
-    const testAccount = await this.createTestAccount();
+  //   const testAccount = await this.createTestAccount();
 
-    this.transporter = nodemailer.createTransport({
-      host: testAccount.smtp.host,
-      port: testAccount.smtp.port,
-      secure: testAccount.smtp.secure,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
+  //   this.transporter = nodemailer.createTransport({
+  //     host: testAccount.smtp.host,
+  //     port: testAccount.smtp.port,
+  //     secure: testAccount.smtp.secure,
+  //     auth: {
+  //       user: testAccount.user,
+  //       pass: testAccount.pass,
+  //     },
+  //   });
 
-    console.log('✅ Ethereal test transporter created');
-    return this.transporter;
-  }
+  //   console.log('✅ Ethereal test transporter created');
+  //   return this.transporter;
+  // }
 
-  /**
-   * Sends a test email and captures it for verification
-   * Returns the message info including preview URL
-   */
-  static async sendTestEmail(emailData: {
-    to: string;
-    from: string;
-    subject: string;
-    text: string;
-    html?: string;
-  }): Promise<TestEmailMessage> {
-    const transporter = await this.createTestTransport();
+  // /**
+  //  * Sends a test email and captures it for verification
+  //  * Returns the message info including preview URL
+  //  */
+  // static async sendTestEmail(emailData: {
+  //   to: string;
+  //   from: string;
+  //   subject: string;
+  //   text: string;
+  //   html?: string;
+  // }): Promise<TestEmailMessage> {
+  //   const transporter = await this.createTestTransport();
 
-    try {
-      const info = await transporter.sendMail(emailData);
+  //   try {
+  //     const info = await transporter.sendMail(emailData);
 
-      const testMessage: TestEmailMessage = {
-        messageId: info.messageId,
-        envelope: info.envelope,
-        response: info.response,
-        previewUrl: nodemailer.getTestMessageUrl(info) || undefined,
-        // Store the email content for URL extraction
-        subject: emailData.subject,
-        text: emailData.text,
-        html: emailData.html,
-      };
+  //     const testMessage: TestEmailMessage = {
+  //       messageId: info.messageId,
+  //       envelope: info.envelope,
+  //       response: info.response,
+  //       previewUrl: nodemailer.getTestMessageUrl(info) || undefined,
+  //       // Store the email content for URL extraction
+  //       subject: emailData.subject,
+  //       text: emailData.text,
+  //       html: emailData.html,
+  //     };
 
-      // Store in memory for backward compatibility
-      this.sentEmails.push(testMessage);
+  //     // Store in memory for backward compatibility
+  //     this.sentEmails.push(testMessage);
       
-      // Also store in file system for cross-process access
-      const allEmails = this.readEmailsFromFile();
-      allEmails.push(testMessage);
-      this.writeEmailsToFile(allEmails);
+  //     // Also store in file system for cross-process access
+  //     const allEmails = this.readEmailsFromFile();
+  //     allEmails.push(testMessage);
+  //     this.writeEmailsToFile(allEmails);
 
-      console.log('✅ Test email sent:', {
-        messageId: testMessage.messageId,
-        to: emailData.to,
-        subject: emailData.subject,
-        previewUrl: testMessage.previewUrl
-      });
+  //     console.log('✅ Test email sent:', {
+  //       messageId: testMessage.messageId,
+  //       to: emailData.to,
+  //       subject: emailData.subject,
+  //       previewUrl: testMessage.previewUrl
+  //     });
 
-      return testMessage;
-    } catch (error) {
-      console.error('❌ Failed to send test email:', error);
-      throw new Error('Could not send test email');
-    }
-  }
+  //     return testMessage;
+  //   } catch (error) {
+  //     console.error('❌ Failed to send test email:', error);
+  //     throw new Error('Could not send test email');
+  //   }
+  // }
 
   /**
    * Gets all emails sent during the current test session
@@ -384,17 +384,17 @@ export class EmailTester {
   }
 }
 
-// Helper function to create a mock email server function for testing
-export const createMockEmailServer = () => {
-  return {
-    async sendEmail(data: any) {
-      // Instead of using the production email server,
-      // use our Ethereal test utilities
-      const result = await EmailTester.sendTestEmail(data.data);
-      return result.envelope.to[0]; // Return first recipient to match production behavior
-    }
-  };
-};
+// // Helper function to create a mock email server function for testing
+// export const createMockEmailServer = () => {
+//   return {
+//     async sendEmail(data: any) {
+//       // Instead of using the production email server,
+//       // use our Ethereal test utilities
+//       const result = await EmailTester.sendTestEmail(data.data);
+//       return result.envelope.to[0]; // Return first recipient to match production behavior
+//     }
+//   };
+// };
 
 // Export types for use in tests
 /**

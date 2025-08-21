@@ -18,12 +18,12 @@ function getSmtpConfig() {
   } as const
 }
 
-const debugLog = false && process.env.NODE_ENV !== 'prod'
+const debugLog = true && process.env.NODE_ENV !== 'prod'
 
 // Export transport options for use in auth.ts
 export const transportOptions = isServer() ? getSmtpConfig() : null
 
-// Send email server function with automatic test/production routing
+// Send email server function
 export const sendEmail = createServerFn({ method: 'POST' })
   .validator((d: any) => d)
   .handler(async ({ data }) => {
@@ -36,22 +36,25 @@ export const sendEmail = createServerFn({ method: 'POST' })
     
     debugLog && console.log('✅ sendEmail: server check passed');
     
+    let result
     try {
-      // Handle email differently based on environment
-      if (isPlaywrightRunning()) {
+      // Obsolete: Handle email differently based on environment
+      // if (isPlaywrightRunning()) {
+      if (false) {
         console.log('✅ sendEmail: test environment, using EmailTester');
-        await EmailTester.sendTestEmail(data)
+        // await EmailTester.sendTestEmail(data)
       } 
       else {
         // console.log('✅ sendEmail: production environment, using nodemailer');
+        debugLog && console.log('SMTP Server:', getEnvVar('SMTP_HOST'));
+        debugLog && console.log('SMTP Port:', getEnvVar('SMTP_PORT'));
         const mailSender = nodemailer.createTransport(getSmtpConfig())
         debugLog && console.log('📮 sendEmail: transport created, sending mail...');
-        const result = await mailSender?.sendMail(data)
-        debugLog && console.log('📬 sendEmail: mail sent, result:', result);
+        result = await mailSender?.sendMail(data)
+        debugLog && console.log('✅ sendEmail: returning result:', result);
+        return {result}
       }
       
-      debugLog && console.log('✅ sendEmail: returning true');
-      return true
     }
     catch (error) {
         console.error('❌ sendEmail: ERROR occurred:', error);

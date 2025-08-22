@@ -21,8 +21,8 @@ import type { Page } from '@playwright/test';
  * Helper function to find email by subject fragment
  * Reusable for any email type (verification, password reset, welcome, etc.)
  */
-function findEmailBySubject(targetEmailAddresses: string[], subjectFragment: string = 'verify'): any {
-  const sentEmails = EmailTester.getSentEmails();
+async function findEmailBySubject(targetEmailAddresses: string[], subjectFragment: string = 'verify'): Promise<any> {
+  const sentEmails = await EmailTester.getSentEmails();
   
   return sentEmails.find(email => 
       targetEmailAddresses.some(targetEmailAddress => email.envelope.to.includes(targetEmailAddress)) &&
@@ -124,7 +124,7 @@ test.describe('Change Email Flow', () => {
     const modalVisible = await page.locator(profileSelectors.modalDialog).isVisible().catch(() => false);
     
     // Step 4: Verify email change verification was sent to both addresses
-    const allSentEmails = EmailTester.getSentEmails();
+    const allSentEmails = await EmailTester.getSentEmails();
     
     // Find emails sent to the new email address
     const newEmailVerifications = allSentEmails.filter(email => 

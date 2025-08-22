@@ -1,6 +1,6 @@
 # E2E Testing Documentation
 
-This directory contains comprehensive end-to-end testing utilities and documentation for the application, including specialized email testing with **Ethereal Email** - a fake SMTP service perfect for testing email functionality without sending real emails.
+This directory contains comprehensive end-to-end testing utilities and documentation for the application, including specialized email testing with **Mailpit** - a local SMTP testing server perfect for testing email functionality without sending real emails.
 
 ## Test Files Overview
 
@@ -8,56 +8,59 @@ This directory contains comprehensive end-to-end testing utilities and documenta
 - **`contact-form-shows-email-success.spec.ts`** - Tests contact form submission and email functionality
 - **`smoke.spec.ts`** - Basic smoke tests for core application functionality
 
-## Email Testing with Ethereal Email
+## Email Testing with Mailpit
 
-## What is Ethereal Email?
+## What is Mailpit?
 
-Ethereal Email is a fake SMTP service that:
+Mailpit is a local SMTP testing server that:
 - **Captures emails** instead of delivering them
-- **Provides a web interface** to view captured emails
-- **Works seamlessly with Nodemailer** (which you already use)
-- **Creates temporary test accounts** automatically
-- **Is completely free** and requires no signup
-- **Keeps your production email code untouched**
+- **Provides a web interface** to view captured emails at http://localhost:8025
+- **Works with any SMTP client** (including your production email code)
+- **Runs locally** for fast, reliable testing
+- **Is completely free** and open source
+- **Requires no external accounts** or internet connection
 
 ## How It Works
 
-### 1. Automatic Test Account Creation
-```typescript
-// Creates a temporary Ethereal account automatically
-const testAccount = await EmailTester.createTestAccount();
-// Returns: { user: 'test123@ethereal.email', pass: 'abc123', smtp: {...}, web: 'https://ethereal.email/...' }
+### 1. Start Mailpit Server
+```bash
+# Start Mailpit server (runs on localhost:1025 for SMTP, localhost:8025 for web UI)
+mailpit
 ```
 
-### 2. Test Email Sending
+### 2. Email Retrieval and Testing
 ```typescript
-// Sends email to Ethereal instead of real recipients
-const result = await EmailTester.sendTestEmail({
+// Retrieve emails captured by Mailpit
+const emails = await EmailTester.getSentEmails();
+
+// Verify specific email was sent
+const emailSent = await EmailTester.verifyEmailSent({
   to: 'user@example.com',
-  from: 'noreply@yourapp.com',
-  subject: 'Test Email',
-  text: 'This is a test',
-  html: '<p>This is a test</p>'
+  subject: 'Welcome'
 });
-// Returns: { messageId, envelope, previewUrl }
+
+// Extract verification links from emails
+const links = EmailTester.extractVerificationLinks(email);
 ```
 
 ### 3. Web Interface Viewing
-Each test run provides a unique URL where you can view all captured emails in a Gmail-like interface:
+View all captured emails in Mailpit's web interface:
 ```
-📧 View emails at: https://ethereal.email/messages/abc123def456
-📧 Email preview URL: https://ethereal.email/message/xyz789
+📧 View emails at: http://localhost:8025
+📧 Mailpit captures all emails sent to localhost:1025
 ```
 
 ## Files Overview
 
 ### `utils/EmailTester.ts`
-Core utilities for Ethereal Email testing:
-- **`EmailTester.createTestAccount()`** - Creates temporary Ethereal account
-- **`EmailTester.sendTestEmail()`** - Sends emails to Ethereal for testing
-- **`EmailTester.getSentEmails()`** - Retrieves all sent emails in current session
-- **`EmailTester.verifyEmailSent()`** - Verifies emails were sent with specific criteria
-- **`EmailTester.cleanup()`** - Cleans up test session
+Core utilities for Mailpit email testing:
+- **`EmailTester.getSentEmails()`** - Retrieves all emails captured by Mailpit
+- **`EmailTester.getLastSentEmail()`** - Gets the most recent email
+- **`EmailTester.getEmailsTo(recipient)`** - Gets emails sent to specific recipient
+- **`EmailTester.verifyEmailSent(criteria)`** - Verifies emails were sent with specific criteria
+- **`EmailTester.extractVerificationLinks(email)`** - Extracts verification links from email content
+- **`EmailTester.clearSentEmails()`** - Clears all emails from Mailpit
+- **`EmailTester.getWebInterfaceUrl()`** - Returns Mailpit web interface URL
 
 ### `utils/user-verification.ts`
 User verification and database utilities for E2E testing:
@@ -128,11 +131,10 @@ pnpm test:e2e:ui -- contact-form-email.spec.ts
 ### Test Output
 When tests run, you'll see output like:
 ```
-✅ Ethereal test account created: { user: 'test123@ethereal.email', webInterface: 'https://ethereal.email/...' }
-🚀 Ethereal test account ready for email testing
-📧 View emails at: https://ethereal.email/messages/abc123def456
-✅ Test email sent: { messageId: '<abc@ethereal.email>', to: 'support@yourapp.com', subject: 'Contact form for Your Company', previewUrl: 'https://ethereal.email/message/xyz789' }
-📧 Email preview URL: https://ethereal.email/message/xyz789
+🚀 Mailpit server running at http://localhost:8025
+📧 Emails captured by Mailpit at localhost:1025
+✅ Email verification completed: { to: 'support@yourapp.com', subject: 'Contact form for Your Company' }
+📧 View emails at: http://localhost:8025
 ✅ Contact form email test completed successfully
 ```
 
@@ -141,43 +143,40 @@ When tests run, you'll see output like:
 ### 🔒 **Production Safety**
 - **Zero impact** on your production email setup
 - **No real emails sent** during testing
-- **No configuration changes** needed in your app
+- **Local testing environment** - no external dependencies
 
 ### 🚀 **Easy Integration**
-- **Works with existing Nodemailer code** - no changes needed
-- **Automatic test account creation** - no manual setup
+- **Works with existing SMTP code** - no changes needed
+- **Local SMTP server** - runs on localhost:1025
 - **Drop-in replacement** for production email sending
 
 ### 🔍 **Comprehensive Verification**
-- **Visual email inspection** via web interface
-- **Programmatic verification** of email content and recipients
+- **Visual email inspection** via web interface at localhost:8025
+- **Programmatic verification** via Mailpit API
 - **Email capture and analysis** for automated testing
 
 ### 🧪 **Perfect for Testing**
-- **Isolated test environment** - each test run gets fresh account
-- **Deterministic results** - no external email service dependencies
-- **Fast execution** - no real SMTP delays
+- **Local server** - fast, reliable, no internet required
+- **Deterministic results** - no external service dependencies
+- **Fast execution** - local SMTP processing
 
 ## Understanding the Test Flow
 
 ### 1. Test Setup
 ```typescript
 test.beforeAll(async () => {
-  // Creates temporary Ethereal account for this test session
-  await EmailTester.createTestAccount();
+  // Mailpit server should be running on localhost:1025 (SMTP) and localhost:8025 (web UI)
+  // No additional setup needed - EmailTester connects to Mailpit automatically
 });
 ```
 
-### 2. Request Interception
+### 2. Email Configuration
 ```typescript
-// Intercepts your app's email sending requests
-await page.route('**/api/**', async (route) => {
-  if (request.url().includes('sendEmail')) {
-    // Redirects to Ethereal instead of production SMTP
-    const emailResult = await EmailTester.sendTestEmail(postData.data);
-    await route.fulfill({ status: 200, body: JSON.stringify(result) });
-  }
-});
+// Your app sends emails to Mailpit's SMTP server (localhost:1025)
+// No request interception needed - emails are captured automatically
+// Configure your test environment to use:
+// SMTP_HOST=localhost
+// SMTP_PORT=1025
 ```
 
 ### 3. Form Interaction
@@ -190,17 +189,17 @@ await page.click('button[type="submit"]');
 
 ### 4. Email Verification
 ```typescript
-// Verify email was captured by Ethereal
-const sentEmails = EmailTester.getSentEmails();
+// Verify email was captured by Mailpit
+const sentEmails = await EmailTester.getSentEmails();
 expect(sentEmails).toHaveLength(1);
-expect(sentEmails[0].envelope.to).toContain('support@yourapp.com');
+expect(sentEmails[0].to[0].address).toBe('support@yourapp.com');
 ```
 
 ### 5. Manual Inspection (Optional)
 ```typescript
-// Get URL to view email in browser
-const previewUrl = sentEmails[0].previewUrl;
-console.log('📧 View email at:', previewUrl);
+// View all emails in Mailpit web interface
+const webInterfaceUrl = EmailTester.getWebInterfaceUrl();
+console.log('📧 View all emails at:', webInterfaceUrl); // http://localhost:8025
 ```
 
 ## Advanced Usage
@@ -224,30 +223,31 @@ test('should send contact form email', async () => {
 ### Email Content Verification
 ```typescript
 // Verify specific email content
-const emails = EmailTester.getEmailsTo('user@example.com');
-expect(emails[0].previewUrl).toBeTruthy();
+const emails = await EmailTester.getEmailsTo('user@example.com');
+expect(emails).toHaveLength(1);
+expect(emails[0].subject).toContain('Welcome');
+expect(emails[0].html).toContain('<h1>Welcome!</h1>');
 
-// You can also store email content during interception
-let capturedEmailContent;
-await page.route('**/sendEmail', async (route) => {
-  capturedEmailContent = route.request().postDataJSON();
-  // ... send to Ethereal
-});
+// Verify email text content
+expect(emails[0].text).toContain('Welcome to our service');
 
-// Then verify content
-expect(capturedEmailContent.subject).toContain('Welcome');
-expect(capturedEmailContent.html).toContain('<h1>Welcome!</h1>');
+// Verify sender and recipient
+expect(emails[0].from.address).toBe('noreply@yourapp.com');
+expect(emails[0].to[0].address).toBe('user@example.com');
 ```
 
 ### Error Scenario Testing
 ```typescript
-// Test email service failures
-await page.route('**/sendEmail', async (route) => {
-  await route.fulfill({ status: 500, body: 'Email service down' });
-});
+// Test email service failures by stopping Mailpit or using wrong SMTP config
+// Clear any existing emails first
+await EmailTester.clearSentEmails();
 
-// Verify app handles email failures gracefully
-expect(EmailTestUtils.getSentEmails()).toHaveLength(0);
+// Trigger email sending with Mailpit unavailable
+// Your app should handle SMTP connection failures gracefully
+
+// Verify no emails were sent
+const emails = await EmailTester.getSentEmails();
+expect(emails).toHaveLength(0);
 ```
 
 ## Troubleshooting
@@ -265,20 +265,20 @@ expect(EmailTestUtils.getSentEmails()).toHaveLength(0);
 - Stop existing server and restart with `.env.test`: `pnpx dotenv-cli -e .env.test -- pnpm dev`
 - Verify `.env.test` file contains required environment variables
 
-**"Could not create test email account"**
-- Check internet connection
-- Ethereal service might be temporarily unavailable
-- Try running tests again
+**"Mailpit connection failed"**
+- Ensure Mailpit server is running: `mailpit`
+- Check Mailpit is listening on localhost:1025 (SMTP) and localhost:8025 (web)
+- Verify no other services are using these ports
 
 **"Email not captured"**
-- Verify route interception is working
-- Check that the intercepted URL matches your email endpoint
-- Ensure `EmailTestUtils.sendTestEmail()` is called in the route handler
+- Verify your app is configured to use localhost:1025 for SMTP
+- Check `.env.test` has correct SMTP settings
+- Ensure Mailpit server is running before starting tests
 
-**"Preview URL not working"**
-- Ethereal URLs expire after some time
-- Generate fresh test account for new test sessions
-- Check console output for correct URLs
+**"Web interface not accessible"**
+- Mailpit web interface should be at http://localhost:8025
+- Check Mailpit server logs for any startup errors
+- Verify port 8025 is not blocked by firewall
 
 **"Environment variable issues"**
 - Verify `.env.test` file exists in project root
@@ -290,14 +290,15 @@ expect(EmailTestUtils.getSentEmails()).toHaveLength(0);
 ```typescript
 // Add debug logging
 test('debug email flow', async ({ page }) => {
-  // Log all network requests
-  page.on('request', request => {
-    console.log('Request:', request.method(), request.url());
-  });
+  // Log SMTP connections (check your app's email service logs)
   
   // Log email test utilities state
-  console.log('Sent emails:', EmailTestUtils.getSentEmails());
-  console.log('Web interface:', EmailTestUtils.getWebInterfaceUrl());
+  const emails = await EmailTester.getSentEmails();
+  console.log('Sent emails:', emails.length);
+  console.log('Web interface:', EmailTester.getWebInterfaceUrl());
+  
+  // Check Mailpit server status
+  console.log('Mailpit API available:', emails !== null);
 });
 ```
 
@@ -336,16 +337,18 @@ Server management is handled by `utils/server-check.ts`:
 
 ## Integration with CI/CD
 
-Ethereal Email works perfectly in CI environments:
-- **No external dependencies** - works offline
+Mailpit works perfectly in CI environments:
+- **Local server** - no external dependencies
 - **No API keys required** - completely free
 - **Deterministic results** - same behavior every time
-- **Fast execution** - no real email delays
+- **Fast execution** - local SMTP processing
 
 ```yaml
 # GitHub Actions example
 - name: Run E2E Email Tests
   run: |
+    mailpit &
+    sleep 2
     pnpm dev &
     sleep 5
     pnpm test:e2e -- contact-form-email.spec.ts
@@ -367,9 +370,9 @@ Ethereal Email works perfectly in CI environments:
 
 ## Resources
 
-- **Ethereal Email**: https://ethereal.email/
-- **Nodemailer Testing**: https://nodemailer.com/about/#testing
-- **Playwright Network Interception**: https://playwright.dev/docs/network
+- **Mailpit**: https://mailpit.axllent.org/
+- **Mailpit GitHub**: https://github.com/axllent/mailpit
+- **Playwright Testing**: https://playwright.dev/docs/
 - **Your Production Email Code**: `stzUser/lib/mail-utilities.ts` (unchanged!)
 
 This email testing setup gives you confidence that your email functionality works correctly while keeping your production email system completely isolated and safe! 🚀📧

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { EmailTester } from './utils/EmailTester';
+import { EmailTester, TestEmailMessage } from './utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 import { getUserByEmail, isEmailVerified } from './utils/user-verification';
 
@@ -10,9 +10,8 @@ test.describe('Email Verification Link Extraction', () => {
     // Create a unique test email for this test
     testEmail = `test-${Date.now()}@example.com`;
     
-    // Initialize EmailTester
-    await EmailTester.createTestAccount();
-    EmailTester.clearSentEmails();
+    // Clear any existing emails in Mailpit
+    await EmailTester.clearSentEmails();
   });
 
   test.afterEach(async () => {
@@ -40,7 +39,7 @@ test.describe('Email Verification Link Extraction', () => {
     expect(user?.emailVerified).toBe(false);
     
     // Check that verification email was sent
-    const sentEmails = EmailTester.getSentEmails();
+    const sentEmails = await EmailTester.getSentEmails();
     expect(sentEmails.length).toBeGreaterThan(0);
     
     // Find the verification email
@@ -62,7 +61,7 @@ test.describe('Email Verification Link Extraction', () => {
     console.log('🔗 Better Auth verification URL extracted:', verificationLinks[0]);
     
     // Get the first verification link
-    const verificationLink = EmailTester.getFirstVerificationLink(testEmail);
+    const verificationLink = await EmailTester.getFirstVerificationLink(testEmail);
     expect(verificationLink).toBeTruthy();
     
     console.log('🔗 Verification link extracted:', verificationLink);
@@ -82,9 +81,13 @@ test.describe('Email Verification Link Extraction', () => {
 
   test('should handle multiple verification links in email', async () => {
     // Create a mock email with multiple links
-    const mockEmail = await EmailTester.sendTestEmail({
-      to: testEmail,
-      from: 'noreply@example.com',
+    const mockEmail: TestEmailMessage = {
+      messageId: 'mock-1',
+      envelope: {
+        from: 'noreply@example.com',
+        to: [testEmail]
+      },
+      response: 'Mock response',
       subject: 'Verify Your Email Address',
       text: `
         Please verify your email by clicking one of these links:
@@ -98,7 +101,7 @@ test.describe('Email Verification Link Extraction', () => {
         <a href="https://example.com/confirm?code=xyz789">Confirm Account</a>
         <a href="https://example.com/help">Get Help</a>
       `
-    });
+    };
     
     // Extract verification links
     const links = EmailTester.extractVerificationLinks(mockEmail);
@@ -114,13 +117,17 @@ test.describe('Email Verification Link Extraction', () => {
 
   test('should return empty array when no verification links found', async () => {
     // Create a mock email without verification links
-    const mockEmail = await EmailTester.sendTestEmail({
-      to: testEmail,
-      from: 'noreply@example.com',
+    const mockEmail: TestEmailMessage = {
+      messageId: 'mock-2',
+      envelope: {
+        from: 'noreply@example.com',
+        to: [testEmail]
+      },
+      response: 'Mock response',
       subject: 'Welcome to Our Service',
       text: 'Welcome! Visit our website at https://example.com for more info.',
       html: '<p>Welcome! Visit <a href="https://example.com">our website</a></p>'
-    });
+    };
     
     // Extract verification links
     const links = EmailTester.extractVerificationLinks(mockEmail);

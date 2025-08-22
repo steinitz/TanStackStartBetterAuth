@@ -31,8 +31,8 @@ const commonSelectors = {
  * Helper function to find email by subject fragment
  * Reusable for any email type (verification, password reset, welcome, etc.)
  */
-function findEmailBySubject(targetEmailAddresses: string[], subjectFragment: string = passwordResetSubject): any {
-  const sentEmails = EmailTester.getSentEmails();
+async function findEmailBySubject(targetEmailAddresses: string[], subjectFragment: string = passwordResetSubject): Promise<any> {
+  const sentEmails = await EmailTester.getSentEmails();
   
   return sentEmails.find(email => 
       targetEmailAddresses.some(targetEmailAddress => email.envelope.to.includes(targetEmailAddress)) &&
@@ -140,7 +140,7 @@ test.describe('Password Reset Flow', () => {
     // Wait a moment for email to be processed
     await page.waitForTimeout(timeoutSeconds * 1000);
     
-    const allEmails = EmailTester.getSentEmails();
+    const allEmails = await EmailTester.getSentEmails();
     console.log('📧 Total emails found:', allEmails.length);
     // console.log('📧 All sent emails:', allEmails.map(e => ({ to: e.envelope?.to, subject: e.subject })));
     console.log('🔍 Looking for subject containing:', passwordResetSubject);
@@ -156,7 +156,7 @@ test.describe('Password Reset Flow', () => {
     // console.log('🎯 Matching emails:', matchingEmails.length);
     console.log('📧 Matching emails:', matchingEmails.map(e => ({ to: e.envelope?.to, subject: e.subject, body: e.text || e.html || 'No body content' })));
 
-    const passwordResetEmail = findEmailBySubject([testEmailAddress]);
+    const passwordResetEmail = await findEmailBySubject([testEmailAddress]);
     expect(passwordResetEmail).toBeTruthy();
     expect(passwordResetEmail?.envelope?.to).toContain(testEmailAddress);
     expect(passwordResetEmail?.subject).toContain('Reset');

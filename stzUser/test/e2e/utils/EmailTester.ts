@@ -1,30 +1,16 @@
-import type {Transporter} from 'nodemailer';
-import nodemailer from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+// Removed Nodemailer, fs, path, os imports - no longer needed for Mailpit
 import { testConstants } from '~stzUser/test/constants';
 
-// Ethereal Email test account interface
-interface EtherealTestAccount {
-  user: string;
-  pass: string;
-  smtp: {
-    host: string;
-    port: number;
-    secure: boolean;
-  };
-  imap: {
-    host: string;
-    port: number;
-    secure: boolean;
-  };
-  pop3: {
-    host: string;
-    port: number;
-    secure: boolean;
-  };
-  web: string;
+// Mailpit message interface (simplified from Ethereal)
+interface MailpitMessage {
+  ID: string;
+  MessageID: string;
+  Subject: string;
+  From: { Address: string; Name: string };
+  To: Array<{ Address: string; Name: string }>;
+  Text: string;
+  HTML: string;
+  Created: string;
 }
 
 // Email message interface for testing
@@ -97,226 +83,126 @@ interface TestEmailMessage {
  * simply checking that an email was sent is sufficient.
  */
 export class EmailTester {
-  private static testAccount: EtherealTestAccount | null = null;
-  private static transporter: Transporter | null = null;
+  private static readonly MAILPIT_API_BASE = 'http://localhost:8025/api/v1';
   private static sentEmails: TestEmailMessage[] = [];
-  private static emailsFilePath: string = path.join(os.tmpdir(), 'playwright-test-emails.json');
+
+
+
+
+
+
 
   /**
-   * Reads emails from the shared file system
+   * Converts Mailpit messages to TestEmailMessage format
    */
-  private static readEmailsFromFile(): TestEmailMessage[] {
+  private static convertMailpitMessages(mailpitMessages: MailpitMessage[]): TestEmailMessage[] {
+    return mailpitMessages.map(msg => ({
+      messageId: msg.MessageID,
+      envelope: {
+        from: msg.From.Address,
+        to: msg.To.map(t => t.Address)
+      },
+      response: 'Message sent via Mailpit',
+      subject: msg.Subject,
+      text: msg.Text,
+      html: msg.HTML,
+      timestamp: msg.Created,
+      previewUrl: `http://localhost:8025/view/${msg.ID}`
+    }));
+  }
+
+  /**
+   * Gets all emails from Mailpit
+   */
+  static async getSentEmails(): Promise<TestEmailMessage[]> {
     try {
-      if (fs.existsSync(this.emailsFilePath)) {
-        const data = fs.readFileSync(this.emailsFilePath, 'utf8');
-        return JSON.parse(data);
+      const response = await fetch(`${this.MAILPIT_API_BASE}/messages`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch emails: ${response.statusText}`);
       }
+      const data = await response.json();
+      return this.convertMailpitMessages(data.messages || []);
     } catch (error) {
-      console.warn('Failed to read emails from file:', error);
-    }
-    return [];
-  }
-
-  /**
-   * Writes emails to the shared file system
-   */
-  private static writeEmailsToFile(emails: TestEmailMessage[]): void {
-    try {
-      fs.writeFileSync(this.emailsFilePath, JSON.stringify(emails, null, 2));
-    } catch (error) {
-      console.error('Failed to write emails to file:', error);
+      console.error('❌ Failed to get emails from Mailpit:', error);
+      return [];
     }
   }
 
   /**
-   * Creates a temporary Ethereal Email test account
-   * This account is valid for testing and provides a web interface to view emails
+   * Gets the most recently sent email from Mailpit
    */
-  static async createTestAccount(): Promise<EtherealTestAccount> {
-    if (this.testAccount) {
-      return this.testAccount;
-    }
-
-    try {
-      // Create a test account using Nodemailer's built-in Ethereal integration
-      this.testAccount = await nodemailer.createTestAccount();
-      console.log('✅ Ethereal test account created:', {
-        user: this.testAccount.user,
-        webInterface: this.testAccount.web
-      });
-      return this.testAccount;
-    } catch (error) {
-      console.error('❌ Failed to create Ethereal test account:', error);
-      throw new Error('Could not create test email account');
-    }
-  }
-
-  /**
-   * Gets the current test account
-   */
-  static getTestAccount(): EtherealTestAccount | null {
-    return this.testAccount;
-  }
-
-  // /**
-  //  * Creates a Nodemailer transporter configured for Ethereal Email testing
-  //  */
-  // static async createTestTransport(): Promise<Transporter> {
-  //   if (this.transporter) {
-  //     return this.transporter;
-  //   }
-
-  //   const testAccount = await this.createTestAccount();
-
-  //   this.transporter = nodemailer.createTransport({
-  //     host: testAccount.smtp.host,
-  //     port: testAccount.smtp.port,
-  //     secure: testAccount.smtp.secure,
-  //     auth: {
-  //       user: testAccount.user,
-  //       pass: testAccount.pass,
-  //     },
-  //   });
-
-  //   console.log('✅ Ethereal test transporter created');
-  //   return this.transporter;
-  // }
-
-  // /**
-  //  * Sends a test email and captures it for verification
-  //  * Returns the message info including preview URL
-  //  */
-  // static async sendTestEmail(emailData: {
-  //   to: string;
-  //   from: string;
-  //   subject: string;
-  //   text: string;
-  //   html?: string;
-  // }): Promise<TestEmailMessage> {
-  //   const transporter = await this.createTestTransport();
-
-  //   try {
-  //     const info = await transporter.sendMail(emailData);
-
-  //     const testMessage: TestEmailMessage = {
-  //       messageId: info.messageId,
-  //       envelope: info.envelope,
-  //       response: info.response,
-  //       previewUrl: nodemailer.getTestMessageUrl(info) || undefined,
-  //       // Store the email content for URL extraction
-  //       subject: emailData.subject,
-  //       text: emailData.text,
-  //       html: emailData.html,
-  //     };
-
-  //     // Store in memory for backward compatibility
-  //     this.sentEmails.push(testMessage);
-      
-  //     // Also store in file system for cross-process access
-  //     const allEmails = this.readEmailsFromFile();
-  //     allEmails.push(testMessage);
-  //     this.writeEmailsToFile(allEmails);
-
-  //     console.log('✅ Test email sent:', {
-  //       messageId: testMessage.messageId,
-  //       to: emailData.to,
-  //       subject: emailData.subject,
-  //       previewUrl: testMessage.previewUrl
-  //     });
-
-  //     return testMessage;
-  //   } catch (error) {
-  //     console.error('❌ Failed to send test email:', error);
-  //     throw new Error('Could not send test email');
-  //   }
-  // }
-
-  /**
-   * Gets all emails sent during the current test session
-   * Reads from file system to support cross-process access
-   */
-  static getSentEmails(): TestEmailMessage[] {
-    const fileEmails = this.readEmailsFromFile();
-    // Merge with in-memory emails for backward compatibility
-    const allEmails = [...this.sentEmails, ...fileEmails];
-    // Remove duplicates based on messageId
-    const uniqueEmails = allEmails.filter((email, index, arr) => 
-      arr.findIndex(e => e.messageId === email.messageId) === index
-    );
-    return uniqueEmails;
-  }
-
-  /**
-   * Gets the most recently sent email
-   * Uses file system to support cross-process access
-   */
-  static getLastSentEmail(): TestEmailMessage | null {
-    const allEmails = this.getSentEmails();
+  static async getLastSentEmail(): Promise<TestEmailMessage | null> {
+    const allEmails = await this.getSentEmails();
     return allEmails.length > 0 ? allEmails[allEmails.length - 1] : null;
   }
 
   /**
-   * Finds emails by recipient
-   * Uses file system to support cross-process access
+   * Finds emails by recipient from Mailpit
    */
-  static getEmailsTo(recipient: string): TestEmailMessage[] {
-    return this.getSentEmails().filter(email =>
+  static async getEmailsTo(recipient: string): Promise<TestEmailMessage[]> {
+    const allEmails = await this.getSentEmails();
+    return allEmails.filter(email =>
       email.envelope.to.includes(recipient)
     );
   }
 
   /**
-   * Finds emails by sender
-   * Uses file system to support cross-process access
+   * Finds emails by sender from Mailpit
    */
-  static getEmailsFrom(sender: string): TestEmailMessage[] {
-    return this.getSentEmails().filter(email =>
+  static async getEmailsFrom(sender: string): Promise<TestEmailMessage[]> {
+    const allEmails = await this.getSentEmails();
+    return allEmails.filter(email =>
       email.envelope.from === sender
     );
   }
 
   /**
-   * Clears the sent emails cache (useful between tests)
-   * Clears both memory and file system storage
+   * Clears all sent emails from Mailpit
    */
-  static clearSentEmails(): void {
-    this.sentEmails = [];
-    this.writeEmailsToFile([]);
-    console.log('🧹 Cleared sent emails cache (memory and file)');
+  static async clearSentEmails(): Promise<void> {
+    try {
+      const response = await fetch(`${this.MAILPIT_API_BASE}/messages`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to clear emails: ${response.statusText}`);
+      }
+      this.sentEmails = [];
+      console.log('🧹 Cleared all sent emails from Mailpit');
+    } catch (error) {
+      console.error('❌ Failed to clear emails from Mailpit:', error);
+      throw error;
+    }
   }
 
   /**
-   * Gets the Ethereal web interface URL for viewing emails
+   * Gets the Mailpit web interface URL for viewing sent emails
    */
-  static getWebInterfaceUrl(): string | null {
-    return this.testAccount?.web || null;
+  static getWebInterfaceUrl(): string {
+    return 'http://localhost:8025';
   }
 
   /**
    * Cleanup method to reset all test utilities
    */
   static async cleanup(): Promise<void> {
-    this.clearSentEmails();
-    if (this.transporter) {
-      this.transporter.close();
-      this.transporter = null;
-    }
-    this.testAccount = null;
+    await this.clearSentEmails();
     console.log('🧹 Email test utilities cleaned up');
   }
 
   /**
    * Verifies that an email matching the given criteria was sent
-   * Uses file system to support cross-process access
+   * Uses Mailpit API to check emails
    */
-  static verifyEmailSent(criteria: {
+  static async verifyEmailSent(criteria: {
     to?: string;
     from?: string;
     subject?: string;
     textContains?: string;
     htmlContains?: string;
-  }): boolean {
-    return this.getSentEmails().some(email => {
+  }): Promise<boolean> {
+    const emails = await this.getSentEmails();
+    return emails.some(email => {
       if (criteria.to && !email.envelope.to.includes(criteria.to)) return false;
       if (criteria.from && email.envelope.from !== criteria.from) return false;
       if (criteria.subject && !email.subject.includes(criteria.subject)) return false;
@@ -365,8 +251,8 @@ export class EmailTester {
   /**
    * Gets verification links from the most recent email to a specific recipient
    */
-  static getVerificationLinksForUser(email: string, searchString?: string): string[] {
-    const userEmails = this.getEmailsTo(email);
+  static async getVerificationLinksForUser(email: string, searchString?: string): Promise<string[]> {
+    const userEmails = await this.getEmailsTo(email);
     if (userEmails.length === 0) {
       return [];
     }
@@ -378,8 +264,8 @@ export class EmailTester {
   /**
    * Gets the first verification link from the most recent email to a user
    */
-  static getFirstVerificationLink(email: string, searchString?: string): string | null {
-    const links = this.getVerificationLinksForUser(email, searchString);
+  static async getFirstVerificationLink(email: string, searchString?: string): Promise<string | null> {
+    const links = await this.getVerificationLinksForUser(email, searchString);
     return links.length > 0 ? links[0] : null;
   }
 }
@@ -419,5 +305,5 @@ export function createTestUser(name: string = testConstants.defaultUserName) {
   };
 }
 
-export type { EtherealTestAccount, TestEmailMessage };
+export type { TestEmailMessage };
 

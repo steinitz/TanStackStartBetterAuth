@@ -15,7 +15,7 @@ test.describe('Signup Flow', () => {
     });
 
     // Clear any previous emails from EmailTester
-    EmailTester.clearSentEmails();
+    await EmailTester.clearSentEmails();
     
     let verificationUrl: string | null = null;
 
@@ -72,11 +72,11 @@ test.describe('Signup Flow', () => {
     expect(emailVerified).toBe(false);
 
     // Get the verification email from EmailTester
-    const lastEmail = EmailTester.getLastSentEmail();
+    const lastEmail = await EmailTester.getLastSentEmail();
     
     if (lastEmail) {
       // Extract verification URL using EmailTester's built-in method
-      verificationUrl = EmailTester.getFirstVerificationLink(uniqueEmail);
+      verificationUrl = await EmailTester.getFirstVerificationLink(uniqueEmail);
       if (verificationUrl) {
       }
     } else {

@@ -20,6 +20,7 @@
     "test:e2e:change-email": "$npm_package_config_playwright -- change-email-flow.spec.ts",
     "test:e2e:password-reset": "$npm_package_config_playwright -- password-reset-flow.spec.ts",
     "test:e2e:mailpit": "$npm_package_config_playwright -- mailpit.spec.ts",
+    "test:e2e:create-verified-user": "$npm_package_config_playwright -- createVerifiedTestUser.spec.ts",
     "test:e2e:ui": "$npm_package_config_playwright --ui",
     "test:all": "vitest run && $npm_package_config_playwright",
     "typecheck": "pnpm --package=typescript dlx tsc --noEmit"

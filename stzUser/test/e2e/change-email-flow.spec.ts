@@ -81,7 +81,7 @@ test.describe('Change Email Flow', () => {
     await signInUser(page, originalEmailAddress, testConstants.defaultPassword);
     
     // Step 2: Navigate to profile and initiate email change
-    await page.goto('http://localhost:3000/auth/profile');
+    await page.goto('/auth/profile');
     
     // More specific form assertions - verify initial state
     await expect(page.locator(profileSelectors.profileForm)).toBeVisible();

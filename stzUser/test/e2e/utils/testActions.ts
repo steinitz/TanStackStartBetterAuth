@@ -7,7 +7,7 @@ import type { Page } from '@playwright/test';
  * Reusable for multiple test flows (change email, change password, etc.)
  */
 export async function signInUser(page: Page, email: string, password: string): Promise<void> {
-  await page.goto('http://localhost:3000/auth/signin');
+  await page.goto('/auth/signin');
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');

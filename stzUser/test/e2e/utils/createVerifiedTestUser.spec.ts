@@ -83,7 +83,7 @@ test.describe('createVerifiedTestUser Unit Tests', () => {
     const createdEmail = await createVerifiedTestUser();
     
     // Verify email format (should be generated)
-    expect(createdEmail).toMatch(/^test-\d+@example\.com$/);
+    expect(createdEmail).toMatch(/^test\d+@example\.com$/);
 
     // Verify user exists in database
     const user = await getUserByEmail(createdEmail);

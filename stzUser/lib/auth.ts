@@ -9,7 +9,7 @@ import nodemailer from "nodemailer"
 import { transportOptions, sendEmail } from "~stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
 import { appDatabase } from "./database"
-import {verifyEmail} from "~stzUser/lib/auth-client"
+
 // import { getEnvVar } from "./env"
 
 const from = process.env.SMTP_FROM_ADDRESS
@@ -138,14 +138,14 @@ ${url}`,
       } 
       else {
         console.log('🚫 sendVerificationEmail: skipping old-email verification for change-email flow.  Calling verifyEmail directly, maybe for no good reason');
-
+        
         // Experiment - get the token and verify the email address old email address.
         // I may have observed the changed email address not being verified but now i'm not sure. 
-        // The following doesn't seem to crash despite being client clode but may not be needed
+        // The following uses server-side auth.api.verifyEmail instead of client-side verifyEmail
         const temp = new URL(url)
         const searchParams = new URLSearchParams(temp.search)
         const token = searchParams.get("token") ?? ""
-        await verifyEmail({
+        await auth.api.verifyEmail({
           query: {
             token 
           }

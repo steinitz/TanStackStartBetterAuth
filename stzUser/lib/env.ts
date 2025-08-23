@@ -31,6 +31,7 @@ type ClientEnv = {
   SMTP_FROM_ADDRESS: string | undefined
   SUPPORT_EMAIL_ADDRESS: string | undefined
   COMPANY_NAME: string
+  BETTER_AUTH_BASE_URL: string
 }
 
 // Load environment variables based on NODE_ENV
@@ -45,6 +46,7 @@ export const clientEnv: ClientEnv = isServer()
       SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS,
       SUPPORT_EMAIL_ADDRESS: process.env.SUPPORT_EMAIL_ADDRESS,
       COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',
+      BETTER_AUTH_BASE_URL: process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000',
     }
   : (typeof window !== 'undefined' && window.__ENV) 
     ? window.__ENV
@@ -53,6 +55,7 @@ export const clientEnv: ClientEnv = isServer()
         SMTP_FROM_ADDRESS: undefined,
         SUPPORT_EMAIL_ADDRESS: undefined,
         COMPANY_NAME: 'Your Company',
+        BETTER_AUTH_BASE_URL: 'http://localhost:3000',
       }
 
 // console.log({clientEnv});

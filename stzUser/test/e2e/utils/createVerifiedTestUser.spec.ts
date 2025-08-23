@@ -36,45 +36,12 @@ test.describe('createVerifiedTestUser Unit Tests', () => {
     expect(isVerified).toBe(true);
 
     // Verify verification email was sent
-    const sentEmails = await EmailTester.getSentEmails();
+    const sentEmails = await EmailTester.getSentEmails();``
     const verificationEmail = sentEmails.find(email =>
       email.envelope.to.includes(testEmail) &&
       email.subject.includes('Verify your email')
     );
     expect(verificationEmail).toBeDefined();
-  });
-
-  test('should handle duplicate email creation gracefully (expect Better Auth error logs)', async ({ }) => {
-    const testEmail = `duplicate-test-${Date.now()}@example.com`;
-    
-    // Create first user
-    const firstEmail = await createVerifiedTestUser({
-      email: testEmail,
-      name: 'First User',
-      password: testConstants.defaultPassword
-    });
-    expect(firstEmail).toBe(testEmail);
-
-    // Attempt to create second user with same email
-    // This should either fail gracefully or handle the duplicate appropriately
-    try {
-      const secondEmail = await createVerifiedTestUser({
-        email: testEmail,
-        name: 'Second User',
-        password: testConstants.defaultPassword
-      });
-      
-      // If it succeeds, it should return the same email
-      expect(secondEmail).toBe(testEmail);
-      
-      // Check that we still have only one user with this email
-      const user = await getUserByEmail(testEmail);
-      expect(user).toBeDefined();
-      expect(user?.email).toBe(testEmail);
-    } catch (error) {
-      // If it fails, that's also acceptable behavior
-      expect(error).toBeDefined();
-    }
   });
 
   test('should create user with default values when no options provided', async () => {

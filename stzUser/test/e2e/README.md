@@ -19,12 +19,24 @@ Mailpit is a local SMTP testing server that:
 - **Runs locally** for fast, reliable testing
 - **Is completely free** and open source
 - **Requires no external accounts** or internet connection
+- **Automatically starts** during E2E tests - no manual setup required!
 
 ## How It Works
 
-### 1. Start Mailpit Server
+### Automatic Mailpit Management
+
+The global test setup now automatically manages Mailpit for you:
+- **Detects** if Mailpit is already running
+- **Starts** Mailpit automatically if not running
+- **Waits** for Mailpit to be ready before running tests
+- **Prevents** "Mailpit connection failed" errors
+
+No manual setup required! Just run your E2E tests and Mailpit will be ready.
+
+### 1. Mailpit Server (Automatic)
 ```bash
-# Start Mailpit server (runs on localhost:1025 for SMTP, localhost:8025 for web UI)
+# Mailpit starts automatically during E2E tests
+# But you can also start it manually if needed:
 mailpit
 ```
 
@@ -265,10 +277,12 @@ expect(emails).toHaveLength(0);
 - Stop existing server and restart with `.env.test`: `pnpx dotenv-cli -e .env.test -- pnpm dev`
 - Verify `.env.test` file contains required environment variables
 
-**"Mailpit connection failed"**
-- Ensure Mailpit server is running: `mailpit`
+**"Mailpit connection failed"** (rare with automatic startup)
+- The global test setup should automatically start Mailpit
+- If issues persist, manually start Mailpit: `mailpit`
 - Check Mailpit is listening on localhost:1025 (SMTP) and localhost:8025 (web)
 - Verify no other services are using these ports
+- Check the test logs for Mailpit startup messages
 
 **"Email not captured"**
 - Verify your app is configured to use localhost:1025 for SMTP

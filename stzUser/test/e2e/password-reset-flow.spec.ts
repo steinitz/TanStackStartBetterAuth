@@ -84,12 +84,12 @@ test.describe('Password Reset Flow', () => {
   test('should complete password reset flow from signin page', async ({ page }) => {
     // Setup: Create verified test user
     const testEmailAddress = await createVerifiedTestUser();
-    const originalPassword = testConstants.defaultPassword;
-    const newPassword = 'NewTestPassword123!';
-    
     // Clear emails after user creation to isolate password reset behavior
     EmailTester.clearSentEmails();
 
+    // const originalPassword = testConstants.defaultPassword;
+    const newPassword = 'NewTestPassword123!';
+    
     const timeoutSeconds = 13;
 
     // Step 1: Navigate to signin page

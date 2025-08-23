@@ -77,9 +77,6 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
-    // WORKAROUND: Set to false due to Better Auth bug where sendOnSignUp affects email change verification
-    // See: https://github.com/better-auth/better-auth/issues/2538
-    // This should be true for proper security, but causes email change verification to fail
     requireEmailVerification: true,
     sendResetPassword: async (
       { user, url }
@@ -138,7 +135,8 @@ ${url}`,
           <br />
           <a href="${url}">${verifyEmailLinkText}</a>`,
         }})
-      } else {
+      } 
+      else {
         console.log('🚫 sendVerificationEmail: skipping old-email verification for change-email flow.  Calling verifyEmail directly, maybe for no good reason');
 
         // Experiment - get the token and verify the email address old email address.

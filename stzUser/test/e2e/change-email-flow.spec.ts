@@ -66,6 +66,9 @@ test.describe('Change Email Flow', () => {
   test('should successfully change and verify user email', async ({ page }) => {
     // Setup: Create verified test user
     const originalEmailAddress = await createVerifiedTestUser();
+    // Clear emails after signup to isolate email change behavior
+    EmailTester.clearSentEmails();
+
     const newEmailAddress = `new-${originalEmailAddress}`;
     
     // Verify initial state - manually check email verification status
@@ -76,9 +79,6 @@ test.describe('Change Email Flow', () => {
     
     // Step 1: Sign in user
     await signInUser(page, originalEmailAddress, testConstants.defaultPassword);
-    
-    // Clear emails after signup to isolate email change behavior
-    EmailTester.clearSentEmails();
     
     // Step 2: Navigate to profile and initiate email change
     await page.goto('http://localhost:3000/auth/profile');

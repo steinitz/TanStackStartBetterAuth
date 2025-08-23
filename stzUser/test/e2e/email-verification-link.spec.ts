@@ -4,11 +4,11 @@ import { testConstants } from '~stzUser/test/constants';
 import { getUserByEmail, isEmailVerified } from './utils/user-verification';
 
 test.describe('Email Verification Link Extraction', () => {
-  let testEmail: string;
+  let testEmailAddress: string;
 
   test.beforeEach(async () => {
     // Create a unique test email for this test
-    testEmail = `test-${Date.now()}@example.com`;
+    testEmailAddress = `test-${Date.now()}@example.com`;
     
     // Clear any existing emails in Mailpit
     await EmailTester.clearSentEmails();
@@ -23,7 +23,7 @@ test.describe('Email Verification Link Extraction', () => {
     await page.goto('/auth/signup');
 
     // Fill out signup form with test email
-    await page.fill('[name="email"]', testEmail);
+    await page.fill('[name="email"]', testEmailAddress);
     await page.fill('[name="password"]', 'TestPassword123!');
     await page.fill('[name="name"]', testConstants.defaultUserName);
     
@@ -34,7 +34,7 @@ test.describe('Email Verification Link Extraction', () => {
     await page.waitForTimeout(2000);
     
     // Verify user was created but not verified
-    const user = await getUserByEmail(testEmail);
+    const user = await getUserByEmail(testEmailAddress);
     expect(user).toBeTruthy();
     expect(user?.emailVerified).toBe(false);
     
@@ -44,7 +44,7 @@ test.describe('Email Verification Link Extraction', () => {
     
     // Find the verification email
     const verificationEmail = sentEmails.find(email => 
-      email.envelope.to.includes(testEmail) && 
+      email.envelope.to.includes(testEmailAddress) && 
       email.subject.toLowerCase().includes('verify')
     );
     expect(verificationEmail).toBeTruthy();
@@ -61,7 +61,7 @@ test.describe('Email Verification Link Extraction', () => {
     console.log('🔗 Better Auth verification URL extracted:', verificationLinks[0]);
     
     // Get the first verification link
-    const verificationLink = await EmailTester.getFirstVerificationLink(testEmail);
+    const verificationLink = await EmailTester.getFirstVerificationLink(testEmailAddress);
     expect(verificationLink).toBeTruthy();
     
     console.log('🔗 Verification link extracted:', verificationLink);
@@ -73,7 +73,7 @@ test.describe('Email Verification Link Extraction', () => {
     await page.waitForTimeout(1000);
     
     // Verify the user is now verified
-    const verifiedUser = await getUserByEmail(testEmail);
+    const verifiedUser = await getUserByEmail(testEmailAddress);
     expect(verifiedUser?.emailVerified).toBe(true);
     
     console.log('✅ Email verification completed successfully');
@@ -85,7 +85,7 @@ test.describe('Email Verification Link Extraction', () => {
       messageId: 'mock-1',
       envelope: {
         from: 'noreply@example.com',
-        to: [testEmail]
+        to: [testEmailAddress]
       },
       response: 'Mock response',
       subject: 'Verify Your Email Address',
@@ -121,7 +121,7 @@ test.describe('Email Verification Link Extraction', () => {
       messageId: 'mock-2',
       envelope: {
         from: 'noreply@example.com',
-        to: [testEmail]
+        to: [testEmailAddress]
       },
       response: 'Mock response',
       subject: 'Welcome to Our Service',

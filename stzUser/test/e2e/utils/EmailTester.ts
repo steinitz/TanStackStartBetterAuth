@@ -103,9 +103,9 @@ export class EmailTester {
         to: msg.To.map(t => t.Address)
       },
       response: 'Message sent via Mailpit',
-      subject: msg.Subject,
-      text: msg.Text,
-      html: msg.HTML,
+      subject: msg.Subject || '',
+      text: msg.Text || '',
+      html: msg.HTML || undefined,
       timestamp: msg.Created,
       previewUrl: `http://localhost:8025/view/${msg.ID}`
     }));
@@ -121,7 +121,18 @@ export class EmailTester {
         throw new Error(`Failed to fetch emails: ${response.statusText}`);
       }
       const data = await response.json();
-      return this.convertMailpitMessages(data.messages || []);
+      
+      // Fetch full content for each message
+      const fullMessages: MailpitMessage[] = [];
+      for (const msg of data.messages || []) {
+        const fullResponse = await fetch(`${this.MAILPIT_API_BASE}/message/${msg.ID}`);
+        if (fullResponse.ok) {
+          const fullMsg = await fullResponse.json();
+          fullMessages.push(fullMsg);
+        }
+      }
+      
+      return this.convertMailpitMessages(fullMessages);
     } catch (error) {
       console.error('❌ Failed to get emails from Mailpit:', error);
       return [];

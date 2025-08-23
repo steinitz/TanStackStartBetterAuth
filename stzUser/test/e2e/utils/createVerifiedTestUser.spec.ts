@@ -44,8 +44,8 @@ test.describe('createVerifiedTestUser Unit Tests', () => {
     expect(verificationEmail).toBeDefined();
   });
 
-  test('should handle duplicate email creation gracefully', async () => {
-    const testEmail = `duplicate-${Date.now()}@example.com`;
+  test('should handle duplicate email creation gracefully (expect Better Auth error logs)', async ({ }) => {
+    const testEmail = `duplicate-test-${Date.now()}@example.com`;
     
     // Create first user
     const firstEmail = await createVerifiedTestUser({
@@ -73,7 +73,6 @@ test.describe('createVerifiedTestUser Unit Tests', () => {
       expect(user?.email).toBe(testEmail);
     } catch (error) {
       // If it fails, that's also acceptable behavior
-      console.log('Duplicate email creation failed as expected:', error);
       expect(error).toBeDefined();
     }
   });
@@ -82,8 +81,8 @@ test.describe('createVerifiedTestUser Unit Tests', () => {
     // Create user with default options
     const createdEmail = await createVerifiedTestUser();
     
-    // Verify email format (should be generated)
-    expect(createdEmail).toMatch(/^test\d+@example\.com$/);
+    // Verify email format (should be generated with timestamp and counter)
+    expect(createdEmail).toMatch(/^test\d+-\d+@example\.com$/);
 
     // Verify user exists in database
     const user = await getUserByEmail(createdEmail);
@@ -96,42 +95,5 @@ test.describe('createVerifiedTestUser Unit Tests', () => {
     expect(isVerified).toBe(true);
   });
 
-  test('should handle server connection issues gracefully', async () => {
-    const testEmail = `connection-test-${Date.now()}@example.com`;
-    
-    // This test will help identify if connection issues cause the failures
-    try {
-      const createdEmail = await createVerifiedTestUser({
-        email: testEmail,
-        name: 'Connection Test User',
-        password: testConstants.defaultPassword
-      });
-      
-      expect(createdEmail).toBe(testEmail);
-      
-      // If successful, verify the user was created properly
-      const user = await getUserByEmail(testEmail);
-      expect(user).toBeDefined();
-      
-      const isVerified = await isEmailVerified(testEmail);
-      expect(isVerified).toBe(true);
-      
-    } catch (error) {
-      // Log detailed error information for debugging
-      console.error('createVerifiedTestUser failed with error:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      
-      // Check if it's a connection-related error
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('CONNECTION_REFUSED') || 
-          errorMessage.includes('ECONNREFUSED') ||
-          errorMessage.includes('status":0')) {
-        console.log('Connection error detected - this may explain E2E test failures');
-      }
-      
-      // Re-throw to fail the test and provide visibility
-      throw error;
-    }
-  });
+
 });

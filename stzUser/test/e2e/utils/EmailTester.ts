@@ -298,9 +298,13 @@ export class EmailTester {
  * Creates a unique test user email using timestamp to prevent duplicate user issues
  * @returns A unique test email address
  */
+// Counter to ensure unique email addresses even when tests run in rapid succession
+let testUserCounter = 0;
+
 export function newTestUser(): string {
   const timestamp = Date.now();
-  return `test${timestamp}@${testConstants.defaultUserDomain}`;
+  const counter = ++testUserCounter;
+  return `test${timestamp}-${counter}@${testConstants.defaultUserDomain}`;
 }
 
 /**

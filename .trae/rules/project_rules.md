@@ -21,6 +21,7 @@ The project uses Mailpit as a lightweight local SMTP server for E2E testing. Ema
 - `pnpm test:e2e:signup` - Test user signup flow
 - `pnpm test:e2e:change-email` - Test email change flow
 - `pnpm test:e2e:password-reset` - Test password reset flow
+- `pnpm test:e2e:create-verified-user` - Test createVerifiedTestUser utility function
 - `pnpm test:e2e:mailpit` - Test Mailpit integration
 
 ### Development Commands

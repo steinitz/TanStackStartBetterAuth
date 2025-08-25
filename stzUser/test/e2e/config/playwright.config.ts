@@ -11,6 +11,8 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   /* Global setup to verify server is running */
   globalSetup: './global-setup.ts',
+  /* Global teardown to clean up after tests */
+  globalTeardown: './global-teardown.ts',
   /* Disable parallel execution to avoid race conditions with shared resources */
   fullyParallel: false,
   /* Run tests serially with single worker */

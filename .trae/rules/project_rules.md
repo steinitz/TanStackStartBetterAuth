@@ -9,7 +9,6 @@ The project uses Mailpit as a lightweight local SMTP server for E2E testing. Ema
 - `pnpm test` - Run unit tests
 - `pnpm test:ui` - Run unit tests with UI
 - `pnpm test:run` - Run unit tests once
-- `pnpm typecheck` - Check TypeScript types
 
 ### E2E Tests
 - `pnpm test:e2e` - Run all E2E tests
@@ -24,10 +23,11 @@ The project uses Mailpit as a lightweight local SMTP server for E2E testing. Ema
 - `pnpm test:e2e:create-verified-user` - Test createVerifiedTestUser utility function
 - `pnpm test:e2e:mailpit` - Test Mailpit integration
 
-### Development Commands
+## Development Commands
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm start:prod` - Start production server
+- `pnpm typecheck` - Check TypeScript types
 
 ## Testing Best Practices
 - Use the specific test commands above (e.g., `pnpm test:e2e:password-reset`)

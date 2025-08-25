@@ -148,6 +148,7 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
     attempts++;
 
     if (await checkServerStatus(baseURL)) {
+      await sleep(1000); // Wait 1 second
       console.log('✅ Development server started successfully');
       return;
     }
@@ -156,4 +157,4 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
   }
 
   throw new Error('Failed to start development server within timeout period');
-}
+}``

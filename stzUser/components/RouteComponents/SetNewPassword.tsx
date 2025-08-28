@@ -7,6 +7,27 @@ import {resetPassword} from '~stzUser/lib/auth-client';
 import { routeStrings } from '~/constants';
 import { Spacer } from '~stzUtils/components/Spacer';
 
+// UI strings for component and testing
+export const setNewPasswordStrings = {
+  pageTitle: 'Set New Password',
+  passwordLabel: 'Password',
+  confirmPasswordLabel: 'Confirm Password',
+  setPasswordButton: 'Set Password',
+  passwordUpdatedTitle: 'Password Updated',
+  passwordUpdatedMessage: 'Your password has been successfully updated.',
+  continueButton: 'Continue',
+};
+
+// Test selectors for E2E testing
+export const setNewPasswordSelectors = {
+  setNewPasswordForm: 'form',
+  passwordInput: 'input[name="password"]',
+  confirmPasswordInput: 'input[name="confirmPassword"]',
+  setPasswordButton: 'button[type="submit"]',
+  spinnerContainer: '.spinner',
+  passwordUpdatedH1Text: setNewPasswordStrings.passwordUpdatedTitle,
+};
+
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type PasswordResetData = {
   password: string;
@@ -64,13 +85,13 @@ export const SetNewPassword = () => {
       </div>
       <section>
         <form onSubmit={handleSetNewPassword}>
-        <h1>Set New Password</h1>
+        <h1>{setNewPasswordStrings.pageTitle}</h1>
           <PasswordInput
             validationIssue={validationIssues?.password}
           />
           <Spacer />
           <div style={{textAlign: "right"}}>
-            <button type="submit">Set New Password</button>
+            <button type="submit">{setNewPasswordStrings.setPasswordButton}</button>
           </div>
         </form>
       </section>

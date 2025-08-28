@@ -8,13 +8,24 @@ import {Spacer} from "~stzUtils/components/Spacer";
 import {isEmptyString} from "~stzUser/lib/utils";
 import Spinner from "~stzUser/components/Other/Spinner";
 
+// UI strings for component and testing
+export const requestPasswordResetStrings = {
+  pageTitle: 'Password Reset',
+  emailLabel: 'Email',
+  resetPasswordButton: 'Reset Password',
+  linkSentTitle: 'Password Reset Link Sent',
+  linkSentMessage: 'We\'ve sent a password-reset link to',
+  linkSentInstructions: 'Please check your email inbox and follow the instructions',
+  okButton: 'Ok',
+};
+
 // Test selectors for E2E testing
 export const requestPasswordResetSelectors = {
   passwordResetForm: 'form',
   emailInput: 'input[name="email"]',
   resetPasswordButton: 'button[type="submit"]',
   spinnerContainer: '.spinner',
-  linkSentH1Text: 'Password Reset Link Sent',
+  linkSentH1Text: requestPasswordResetStrings.linkSentTitle,
 };
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
@@ -84,11 +95,11 @@ export const RequestPasswordReset = () => {
         {isEmptyString(email) ?
           <form onSubmit={handlePasswordReset}>
             <div style={{display: "flex", flexDirection: "row", justifyContent: "flex-start"}}>
-              <h1>Password Reset</h1>
+              <h1>{requestPasswordResetStrings.pageTitle}</h1>
               {shouldShowSpinner && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
             </div>
             <label>
-              Email
+              {requestPasswordResetStrings.emailLabel}
               <input
                 name="email"
                 type="email"
@@ -97,20 +108,20 @@ export const RequestPasswordReset = () => {
               />
               <FormFieldError message={validationIssues?.email}/>
             </label>
-            <button type="submit">Reset Password</button>
+            <button type="submit">{requestPasswordResetStrings.resetPasswordButton}</button>
           </form>
           :
           <form onSubmit={() => navigate({to: "/"})}>
-            <h1>Password Reset Link Sent</h1>
-            <p>We've sent a password-reset link to</p>
+            <h1>{requestPasswordResetStrings.linkSentTitle}</h1>
+            <p>{requestPasswordResetStrings.linkSentMessage}</p>
             <p style={{marginLeft: '4rem'}}>{email}</p>
-            <p>Please check your email inbox and follow the instructions</p>
+            <p>{requestPasswordResetStrings.linkSentInstructions}</p>
             <Spacer space={2}/>
             <div style={{textAlign: "right"}}>
               <button
                 type="submit"
               >
-                Ok
+                {requestPasswordResetStrings.okButton}
               </button>
             </div>
           </form>

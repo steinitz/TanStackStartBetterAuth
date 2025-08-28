@@ -4,6 +4,9 @@ A modern web application built with TanStack Start and Better Auth, featuring co
 
 > **🔧 Environment System Note**: This project uses a sophisticated "secure by default" environment variable system that handles server/client separation automatically. Environment variables are loaded via `bootstrap.env.mjs` in production and hydrated safely to the client. See [Environment Documentation](stzUser/README.md#environment-variable-system) for details.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/steinitz/TanStackStartBetterAuth)
+
+
 ## Features
 
 - 🔐 **Authentication & Authorization**: Complete user management with Better Auth

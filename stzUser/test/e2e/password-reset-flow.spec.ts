@@ -5,15 +5,18 @@ import { EmailTester } from './utils/EmailTester';
 import { signInUser } from './utils/testActions';
 import type { Page } from '@playwright/test';
 import { passwordResetSubject } from '../../lib/auth';
-import { requestPasswordResetSelectors } from '~stzUser/components/RouteComponents/RequestPasswordReset';
+import { requestPasswordResetSelectors, requestPasswordResetStrings } from '~stzUser/components/RouteComponents/RequestPasswordReset';
+import { setNewPasswordSelectors, setNewPasswordStrings } from '~stzUser/components/RouteComponents/SetNewPassword';
 
-// Construct test selectors following model test pattern
+// Configure test-specific options for debugging
+test.use({
+  // headless: false,
+  // launchOptions: {
+  //   slowMo: 1000,
+  // },
+});
 
-const setNewPasswordSelectors = {
-  setPasswordForm: 'form',
-  passwordInput: 'input[type="password"]',
-  setPasswordButton: 'button[type="submit"]'
-};
+// Additional test selectors not covered by component exports
 
 const signInSelectors = {
   signInForm: 'form',
@@ -108,7 +111,7 @@ test.describe('Password Reset Flow', () => {
 
     // Step 3: Verify we're on the request password reset page
     await expect(page).toHaveURL('/auth/requestPasswordReset');
-    await expect(page.locator('h1')).toContainText('Password Reset');
+    await expect(page.locator('h1')).toContainText(requestPasswordResetStrings.pageTitle);
     
     // Step 4: Fill out the password reset form with specific form assertions
     await expect(page.locator(requestPasswordResetSelectors.passwordResetForm)).toBeVisible();
@@ -119,12 +122,12 @@ test.describe('Password Reset Flow', () => {
     await expect(page.locator(requestPasswordResetSelectors.emailInput)).toHaveValue(testEmailAddress);
     
     // Step 5: Submit the password reset request
-    await expect(page.getByRole('button', { name: 'Reset Password' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: requestPasswordResetStrings.resetPasswordButton })).toBeEnabled();
     await page.click(requestPasswordResetSelectors.resetPasswordButton);
     
-    // Step 5a: Wait briefly to ensure email sending completes
-    // console.log('password-reset-flow - 5a. waiting 3 seconds for email-send completion')
-    await page.waitForTimeout(3 * 1000);
+    // Step 5a: Wait for email sending to complete by checking for success message
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h1')).toContainText(requestPasswordResetSelectors.linkSentH1Text, { timeout: 10000 });
     
     // Step 6: Verify success message is displayed
     // console.log('password-reset-flow - 6. checking for email-sent dialog')
@@ -137,8 +140,19 @@ test.describe('Password Reset Flow', () => {
     // console.log('email-sent dialog appeared')
     
     // Step 7: Verify password reset email was sent using helper function
-    // Wait a moment for email to be processed
-    await page.waitForTimeout(timeoutSeconds * 1000);
+    // Poll for email with exponential backoff
+    let passwordResetEmail;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts) {
+      passwordResetEmail = await findEmailBySubject([testEmailAddress]);
+      if (passwordResetEmail) break;
+      
+      const waitTime = Math.min(500 * Math.pow(1.5, attempts), 3000); // Exponential backoff, max 3s
+      await page.waitForTimeout(waitTime);
+      attempts++;
+    }
     
     const allEmails = await EmailTester.getSentEmails();
     console.log('📧 Total emails found:', allEmails.length);
@@ -156,7 +170,6 @@ test.describe('Password Reset Flow', () => {
     // console.log('🎯 Matching emails:', matchingEmails.length);
     console.log('📧 Matching emails:', matchingEmails.map(e => ({ to: e.envelope?.to, subject: e.subject, body: e.text || e.html || 'No body content' })));
 
-    const passwordResetEmail = await findEmailBySubject([testEmailAddress]);
     expect(passwordResetEmail).toBeTruthy();
     expect(passwordResetEmail?.envelope?.to).toContain(testEmailAddress);
     expect(passwordResetEmail?.subject).toContain('Reset');
@@ -171,14 +184,14 @@ test.describe('Password Reset Flow', () => {
       // Step 9: Click the password reset link (automatically redirects to set new password page)
       await page.goto(passwordResetUrl);
       
-      // Wait for the set new password page to load
-      await page.waitForLoadState('networkidle', { timeout: timeoutSeconds * 1000 });
+      // Wait for the set new password page to load with proper error handling
+      await page.waitForLoadState('networkidle', { timeout: 15000 });
       
       // Verify we're on the set new password page
-      await expect(page.locator('h1')).toContainText('Set New Password', { timeout: timeoutSeconds * 1000 });
+      await expect(page.locator('h1')).toContainText(setNewPasswordStrings.pageTitle, { timeout: 10000 });
       
       // Step 10: Fill out the new password form with specific form assertions
-      await expect(page.locator(setNewPasswordSelectors.setPasswordForm)).toBeVisible();
+      await expect(page.locator(setNewPasswordSelectors.setNewPasswordForm)).toBeVisible();
       const passwordInput = page.locator(setNewPasswordSelectors.passwordInput);
       await expect(passwordInput).toBeVisible();
       await expect(passwordInput).toBeEnabled();
@@ -187,12 +200,20 @@ test.describe('Password Reset Flow', () => {
       await expect(passwordInput).toHaveValue(newPassword);
       
       // Step 11: Submit the new password
-      await expect(page.getByRole('button', { name: 'Set New Password' })).toBeEnabled();
+      await expect(page.getByRole('button', { name: setNewPasswordStrings.setPasswordButton })).toBeEnabled();
       await page.click(setNewPasswordSelectors.setPasswordButton);
       
       // Step 12: Verify password reset completion
-      // This might redirect to signin or show a success message
-      await page.waitForLoadState('networkidle', { timeout: timeoutSeconds * 1000 });
+      // Wait for form submission and potential redirect
+      await page.waitForLoadState('networkidle', { timeout: 15000 });
+      
+      // Wait for either success message or redirect to signin
+      try {
+        await expect(page.locator('h1')).toContainText(['Sign In', 'Success', 'Password Updated'], { timeout: 10000 });
+      } catch {
+        // If no clear success indicator, proceed to signin test
+        console.log('No clear success message found, proceeding to signin test');
+      }
       
       // Step 13: Test that we can sign in with the new password using signInUser utility
       await signInUser(page, testEmailAddress, newPassword);

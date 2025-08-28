@@ -3,7 +3,16 @@ import { newTestUser, EmailTester } from './utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 import { isEmailVerified } from './utils/user-verification';
 
+// Configure test-specific options for debugging
+test.use({
+  // headless: false,
+  launchOptions: {
+    slowMo: 1000,
+  },
+});
+
 test.describe('Signup Flow', () => {
+
   test('should complete signup flow and show success message', async ({ page }) => {
     // Listen for console messages and errors
     // page.on('console', (msg) => {
@@ -28,7 +37,7 @@ test.describe('Signup Flow', () => {
     // Navigate to signup page
     await page.goto('/auth/signup');
 
-    // Check if we're on the signup page by looking for the form
+    // Check if we're on the signup page by lookin`g for the form
     await expect(page.locator('form')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
 

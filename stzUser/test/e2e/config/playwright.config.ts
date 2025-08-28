@@ -76,5 +76,4 @@ export default defineConfig({
     // },
   ],
 
-  /* Manual server management - start 'pnpm dev' separately for full server log visibility */
 });

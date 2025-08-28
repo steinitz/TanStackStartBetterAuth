@@ -9,6 +9,7 @@ import { requestPasswordResetSelectors, requestPasswordResetStrings } from '~stz
 import { setNewPasswordSelectors, setNewPasswordStrings } from '~stzUser/components/RouteComponents/SetNewPassword';
 
 // Configure test-specific options for debugging
+// We've now replaced the slowMo: options with more-specific waiting techniques
 test.use({
   // headless: false,
   // launchOptions: {

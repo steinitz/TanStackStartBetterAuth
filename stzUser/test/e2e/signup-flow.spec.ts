@@ -4,6 +4,8 @@ import { testConstants } from '~stzUser/test/constants';
 import { isEmailVerified } from './utils/user-verification';
 
 // Configure test-specific options for debugging
+// See password-reset-flow.spec.ts for examples of more-specific 
+// waiting techniques for, in particular, email-based flows
 test.use({
   // headless: false,
   launchOptions: {

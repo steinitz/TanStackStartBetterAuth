@@ -1,4 +1,4 @@
-import {useState} from "react";
+import React, {useState} from "react";
 import {FormFieldError} from "~stzUtils/components/FormFieldError";
 import { ValidatedInput } from "~stzUtils/components/ValidatedInput";
 import { fieldLabelSubtext } from "~stzUtils/components/styles";
@@ -9,12 +9,26 @@ type ValidationErrors = Record<string, string> | undefined
 // Re-export ValidatedInput for use in other components
 export { ValidatedInput };
 
-export function PasswordInput({validationIssue}) {
+export function PasswordInput({
+  validationIssue,
+  fieldName = "password",
+  label = "Password",
+  placeholder,
+  autoComplete = "on",
+  style
+}: {
+  validationIssue?: string,
+  fieldName?: string,
+  label?: string,
+  placeholder?: string,
+  autoComplete?: string,
+  style?: React.CSSProperties
+}) {
   const [shouldShowPassword, setShouldShowPassword] = useState(false)
   return (
     <label>
       <div>
-        Password
+        {label}
           <div
             style={{float: 'right', marginTop: '3px'}}
             className={shouldShowPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}
@@ -31,12 +45,14 @@ export function PasswordInput({validationIssue}) {
           // width: 'calc(100% - 1.6rem)', // why do I need to repeat this from mvp.css?
           fontWeight: shouldShowPassword ? 'normal' : 'bold',
           letterSpacing: shouldShowPassword ? 'normal' : '.25rem',
+          ...style
         }}
         type={shouldShowPassword ? 'text' : 'password'}
-        name="password"
-        autoComplete="on"
+        name={fieldName}
+        {...(placeholder && { placeholder })}
+        autoComplete={autoComplete}
       />
-      <FormFieldError message={validationIssue} />
+      <FormFieldError message={validationIssue || ''} />
     </label>
   )
 }

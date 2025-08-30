@@ -6,6 +6,7 @@ import * as v from "valibot";
 import {resetPassword} from '~stzUser/lib/auth-client';
 import { routeStrings } from '~/constants';
 import { Spacer } from '~stzUtils/components/Spacer';
+import { requiredPasswordSchema, RequiredPasswordData } from '~stzUser/lib/password-validation';
 
 // UI strings for component and testing
 export const setNewPasswordStrings = {
@@ -28,15 +29,11 @@ export const setNewPasswordSelectors = {
   passwordUpdatedH1Text: setNewPasswordStrings.passwordUpdatedTitle,
 };
 
-// TypeScript - sugggested by Valibot docs, and comes in handy later
-type PasswordResetData = {
-  password: string;
-};
+// TypeScript - using shared password validation
+type PasswordResetData = RequiredPasswordData;
 
-// Valibot
-const PasswordResetSchema = v.object({
-  password: v.pipe(v.string(), v.nonEmpty('password required')),
-});
+// Valibot - using shared password validation schema
+const PasswordResetSchema = requiredPasswordSchema;
 
 export const SetNewPassword = () => {
   const router = useRouter()

@@ -2,9 +2,9 @@ import {useNavigate} from "@tanstack/react-router";
 import {MouseEvent, SyntheticEvent, useEffect, useState} from "react";
 import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~stzUser/lib/form";
-import {changeEmail, deleteUser, useSession} from "~stzUser/lib/auth-client";
+import {changeEmail, changePassword, deleteUser, useSession} from "~stzUser/lib/auth-client";
 import {Spacer} from "~stzUtils/components/Spacer";
-import {EmailInput} from "~stzUtils/components/InputFields";
+import {EmailInput, PasswordInput} from "~stzUtils/components/InputFields";
 import {
   DeleteAccountConfirmationDialog,
 } from "./deleteAccountConfirmationDialog";
@@ -16,6 +16,7 @@ import {makeDialogRef} from "~stzUtils/components/Dialog";
 import Spinner from "~stzUser/components/Other/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "./checkForNewEmailVerificationLinkDialog";
 import {routeStrings} from "~/constants";
+import { passwordValidation } from '~stzUser/lib/password-validation';
 
 const didConfirmChangeSearchParam = 'didConfirmChange'
 
@@ -35,16 +36,22 @@ export const profileStructuralSelectors = {
 
 type ProfileData = {
   email: string
+  currentPassword?: string
+  newPassword?: string
 }
 
-// Valibot
+// Valibot - using shared password validation
 const ProfileSchema = v.object({
   email: v.pipe(
     v.string('email must be a string'),
     v.nonEmpty('email address required'),
     v.email('invalid email'),
   ),
+  currentPassword: v.optional(passwordValidation),
+  newPassword: v.optional(passwordValidation),
 })
+
+
 
 export const Profile = () => {
   const {data: session} = useSession()
@@ -59,6 +66,7 @@ export const Profile = () => {
   const [, setEmailChangeError] = useState<any>()
   const [, setNewEmailAddress] = useState('')
   const [shouldShowEmailChangeSpinner, setShouldShowEmailChangeSpinner] = useState(false)
+  const [shouldShowPasswordChangeSpinner, setShouldShowPasswordChangeSpinner] = useState(false)
 
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: ProfileData) => {
@@ -78,14 +86,49 @@ export const Profile = () => {
   ) => {
     const fields = sharedFormSubmission(event)
     const newEmail = fields.email as string
+    const currentPasswordValue = fields.currentPassword as string
+    const newPasswordValue = fields.newPassword as string
     const isValid = validateFormFields(fields as ProfileData)
 
     if (isValid) {
-      // Password reset functionality removed from Profile component
-      // Password reset should be handled through a separate "Forgot Password" flow
-      // that uses requestPasswordReset to send an email with a reset token
+      // Prevent simultaneous email and password changes
+      const isEmailChange = fields.email !== email
+      const isPasswordChange = newPasswordValue && newPasswordValue.trim() !== '' && currentPasswordValue && currentPasswordValue.trim() !== ''
       
-      if (fields.email !== email) {
+      if (isEmailChange && isPasswordChange) {
+        alert('Please change either email or password, not both at the same time.')
+        return
+      }
+      
+      // Handle password change
+      if (isPasswordChange) {
+        setShouldShowPasswordChangeSpinner(true)
+        try {
+          const { data, error } = await changePassword({
+            newPassword: newPasswordValue,
+            currentPassword: currentPasswordValue,
+            revokeOtherSessions: true
+          })
+          if (data && !error) {
+            alert('Password changed successfully!')
+            // Clear the password fields
+            if (event.currentTarget) {
+              const currentPasswordInput = event.currentTarget.querySelector('input[name="currentPassword"]') as HTMLInputElement
+              const newPasswordInput = event.currentTarget.querySelector('input[name="newPassword"]') as HTMLInputElement
+              if (currentPasswordInput) currentPasswordInput.value = ''
+              if (newPasswordInput) newPasswordInput.value = ''
+            }
+          } else {
+            alert(`Error changing password: ${error?.message || 'Unknown error'}`)
+          }
+        } catch (error: any) {
+          alert(`Error changing password: ${error.message || 'Unknown error'}`)
+        }
+        setShouldShowPasswordChangeSpinner(false)
+      }
+      
+      // Handle email change
+      if (isEmailChange) {
         // note: BetterAuth supports email confirmation for changing email.
         setShouldShowEmailChangeSpinner(true)
         setNewEmailAddress((newEmail))
@@ -184,12 +227,37 @@ export const Profile = () => {
           >
             <div style={{display: "flex", flexDirection: "row", justifyContent: "flex-start"}}>
               <h1>Profile</h1>
-              {shouldShowEmailChangeSpinner && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
+              {(shouldShowEmailChangeSpinner || shouldShowPasswordChangeSpinner) && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
             </div>
+            
+            <p style={{marginTop: '0', color: 'var(--color-text-secondary)', fontSize: '0.9rem'}}>
+              Update your email address or change your password.<br />
+              Leave password fields empty to keep your current password.
+            </p>
+            
+            <Spacer />
 
             <EmailInput
               validationErrors={validationIssues}
               defaultValue={email}
+            />
+            
+            <Spacer />
+            
+            <PasswordInput
+              fieldName="currentPassword"
+              label="Current Password"
+              autoComplete="current-password"
+              validationIssue={validationIssues?.currentPassword}
+            />
+            
+            <Spacer />
+            
+            <PasswordInput
+              fieldName="newPassword"
+              label="New Password"
+              autoComplete="new-password"
+              validationIssue={validationIssues?.newPassword}
             />
 
             <div

@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/test/unit/setup.ts'],
+    setupFiles: ['./stzUser/test/unit/setup.ts'],
     globals: true, // Re-enable globals for jest-dom compatibility
     watch: false,
     /* Only target *.test.ts files for Vitest unit tests */

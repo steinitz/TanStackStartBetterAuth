@@ -382,11 +382,114 @@ Mailpit works perfectly in CI environments:
 3. **Email accessibility testing** - verify emails work with screen readers
 4. **Multi-language email testing** - test internationalized email content
 
+## Test Utilities & Stability
+
+### Waiting Utilities (`utils/testActions.ts`)
+
+The E2E test suite includes sophisticated waiting utilities that have proven crucial for test stability:
+
+#### `waitWithExponentialBackoff()`
+Generic utility for retrying async operations with exponential backoff:
+
+```typescript
+import { waitWithExponentialBackoff } from './utils/testActions';
+
+// Wait for any async operation with retries
+await waitWithExponentialBackoff(
+  async () => {
+    const response = await fetch('/api/status');
+    if (!response.ok) throw new Error('API not ready');
+    return response;
+  },
+  {
+    maxAttempts: 10,
+    baseWaitMs: 500,
+    maxWaitMs: 3000,
+    multiplier: 1.5,
+    errorMessage: 'API failed to become ready'
+  }
+);
+```
+
+#### `waitForElementVisible()`
+Specialized utility for Playwright element visibility with exponential backoff:
+
+```typescript
+import { waitForElementVisible } from './utils/testActions';
+
+// Wait for element visibility with robust retry logic
+const submitButton = page.locator('button[type="submit"]');
+await waitForElementVisible(submitButton, {
+  maxAttempts: 8,
+  baseWaitMs: 300,
+  timeout: 1000,
+  errorMessage: 'Submit button never became visible'
+});
+```
+
+#### `signInUser()`
+Reusable authentication helper with error handling:
+
+```typescript
+import { signInUser } from './utils/testActions';
+
+// Sign in with automatic error detection and navigation verification
+await signInUser(page, 'user@example.com', 'password123');
+```
+
+### Test Stability Best Practices
+
+1. **Use Exponential Backoff**: Prefer `waitWithExponentialBackoff()` over simple timeouts for unreliable operations
+2. **Element Visibility**: Use `waitForElementVisible()` instead of basic `toBeVisible()` for dynamic elements
+3. **Focused Waiting**: Target specific conditions rather than arbitrary delays
+4. **Error Context**: Provide meaningful error messages for debugging failures
+5. **SlowMo Configuration**: Use `slowMo: 1000` in browser launch options for timing-sensitive tests
+
+### Recent Stability Improvements
+
+#### Password Change & Reset Tests
+The password change (`password-change.spec.ts`) and password reset (`password-reset-flow.spec.ts`) tests have been stabilized using:
+
+- **Exponential backoff patterns** for element visibility
+- **Robust email verification** with retry logic
+- **Improved error handling** for form submissions
+- **Consistent waiting strategies** across test flows
+
+#### Code Abstraction Benefits
+- **Reduced duplication**: Common waiting patterns extracted to `testActions.ts`
+- **Improved maintainability**: Centralized retry logic for easier updates
+- **Better error messages**: Contextual failure information for debugging
+- **Consistent behavior**: Standardized waiting across all E2E tests
+
+### Test Cleanup & Server Management
+
+#### Global Teardown Behavior
+The E2E test suite uses `global-teardown.ts` for cleanup:
+
+- **Dev Server**: Forcefully terminated after all tests (`pkill -f 'vite.*dev'`)
+- **Mailpit**: Intentionally left running for development continuity
+- **Clean State**: Ensures fresh server environment between test runs
+
+#### Manual Cleanup (if needed)
+```bash
+# Stop Mailpit manually (optional)
+pkill mailpit
+
+# Verify no dev servers running
+ps aux | grep vite
+```
+
+#### Development vs Test Mode
+- **Test Mode**: Servers terminated for isolation
+- **Development Mode**: Servers preserved for workflow continuity
+- **Environment Detection**: Uses `PLAYWRIGHT_RUNNING=true` flag
+
 ## Resources
 
 - **Mailpit**: https://mailpit.axllent.org/
 - **Mailpit GitHub**: https://github.com/axllent/mailpit
 - **Playwright Testing**: https://playwright.dev/docs/
+- **Test Utilities**: `stzUser/test/e2e/utils/testActions.ts`
 - **Your Production Email Code**: `stzUser/lib/mail-utilities.ts` (unchanged!)
 
 This email testing setup gives you confidence that your email functionality works correctly while keeping your production email system completely isolated and safe! 🚀📧

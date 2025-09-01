@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createVerifiedTestUser } from './utils/user-verification';
 import { testConstants } from '~stzUser/test/constants';
 import { EmailTester } from './utils/EmailTester';
-import { signInUser } from './utils/testActions';
+import { signInUser, waitWithExponentialBackoff } from './utils/testActions';
 import type { Page } from '@playwright/test';
 import { passwordResetSubject } from '../../lib/auth';
 import { requestPasswordResetSelectors, requestPasswordResetStrings } from '~stzUser/components/RouteComponents/RequestPasswordReset';
@@ -141,19 +141,19 @@ test.describe('Password Reset Flow', () => {
     // console.log('email-sent dialog appeared')
     
     // Step 7: Verify password reset email was sent using helper function
-    // Poll for email with exponential backoff
-    let passwordResetEmail;
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    while (attempts < maxAttempts) {
-      passwordResetEmail = await findEmailBySubject([testEmailAddress]);
-      if (passwordResetEmail) break;
-      
-      const waitTime = Math.min(500 * Math.pow(1.5, attempts), 3000); // Exponential backoff, max 3s
-      await page.waitForTimeout(waitTime);
-      attempts++;
-    }
+    // Poll for email with abstracted exponential backoff utility
+    const passwordResetEmail = await waitWithExponentialBackoff(
+      async () => {
+        const email = await findEmailBySubject([testEmailAddress]);
+        if (!email) {
+          throw new Error('Password reset email not found');
+        }
+        return email;
+      },
+      {
+        errorMessage: 'Password reset email not received after maximum attempts'
+      }
+    );
     
     const allEmails = await EmailTester.getSentEmails();
     console.log('📧 Total emails found:', allEmails.length);

@@ -1,26 +1,22 @@
 import * as v from "valibot";
 
-// Shared password validation schema
-export const passwordValidation = v.pipe(
+export const minPasswordLength = 8;
+
+// Base password validation - string that is not empty
+const basePasswordValidation = v.pipe(
   v.string(),
   v.nonEmpty('password required')
 );
 
-// For required password fields (like SetNewPassword)
-export const requiredPasswordSchema = v.object({
-  password: passwordValidation,
-});
+// For new passwords - includes minimum length requirement
+export const passwordValidation = v.pipe(
+  basePasswordValidation,
+  v.minLength(minPasswordLength, `must be at least ${minPasswordLength} characters`)
+);
 
-// For optional password fields (like Profile)
-export const optionalPasswordSchema = v.object({
-  password: v.optional(passwordValidation),
-});
-
-// Type definitions
-export type RequiredPasswordData = {
-  password: string;
-};
-
-export type OptionalPasswordData = {
-  password?: string;
-};
+// For current passwords - only requires non-empty string
+// Current passwords may not meet new minimum length standards
+export const currentPasswordValidation = v.pipe(
+  v.string(),
+  v.nonEmpty('current password required')
+);

@@ -4,4 +4,6 @@ export const userRoles = {
   user: 'user',
 }
 
+export const minPasswordLength = 8
+
 export type userRolesType = keyof typeof userRoles

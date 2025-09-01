@@ -16,7 +16,7 @@ import {makeDialogRef} from "~stzUtils/components/Dialog";
 import Spinner from "~stzUser/components/Other/Spinner";
 import {CheckForNewEmailVerificationLinkDialog} from "./checkForNewEmailVerificationLinkDialog";
 import {routeStrings} from "~/constants";
-import { passwordValidation } from '~stzUser/lib/password-validation';
+import { passwordValidation, currentPasswordValidation } from '~stzUser/lib/password-validation';
 
 const didConfirmChangeSearchParam = 'didConfirmChange'
 
@@ -47,7 +47,7 @@ const ProfileSchema = v.object({
     v.nonEmpty('email address required'),
     v.email('invalid email'),
   ),
-  currentPassword: v.optional(passwordValidation),
+  currentPassword: v.optional(currentPasswordValidation),
   newPassword: v.optional(passwordValidation),
 })
 
@@ -251,7 +251,7 @@ export const Profile = () => {
               validationIssue={validationIssues?.currentPassword}
             />
             
-            <Spacer />
+            <Spacer space={0}/>
             
             <PasswordInput
               fieldName="newPassword"

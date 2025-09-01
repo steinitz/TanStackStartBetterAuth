@@ -9,6 +9,7 @@ import nodemailer from "nodemailer"
 import { transportOptions, sendEmail } from "~stzUser/lib/mail-utilities"
 import { routeStrings } from "~/constants"
 import { appDatabase } from "./database"
+import { minPasswordLength } from "./password-validation"
 
 // import { getEnvVar } from "./env"
 
@@ -78,6 +79,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    minPasswordLength,
     sendResetPassword: async (
       { user, url }
     ) => {

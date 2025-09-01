@@ -6,7 +6,7 @@ import * as v from "valibot";
 import {resetPassword} from '~stzUser/lib/auth-client';
 import { routeStrings } from '~/constants';
 import { Spacer } from '~stzUtils/components/Spacer';
-import { requiredPasswordSchema, RequiredPasswordData } from '~stzUser/lib/password-validation';
+import { passwordValidation } from '~stzUser/lib/password-validation';
 
 // UI strings for component and testing
 export const setNewPasswordStrings = {
@@ -29,33 +29,24 @@ export const setNewPasswordSelectors = {
   passwordUpdatedH1Text: setNewPasswordStrings.passwordUpdatedTitle,
 };
 
-// TypeScript - using shared password validation
-type PasswordResetData = RequiredPasswordData;
-
-// Valibot - using shared password validation schema
-const PasswordResetSchema = requiredPasswordSchema;
+// TypeScript - simple password data type
+type PasswordResetData = {
+  password: string;
+};
 
 export const SetNewPassword = () => {
   const router = useRouter()
 
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: PasswordResetData) => {
-    let isValid = true;
-
     try {
-      const valibotResult = v.parse(
-        PasswordResetSchema,
-        fields,
-        {abortPipeEarly: true} // ensures each key, e.g. email, has only one error message
-      )
-      console.log('validating password\n', {valibotResult})
-    } catch (error: any) {/*: ValiError<typeof SignupSchema>*/
-      const flattenedIssues = v.flatten<typeof PasswordResetSchema>(error.issues)
-      setValidationIssues(flattenedIssues?.nested ?? {})
-      isValid = false
+      v.parse(passwordValidation, fields.password);
+      setValidationIssues({}); // Clear any previous validation issues
+      return true;
+    } catch (error: any) {
+      setValidationIssues({ password: error.message });
+      return false;
     }
-
-    return isValid
   }
 
   const handleSetNewPassword = async (

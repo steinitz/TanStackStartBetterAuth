@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import { createVerifiedTestUser, getUserByEmail } from './utils/user-verification'
 import { testConstants } from '~stzUser/test/constants'
 import { signInUser, waitForElementVisible } from './utils/testActions'
+import { profileTestIds, profileStructuralSelectors } from '~stzUser/components/RouteComponents/Profile/Profile'
 // import { passwordValidation, currentPasswordValidation } from '~stzUser/lib/password-validation'
 // import { clientEnv } from '~stzUser/lib/env'
 // import * as v from 'valibot'
@@ -38,7 +39,7 @@ test.describe('Password Change Flow', () => {
     })
   })
 
-  test('should display password change form fields', async ({ page }) => {
+  test.skip('should display password change form fields', async ({ page }) => {
     // Sign in with the test user using the utility function
     await signInUser(page, testUserEmail, testConstants.defaultPassword)
     
@@ -52,8 +53,8 @@ test.describe('Password Change Flow', () => {
     });
     
     // Verify password input fields are present
-    const currentPasswordInput = page.locator('input[name="currentPassword"]')
-    const newPasswordInput = page.locator('input[name="newPassword"]')
+    const currentPasswordInput = page.locator(profileStructuralSelectors.currentPasswordInput)
+    const newPasswordInput = page.locator(profileStructuralSelectors.newPasswordInput)
     
     await expect(currentPasswordInput).toBeVisible()
     await expect(newPasswordInput).toBeVisible()
@@ -69,33 +70,75 @@ test.describe('Password Change Flow', () => {
     console.log('✅ Password form fields are visible and interactive')
   })
 
-  // TODO: Add back other test cases later
-  // test('should successfully change password with correct current password', async () => {
-  //   // Verify user exists and is verified
-  //   const user = await getUserByEmail(testUserEmail)
-  //   expect(user).toBeTruthy()
-  //   expect(user?.emailVerified).toBe(true)
-  //
-  //   // Attempt password change
-  //   const { data, error } = await changePassword({
-  //     currentPassword: originalPassword,
-  //     newPassword: newPassword,
-  //     revokeOtherSessions: true
-  //   })
-  //
-  //   // Verify successful password change
-  //   expect(error).toBeFalsy()
-  //   expect(data).toBeTruthy()
-  //
-  //   // Verify we can sign in with the new password
-  //   const signInResult = await signIn.email({
-  //     email: testUserEmail,
-  //     password: newPassword
-  //   })
-  //
-  //   expect(signInResult.error).toBeFalsy()
-  //   expect(signInResult.data?.user?.email).toBe(testUserEmail)
-  // }, 10000) // Increased timeout for real API calls
+  test('should successfully change password with correct current password', async ({ page }) => {
+    // Sign in with the test user using the utility function
+    await signInUser(page, testUserEmail, originalPassword)
+    
+    // Navigate to profile page
+    await page.goto('/auth/profile')
+    
+    // Wait for the profile form using abstracted exponential backoff utility
+    const profileForm = page.locator('[data-testid="profile-form"]');
+    await waitForElementVisible(profileForm, {
+      errorMessage: 'Profile form not found after maximum attempts'
+    });
+    
+    // Fill in the password change form
+    const currentPasswordInput = page.locator(profileStructuralSelectors.currentPasswordInput)
+    const newPasswordInput = page.locator(profileStructuralSelectors.newPasswordInput)
+    
+    await expect(currentPasswordInput).toBeVisible()
+    await expect(newPasswordInput).toBeVisible()
+    
+    await currentPasswordInput.fill(originalPassword)
+    await newPasswordInput.fill(newPassword)
+    
+    // Set up alert handler to dismiss the success alert
+    page.on('dialog', async dialog => {
+      console.log(`Dialog appeared: ${dialog.type()} - ${dialog.message()}`)
+      await dialog.accept()
+    })
+    
+    // Submit the form
+    const submitButton = page.locator('button[type="submit"]')
+    await expect(submitButton).toBeEnabled()
+    await submitButton.click()
+    
+    // Wait for form submission to complete and verify success
+    // The form should clear the password fields on successful change
+    await expect(currentPasswordInput).toHaveValue('', { timeout: 10000 })
+    await expect(newPasswordInput).toHaveValue('', { timeout: 10000 })
+    
+    console.log('✅ Password change form submitted and fields cleared')
+    
+    // Sign out to test the new password
+    await page.goto('/auth/signout')
+    // Verify we can sign in with the new password
+    await signInUser(page, testUserEmail, newPassword)
+    
+    console.log('✅ Successfully signed in with new password')
+    
+    // Verify old password no longer works by attempting to change password again with old password
+    await page.goto('/auth/profile')
+    await waitForElementVisible(profileForm, {
+      errorMessage: 'Profile form not found after maximum attempts'
+    });
+    
+    // Try to use old password - this should fail
+    await currentPasswordInput.fill(originalPassword) // This should be wrong now
+    await newPasswordInput.fill('AnotherNewPassword123!')
+    await submitButton.click()
+    
+    // The form should NOT clear fields if there's an error, or we should see an error message
+    // Wait a moment for any error processing
+    await page.waitForTimeout(2000)
+    
+    // Either the fields should still have values (indicating error) or we should see an error message
+    const currentPasswordValue = await currentPasswordInput.inputValue()
+    const hasError = currentPasswordValue !== '' // Fields not cleared indicates error
+    expect(hasError).toBe(true)
+    console.log('✅ Old password correctly rejected')
+  })
 
   // TODO: Add back other test cases later
   // it('should fail to change password with incorrect current password', async () => {

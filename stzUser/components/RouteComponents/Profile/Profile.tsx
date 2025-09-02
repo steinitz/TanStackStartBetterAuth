@@ -29,10 +29,19 @@ export const profileTestIds = {
 // Structural selectors - DOM-based selectors that can't be test IDs
 export const profileStructuralSelectors = {
   emailInput: 'input[type="email"]',
+  currentPasswordInput: 'input[name="currentPassword"]',
+  newPasswordInput: 'input[name="newPassword"]',
   spinnerContainer: 'div:has(> div > svg)',
   dialog: 'dialog',
   modalDialog: '[role="dialog"]'
 } as const;
+
+export const profileStrings = {
+  passwordChangeSuccess: 'Password changed',
+  passwordChangeError: 'Error changing password',
+  currentPasswordLabel: 'Current password',
+  newPasswordLabel: 'New password',
+}
 
 type ProfileData = {
   email: string
@@ -50,8 +59,6 @@ const ProfileSchema = v.object({
   currentPassword: v.optional(currentPasswordValidation),
   newPassword: v.optional(passwordValidation),
 })
-
-
 
 export const Profile = () => {
   const {data: session} = useSession()
@@ -81,6 +88,13 @@ export const Profile = () => {
     return valibotResult.success
   }
 
+  const profileFormId = 'profileForm'
+
+  const resetForm = () => {
+    const profileForm = document.getElementById(profileFormId) as HTMLFormElement
+    profileForm.reset();
+  }
+      
   const handleSaveChanges = async (
     event: SyntheticEvent<HTMLFormElement>,
   ) => {
@@ -96,10 +110,10 @@ export const Profile = () => {
       const isPasswordChange = newPasswordValue && newPasswordValue.trim() !== '' && currentPasswordValue && currentPasswordValue.trim() !== ''
       
       if (isEmailChange && isPasswordChange) {
-        alert('Please change either email or password, not both at the same time.')
+        alert('You can change either email or password — one at a time.')
         return
       }
-      
+
       // Handle password change
       if (isPasswordChange) {
         setShouldShowPasswordChangeSpinner(true)
@@ -110,19 +124,20 @@ export const Profile = () => {
             revokeOtherSessions: true
           })
           if (data && !error) {
-            alert('Password changed successfully!')
-            // Clear the password fields
-            if (event.currentTarget) {
-              const currentPasswordInput = event.currentTarget.querySelector('input[name="currentPassword"]') as HTMLInputElement
-              const newPasswordInput = event.currentTarget.querySelector('input[name="newPassword"]') as HTMLInputElement
-              if (currentPasswordInput) currentPasswordInput.value = ''
-              if (newPasswordInput) newPasswordInput.value = ''
+            alert(profileStrings.passwordChangeSuccess)
+            resetForm()
+             // Clear the password fields
+          } 
+          else {
+            let alertMessage = error.message
+            if (error.status === 400 && error.message === "Invalid password") {
+              alertMessage = "You entered an incorrect Current Password.\nYou can signout and reset your password from the Sign In page";
             }
-          } else {
-            alert(`Error changing password: ${error?.message || 'Unknown error'}`)
+            alert(alertMessage)
           }
-        } catch (error: any) {
-          alert(`Error changing password: ${error.message || 'Unknown error'}`)
+        } 
+        catch (error: any) {
+          alert(`${profileStrings.passwordChangeError}: ${error.message || 'Unknown error'}`)
         }
         setShouldShowPasswordChangeSpinner(false)
       }
@@ -223,6 +238,7 @@ export const Profile = () => {
           <form
             data-testid={profileTestIds.profileForm}
             onSubmit={handleSaveChanges}
+            id={profileFormId}
             // style={{maxWidth: '350px'}}
           >
             <div style={{display: "flex", flexDirection: "row", justifyContent: "flex-start"}}>

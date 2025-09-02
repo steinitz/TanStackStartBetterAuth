@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "config": {
-    "playwright": "dotenv -e .env.test -- playwright test --config=stzUser/test/e2e/config/playwright.config.ts"
+    "playwright": "dotenv -e .env.test -- playwright test --headed --config=stzUser/test/e2e/config/playwright.config.ts"
   },
   "scripts": {
     "dev": "vite dev",
@@ -19,7 +19,7 @@
     "test:e2e:signup": "$npm_package_config_playwright -- signup-flow.spec.ts",
     "test:e2e:change-email": "$npm_package_config_playwright -- change-email-flow.spec.ts",
     "test:e2e:password-reset": "$npm_package_config_playwright -- password-reset-flow.spec.ts",
-    "test:e2e:password-change": "$npm_package_config_playwright -- password-change-flow.spec.ts",
+    "test:e2e:password-change": "$npm_package_config_playwright -- password-change.spec.ts",
     "test:e2e:mailpit": "$npm_package_config_playwright -- mailpit.spec.ts",
     "test:e2e:create-verified-user": "$npm_package_config_playwright -- createVerifiedTestUser.spec.ts",
     "test:e2e:ui": "$npm_package_config_playwright --ui",

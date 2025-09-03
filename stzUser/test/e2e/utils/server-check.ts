@@ -1,7 +1,78 @@
-import {spawn, ChildProcess} from 'child_process';
+import {spawn, ChildProcess, exec} from 'child_process';
 import {promisify} from 'util';
 
 const sleep = promisify(setTimeout);
+const execAsync = promisify(exec);
+
+/**
+ * Find process ID running on a specific port
+ * @param port - The port number to check (defaults to 3000)
+ * @returns Promise that resolves to process ID or null if not found
+ */
+export async function findProcessOnPort(port: number = 3000): Promise<number | null> {
+  try {
+    // Use lsof to find process on port (works on macOS and Linux)
+    const { stdout } = await execAsync(`lsof -ti:${port}`);
+    const pid = stdout.trim();
+    return pid ? parseInt(pid, 10) : null;
+  } catch {
+    // If lsof fails, try netstat approach (fallback)
+    try {
+      const { stdout } = await execAsync(`netstat -tulpn 2>/dev/null | grep :${port}`);
+      const match = stdout.match(/\s+(\d+)\//); 
+      return match ? parseInt(match[1], 10) : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
+ * Terminate a process gracefully, then forcefully if needed
+ * @param pid - Process ID to terminate
+ * @param timeoutMs - Timeout in milliseconds before using SIGKILL (defaults to 5000)
+ * @returns Promise that resolves when process is terminated
+ */
+export async function terminateProcess(pid: number, timeoutMs: number = 5000): Promise<void> {
+  try {
+    // First try graceful termination with SIGTERM
+    process.kill(pid, 'SIGTERM');
+    console.log(`📤 Sent SIGTERM to process ${pid}`);
+    
+    // Wait for graceful shutdown
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        // Check if process still exists (will throw if not)
+        process.kill(pid, 0);
+        await sleep(100); // Wait 100ms before checking again
+      } catch {
+        // Process no longer exists - graceful termination succeeded
+        console.log(`✅ Process ${pid} terminated gracefully`);
+        return;
+      }
+    }
+    
+    // If we reach here, graceful termination failed - use SIGKILL
+    console.log(`⚠️  Process ${pid} didn't respond to SIGTERM, using SIGKILL`);
+    process.kill(pid, 'SIGKILL');
+    console.log(`💀 Sent SIGKILL to process ${pid}`);
+    
+    // Wait a bit to ensure process is killed
+    await sleep(500);
+    
+  } catch (error: any) {
+    if (error.code === 'ESRCH') {
+      // Process doesn't exist - already terminated
+      console.log(`✅ Process ${pid} was already terminated`);
+      return;
+    } else if (error.code === 'EPERM') {
+      throw new Error(`Permission denied: Cannot terminate process ${pid}. Try running with elevated privileges.`);
+    } else {
+      throw new Error(`Failed to terminate process ${pid}: ${error.message}`);
+    }
+  }
+}
 
 /**
  * Lightweight server check using fetch (for use within test contexts)
@@ -162,9 +233,34 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
 
   // Check if server is running but not ready
   if (await checkServerStatus(baseURL)) {
-    const errorMessage = 'Server is running but not fully ready or not with test environment. Please restart your dev server with: pnpx dotenv-cli -e .env.test -- pnpm dev';
-    console.log(`⚠️  ${errorMessage}`);
-    throw new Error(errorMessage);
+    const pid = await findProcessOnPort(3000);
+    
+    if (pid && process.env.SKIP_SERVER_TERMINATION_COUNTDOWN === 'true') {
+      console.log('⚠️  Server running without test environment. Auto-terminating due to SKIP_SERVER_TERMINATION_COUNTDOWN=true');
+      await terminateProcess(pid);
+      // Wait a moment for port to be freed
+      await sleep(1000);
+    } else if (pid) {
+      // Graduated termination approach with warning and countdown
+      console.log('⚠️  Server is running but not with test environment.');
+      console.log('🔄 Starting countdown to auto-terminate server...');
+      console.log('💡 Set SKIP_SERVER_TERMINATION_COUNTDOWN=true to skip countdown, or Ctrl+C to cancel');
+      
+      // 10-second countdown
+      for (let i = 10; i > 0; i--) {
+        console.log(`⏰ Terminating server in ${i} seconds... (Ctrl+C to cancel)`);
+        await sleep(1000);
+      }
+      
+      console.log('🛑 Terminating existing server...');
+      await terminateProcess(pid);
+      // Wait a moment for port to be freed
+      await sleep(1000);
+    } else {
+      const errorMessage = 'Server is running but not fully ready or not with test environment. Please restart your dev server with: pnpx dotenv-cli -e .env.test -- pnpm dev';
+      console.log(`⚠️  ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
   }
 
   console.log('🚀 Server not detected, starting development server with .env.test...');
@@ -192,7 +288,7 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
   serverProcess.unref();
 
   // Wait for server to start (with timeout)
-  const maxAttempts = 45; // 45 seconds for better-auth initialization
+  const maxAttempts = 15; // 15 seconds should be sufficient for development
   let attempts = 0;
   let serverDetected = false;
 

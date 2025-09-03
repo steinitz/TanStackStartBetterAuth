@@ -342,12 +342,52 @@ Server management is handled by `utils/server-check.ts`:
 - **`checkServerTestEnvironment()`** - Validates running servers use test environment
 - **`isPlaywrightRunning()`** - Simple detection: `process.env.PLAYWRIGHT_RUNNING === 'true'`
 
+### Graduated Server Termination
+
+When E2E tests detect a server running without the test environment, they use a graduated termination approach:
+
+**Default Behavior (Graduated Termination):**
+1. **10-second countdown** with console warnings
+2. **Graceful termination** using SIGTERM signal
+3. **Forceful termination** using SIGKILL if SIGTERM fails
+4. **Port cleanup** with 1-second delay before starting new server
+
+**Skip Countdown Mode:**
+Set `SKIP_SERVER_TERMINATION_COUNTDOWN=true` in `.env.test` to skip the warning countdown:
+
+```bash
+# .env.test
+PLAYWRIGHT_RUNNING=true
+SKIP_SERVER_TERMINATION_COUNTDOWN=true  # Skip 10-second countdown
+```
+
+**Console Output Examples:**
+```bash
+# Default behavior (with countdown)
+⚠️  Server is running but not with test environment.
+🔄 Starting countdown to auto-terminate server...
+💡 Set SKIP_SERVER_TERMINATION_COUNTDOWN=true to skip countdown, or Ctrl+C to cancel
+⏰ Terminating server in 10 seconds... (Ctrl+C to cancel)
+⏰ Terminating server in 9 seconds... (Ctrl+C to cancel)
+# ... countdown continues
+🛑 Terminating existing server...
+📤 Sent SIGTERM to process 12345
+✅ Process 12345 terminated gracefully
+
+# Skip countdown mode
+⚠️  Server running without test environment. Auto-terminating due to SKIP_SERVER_TERMINATION_COUNTDOWN=true
+📤 Sent SIGTERM to process 12345
+✅ Process 12345 terminated gracefully
+```
+
 ### Benefits
 - **Test Environment Isolation**: Guarantees proper test configuration
 - **Environment Variable Propagation**: Reliable loading of `.env.test` variables
 - **Development Friendly**: Reuses compatible servers, starts new ones when needed
 - **CI Optimized**: Always starts fresh servers with test environment
 - **Error Prevention**: Blocks tests from running against wrong environment
+- **Graceful Termination**: Uses SIGTERM before SIGKILL for clean shutdown
+- **Developer Control**: Optional countdown skip for faster test execution
 
 ## Integration with CI/CD
 

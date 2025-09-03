@@ -6,6 +6,7 @@ import {FormFieldError} from '~stzUtils/components/FormFieldError';
 import {PasswordInput} from '~stzUtils/components/InputFields';
 import {fieldsFromFormData} from "~stzUser/lib/form";
 import {Spacer} from "~stzUtils/components/Spacer";
+import {requiredPasswordValidation} from '~stzUser/lib/password-validation';
 
 // TypeScript - sugggested by Valibot docs, and comes in handy later
 type SignupData = {
@@ -21,7 +22,7 @@ const SignupSchema = v.object({
     v.nonEmpty('email address required'),
     v.email('invalid email'),
   ),
-  password: v.pipe(v.string(), v.nonEmpty('password required')),
+  password: requiredPasswordValidation,
   name: v.string(),
 });
 

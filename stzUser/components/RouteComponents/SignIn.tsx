@@ -5,6 +5,7 @@ import {signIn, sendVerificationEmail} from '~stzUser/lib/auth-client'
 import {PasswordInput} from "~stzUtils/components/InputFields";
 import {FormFieldError} from "~stzUtils/components/FormFieldError";
 import {niceValidationIssues, sharedFormSubmission} from "~stzUser/lib/form";
+import {requiredPasswordValidation} from '~stzUser/lib/password-validation';
 
 // TypeScript - sugggested by Valibot docs and comes in handy later
 type SignInData = {
@@ -19,7 +20,7 @@ const SignupSchema = v.object({
     v.nonEmpty('email address required'),
     v.email('invalid email'),
   ),
-  password: v.pipe(v.string(), v.nonEmpty('password required')),
+  password: requiredPasswordValidation,
 });
 
 export const SignIn = () => {

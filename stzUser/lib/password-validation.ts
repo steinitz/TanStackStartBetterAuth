@@ -8,15 +8,21 @@ const basePasswordValidation = v.pipe(
   v.nonEmpty('password required')
 );
 
-// For new passwords - includes minimum length requirement
-export const passwordValidation = v.pipe(
-  basePasswordValidation,
-  v.minLength(minPasswordLength, `must be at least ${minPasswordLength} characters`)
-);
+// For new passwords - allow empty OR valid password with length requirement
+export const passwordValidation = v.union([
+  v.literal(''), // Allow empty string
+  v.pipe(
+    basePasswordValidation,
+    v.minLength(minPasswordLength, `must be at least ${minPasswordLength} characters`)
+  )
+]);
 
-// For current passwords - only requires non-empty string
+// For current passwords - allow empty OR valid password
 // Current passwords may not meet new minimum length standards
-export const currentPasswordValidation = v.pipe(
-  v.string(),
-  v.nonEmpty('current password required')
-);
+export const currentPasswordValidation = v.union([
+  v.literal(''), // Allow empty string
+  v.pipe(
+    v.string(),
+    v.nonEmpty('current password required')
+  )
+]);

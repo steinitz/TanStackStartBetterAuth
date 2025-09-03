@@ -173,7 +173,8 @@ export const Profile = () => {
         if (error) {
           alert('Error changing email address')
           setEmailChangeError(error.message as string)
-        } else {
+        } 
+        else {
           checkForEmailChangeLinkConfirmationDialogRef.current.setIsOpen(true)
         }
         

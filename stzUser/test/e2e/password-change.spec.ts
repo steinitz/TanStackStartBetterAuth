@@ -140,7 +140,7 @@ test.describe('Password Change Flow', () => {
     console.log('✅ Old password correctly rejected')
   })
 
-  // TODO: Add back other test cases later
+  // TODO: Consider finishing these draft unit tests or convert them to E2E tests, as done for the above
   // it('should fail to change password with incorrect current password', async () => {
   //   // Attempt password change with wrong current password
   //   const { data, error } = await changePassword({

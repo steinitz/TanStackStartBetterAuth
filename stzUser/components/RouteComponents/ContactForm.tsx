@@ -8,6 +8,20 @@ import {ContactSent} from '~stzUser/components/Other/ContactSent';
 import {clientEnv} from '~stzUser/lib/env';
 import {Spacer} from "~stzUtils/components/Spacer";
 
+// Test IDs - raw identifiers used in component data-testid attributes
+export const contactFormTestIds = {
+  contactForm: 'contact-form',
+  submitButton: 'contact-submit-button'
+} as const;
+
+// Structural selectors - DOM-based selectors that can't be test IDs
+export const contactFormSelectors = {
+  nameInput: 'input[name="name"]',
+  emailInput: 'input[name="email"]',
+  messageTextarea: 'textarea[name="message"]',
+  form: 'form'
+} as const;
+
 // TypeScript - suggested by Valibot docs, and comes in handy later
 type ContactData = {
   name?: string;
@@ -46,6 +60,8 @@ export const ContactForm = ({
   // validate the form fields
   const [validationIssues, setValidationIssues] = useState<any>({});
 
+  console.log('ContactForm running')
+
   const validateFormFields = (fields: ContactData) => {
     const valibotResult = v.safeParse(
       ContactSchema,
@@ -71,10 +87,15 @@ export const ContactForm = ({
 
   // sends the contact message
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
+    console.log('🔄 ContactForm: sendMessage called');
     const fields = sharedFormSubmission(event);
+    console.log('📝 ContactForm: extracted fields:', fields);
+    
+    console.log('📝 ContactForm: current state before update - name:', name, 'email:', email, 'message:', message);
     setName(fields.name as string);
     setEmail(fields.email as string);
     setMessage(fields.message as string);
+    console.log('📝 ContactForm: state updated with fields - name:', fields.name, 'email:', fields.email, 'message:', fields.message);
 
     const isValid = validateFormFields(fields);
     if (isValid) {
@@ -120,7 +141,9 @@ export const ContactForm = ({
   };
 
   const clearValidationIssue = (key: string) => {
-    setValidationIssues({...validationIssues, [key]: ''});
+    if (validationIssues[key]) {
+      setValidationIssues({...validationIssues, [key]: ''});
+    }
   };
 
   return (
@@ -134,7 +157,7 @@ export const ContactForm = ({
             </>
           }
           {subheading && <p style={{textAlign: 'center'}}>{subheading}</p>}
-          <form onSubmit={sendMessage}>
+          <form data-testid={contactFormTestIds.contactForm} onSubmit={sendMessage}>
           <label>Name
             <input
               name="name"
@@ -163,7 +186,7 @@ export const ContactForm = ({
             />
             <FormFieldError message={validationIssues?.message}/>
           </label>
-          <button type="submit">{submitButtonText}</button>
+          <button data-testid={contactFormTestIds.submitButton} type="submit">{submitButtonText}</button>
         </form>
         </>
       ) : (

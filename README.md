@@ -125,8 +125,12 @@ Happy building! 🚀
 To pull updates from the original foundation repository into your fork:
 
 ```bash
-# One-time setup
+# Check if upstream already exists
+git remote -v
+
+# One-time setup (skip if upstream already exists)
 git remote add upstream <original-repo-url>
+# If you get "upstream already exists", you can skip this step
 
 # Regular updates
 git fetch upstream

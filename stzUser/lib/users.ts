@@ -30,6 +30,38 @@ export async function queryUsersWithKysely(): Promise<UserWithRole[]> {
   }
 }
 
+/**
+ * Query a single user by email directly from the database using Kysely
+ * This function bypasses the Better Auth API and queries the user table directly
+ */
+export async function queryUserWithKysely(email: string): Promise<UserWithRole | null> {
+  try {
+    const user = await db
+      .selectFrom('user')
+      .selectAll()
+      .where('email', '=', email)
+      .executeTakeFirst()
+    
+    if (!user) {
+      return null
+    }
+    
+    // Convert string dates to Date objects and add role-related fields
+    return {
+      ...user,
+      createdAt: new Date(user.createdAt),
+      updatedAt: new Date(user.updatedAt),
+      role: null,
+      banned: null,
+      banReason: null,
+      banExpires: null
+    } as UserWithRole
+  } catch (dbError) {
+    console.error('Database query failed:', dbError)
+    return null
+  }
+}
+
 export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
   try {
     // Use Better Auth API to get users with role information

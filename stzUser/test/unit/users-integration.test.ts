@@ -37,47 +37,47 @@ describe('queryUsersWithKysely basic test', () => {
       console.log('No users found in database - test is still valid but limited')
     }
   })
-
-  // Test-user constants
-  const testEmail = `integration-test-user@${testConstants.defaultUserDomain}`
-  const password = testConstants.defaultPassword
-  const name = "Integration Test User"
-  
+ 
   // Helper function to create test user if it doesn't already exist.
+  // Can be reused with different user parameters for various tests.
 
   // Note we never delete this test user due to better-auth requiring
   // admin privileges for deletion.  And manual deletion might cause
   // issues with orphan session etc
-  async function createTestUserIfNeeded() {
+  async function createTestUserIfNeeded(email: string, password: string, name: string) {
     // First check if the user already exists
-    let users = await queryUsersWithKysely()
-    let testUser = users.find(user => user.email === testEmail)
+    let testUser = await queryUserWithKysely(email)
     
     // If the test user doesn't exist, create it
     if (!testUser) {
-      console.log('Integration test user does not exist, creating it now')
+      console.log(`Test user ${email} does not exist, creating it now`)
       
       await auth.api.createUser({
         body: {
-          email: testEmail,
-          password: password,
-          name: name,
+          email,
+          password,
+          name,
           role: "user",
           data: {isTestUser: true, purpose: "integration-testing"},
         },
       });
-      console.log('Integration-test user created successfully')
+      console.log(`Test user ${email} created successfully`)
     } else {
-      // console.log('Integration-test user already exists, no action needed')
+      // console.log(`Test user ${email} already exists, no action needed`)
     }
   }
   
   it('kysely should be able to retrieve a user from better-auth', async () => {
+    // Test-user constants
+    const testEmail = `integration-test-user@${testConstants.defaultUserDomain}`
+    const password = testConstants.defaultPassword
+    const name = "Integration Test User"
+    
     try {
-      // Ensure test user exists
-      await createTestUserIfNeeded()
-      
-      // Explicitly query for the user with the new direct query function
+        // Ensure test user exists
+        await createTestUserIfNeeded(testEmail, password, name)
+        
+        // Explicitly query for the user with the new direct query function
       const testUser = await queryUserWithKysely(testEmail)
       
       // Verify the test user exists and can be retrieved via Kysely

@@ -155,11 +155,14 @@ export async function updateEmailVerificationStatus(data: { userId: string; emai
       throw new Error('Not authenticated')
     }
     
-    // Update email verification status directly in the database
-    const stmt = appDatabase.prepare('UPDATE user SET emailVerified = ? WHERE id = ?')
-    const result = stmt.run(data.emailVerified ? 1 : 0, data.userId)
+    // Update email verification status using Kysely
+    const result = await db
+      .updateTable('user')
+      .set({ emailVerified: data.emailVerified })
+      .where('id', '=', data.userId)
+      .executeTakeFirst()
     
-    if (result.changes === 0) {
+    if (!result || result.numUpdatedRows === 0n) {
       throw new Error('User not found or no changes made')
     }
     

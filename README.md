@@ -4,7 +4,7 @@ A production-ready starter template with authentication, database integration, a
 
 ## What You Get
 
-- 🔐 **Complete Authentication System** - Sign up, login, password reset, email verification
+- 🔐 **Complete Authentication System** - Sign up, login, password reset, email verification, and **bot protection with Cloudflare Turnstile**
 - 🗄️ **Database Ready** - SQLite with Drizzle ORM, easily switchable to PostgreSQL/MySQL
 - 🎨 **Clean UI Foundation** - MVP.css styling with custom components
 - 🧪 **Full Testing Suite** - Unit tests (Vitest) and E2E tests (Playwright) with email testing
@@ -52,7 +52,8 @@ A production-ready starter template with authentication, database integration, a
 
 **Authentication & Security**
 - **Better Auth** - Comprehensive auth with social providers, 2FA, sessions
-- **Secure by default** - CSRF protection, secure headers, input validation
+- **Cloudflare Turnstile** - Non-interactive bot protection for the sign-up flow
+- **Secure by default** - CSRF protection, secure headers, input validation, and server-side Turnstile verification
 
 **Database & Backend**
 - **Drizzle ORM** - Type-safe database operations with migrations

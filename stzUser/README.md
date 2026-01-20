@@ -10,6 +10,7 @@ This directory contains the "pure foundation" authentication components and util
   - `database.ts` - Database setup
   - `form.tsx` - Form utilities and validation helpers
   - `EmailTestUtils.ts` - General utility functions
+  - `turnstile.server.ts` - Cloudflare Turnstile server-side verification
 
 - **`components/`** - Reusable UI components
   - `SignIn.tsx` - Sign-in form component
@@ -91,6 +92,7 @@ SMTP_HOST=your_smtp_host
 SMTP_PORT=587
 SMTP_USER=your_smtp_username
 SMTP_PASS=your_smtp_password
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA # Dummy key for dev
 ```
 
 ### Client-Safe Environment Variables
@@ -100,6 +102,7 @@ These variables are safely exposed to the browser via the hydration mechanism:
 APP_NAME="Your App Name"
 COMPANY_NAME="Your Company"
 SMTP_FROM_ADDRESS="noreply@yourcompany.com"
+TURNSTILE_SITE_KEY=1x00000000000000000000AA # Dummy key for dev
 ```
 
 ### Environment Variable Hydration

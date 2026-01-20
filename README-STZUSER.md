@@ -9,7 +9,7 @@ A modern web application built with TanStack Start and Better Auth, featuring co
 
 ## Features
 
-- 🔐 **Authentication & Authorization**: Complete user management with Better Auth
+- 🔐 **Authentication & Authorization**: Complete user management with Better Auth and bot protection with Cloudflare Turnstile
 - 👥 **User Admin**: Admin tools for user roles, user deletion
 - 🎯 **Type Safety**: Comprehensive TypeScript implementation
 - 📧 **Contact System**: Built-in contact form with email functionality
@@ -68,7 +68,7 @@ This project follows a modular architecture:
 ## Technology Stack
 
 - **Framework**: TanStack Start (React-based full-stack framework)
-- **Authentication**: Better Auth with role-based permissions
+- **Authentication**: Better Auth with role-based permissions and Cloudflare Turnstile for sign-up security
 - **Database**: SQLite (development) / PostgreSQL (production)
   - **Note**: The project uses Kysely for database queries with SQLite-specific date handling (stored as strings). When migrating to PostgreSQL, date types will need adjustment.
 - **Styling**: MVP.css with custom overrides

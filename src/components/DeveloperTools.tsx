@@ -12,9 +12,12 @@ import { CSSProperties } from 'react'
 
 type DetailsItemsStyleAttributeType = {
   position: string
+} & Partial<{
   top: string
+  bottom: string
   left: string
-}
+  right: string
+}>
 
 export const DeveloperTools = ({
   detailItemsStyleAttribute,
@@ -156,7 +159,7 @@ export const DeveloperTools = ({
             </div>
           </div>
 
-          </div>
+        </div>
       </details>
 
       {/* <TanStackRouterDevtools initialIsOpen={false} position="bottom-right" router={router} /> */}

@@ -1,10 +1,10 @@
-import {Link} from "@tanstack/react-router";
-import {UserBlock, navLinkStyle} from "~stzUser/components/Other/userBlock";
-import {Spacer} from "~stzUtils/components/Spacer";
+import { Link } from "@tanstack/react-router";
+import { UserBlock, navLinkStyle } from "~stzUser/components/Other/userBlock";
+import { Spacer } from "~stzUtils/components/Spacer";
 
 export const Header = () => {
 
-  return(
+  return (
     <section
       style={{
         display: 'flex',
@@ -29,20 +29,8 @@ export const Header = () => {
           alt="logo"
         />
       </Link>
-      <Spacer orientation={'horizontal'} space={1}/>
-      <Link
-        to="/contact"
-        style={navLinkStyle}
-        activeProps={{
-          style: {
-            backgroundColor: 'var(--color-accent)',
-            color: 'var(--color-bg)',
-          },
-        }}
-      >
-        Contact
-      </Link>
-      <UserBlock/>
+      <Spacer orientation={'horizontal'} space={1} />
+      <UserBlock />
     </section>
   )
 }

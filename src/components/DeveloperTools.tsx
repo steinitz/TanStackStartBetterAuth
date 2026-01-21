@@ -9,6 +9,7 @@ import { getCount } from '~/lib/count'
 import { admin, useSession } from '~stzUser/lib/auth-client'
 import { Link } from '@tanstack/react-router'
 import { CSSProperties } from 'react'
+import { useConsumeResource, useGrantCredits } from '~stzUser/lib/wallet.server'
 
 type DetailsItemsStyleAttributeType = {
   position: string
@@ -130,6 +131,28 @@ export const DeveloperTools = ({
     }
   }
 
+  const handleGrantCredits = async () => {
+    try {
+      await useGrantCredits({ data: { amount: 10, description: 'Dev Tools Grant' } })
+      window.location.reload() // Force reload to see badge update
+    } catch (err) {
+      console.error('Failed to grant credits:', err)
+    }
+  }
+
+  const handleConsumeAction = async () => {
+    try {
+      const result = await useConsumeResource({ data: 'dev_tools_test' })
+      if (!result.success) {
+        alert(result.message)
+      } else {
+        window.location.reload() // Force reload to see badge update
+      }
+    } catch (err) {
+      console.error('Failed to consume action:', err)
+    }
+  }
+
   return (
     <>
       <details ref={detailsRef}>
@@ -149,13 +172,21 @@ export const DeveloperTools = ({
                 Test Admin Privilege
               </button>
               <Spacer orientation={'horizontal'} />
-              {session?.user && (
+              {session?.user?.role === 'admin' && (
                 <Link to="/auth/users">
                   <button type="button">
                     View Users
                   </button>
                 </Link>
               )}
+              <Spacer orientation={'horizontal'} />
+              <button type="button" onClick={handleGrantCredits}>
+                Grant 10 Credits
+              </button>
+              <Spacer orientation={'horizontal'} />
+              <button type="button" onClick={handleConsumeAction}>
+                Consume 1 Action
+              </button>
             </div>
           </div>
 

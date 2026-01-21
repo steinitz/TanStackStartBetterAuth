@@ -43,7 +43,8 @@ export interface ListUsersResponse {
 // Kysely Database Interface
 export interface Database {
   user: UserTable;
-  // Add other tables as needed
+  transactions: TransactionTable;
+  resource_usage: ResourceUsageTable;
 }
 
 // Define the user table schema based on UserWithRole
@@ -59,6 +60,21 @@ export interface UserTable {
   banned: number | null; // SQLite stores booleans as 0/1
   banReason: string | null;
   banExpires: string | null; // SQLite stores dates as strings
+}
+
+export interface TransactionTable {
+  id: string;
+  user_id: string;
+  amount: number; // Positive for credits, negative for debits
+  description: string;
+  created_at: string;
+}
+
+export interface ResourceUsageTable {
+  id: string;
+  user_id: string;
+  resource_type: string; // e.g., 'chess_game_analysis'
+  created_at: string;
 }
 
 // Initialize Kysely instance

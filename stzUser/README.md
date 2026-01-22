@@ -10,7 +10,10 @@ This directory contains the "pure foundation" authentication components and util
   - `database.ts` - Database setup
   - `form.tsx` - Form utilities and validation helpers
   - `EmailTestUtils.ts` - General utility functions
+
   - `turnstile.server.ts` - Cloudflare Turnstile server-side verification
+  - `wallet.server.ts` - Resource usage and credit ledger logic
+  - `migrations.ts` - Declarative database schema sync
 
 - **`components/`** - Reusable UI components
   - `SignIn.tsx` - Sign-in form component
@@ -49,6 +52,16 @@ npx @better-auth/cli migrate --config stzUser/lib/auth.ts
 # Other CLI commands
 npx @better-auth/cli [command] --config stzUser/lib/auth.ts
 ```
+
+## Database Migrations
+
+This foundation uses a dual-engine migration strategy:
+
+1. **Better Auth Tables**: Managed by the Better Auth CLI (`npx @better-auth/cli migrate`). This handles users, sessions, accounts, etc.
+2. **Custom Foundation Tables**: Managed by **"Slim Sync"** logic in `stzUser/lib/migrations.ts`.
+   - **How it works**: Uses Kysely's `.ifNotExists()` pattern to declaratively define tables.
+   - **Execution**: Triggered automatically on application startup in `src/server.ts`.
+   - **Benefits**: Zero-configuration, no migration history files, and immediate consistency across environments.
 
 ## Important Configuration Notes
 

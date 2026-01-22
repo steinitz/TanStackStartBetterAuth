@@ -12,7 +12,8 @@ This directory contains the "pure foundation" authentication components and util
   - `EmailTestUtils.ts` - General utility functions
 
   - `turnstile.server.ts` - Cloudflare Turnstile server-side verification
-  - `wallet.server.ts` - Resource usage and credit ledger logic
+  - `wallet.logic.ts` - Core ledger and consumption business logic
+  - `wallet.server.ts` - Resource usage and credit ledger server functions
   - `migrations.ts` - Declarative database schema sync
 
 - **`components/`** - Reusable UI components

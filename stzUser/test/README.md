@@ -416,8 +416,8 @@ pnpm test:all         # Complete test suite (unit + E2E)
 - **Performance Testing**: Monitor component render times and memory usage
 
 ### E2E Testing
-- **Email Testing**: Comprehensive email functionality testing with Ethereal Email (✅ **IMPLEMENTED**)
-- **Wallet Testing**: Integrated tests for Ledger balances and UI badge reactivity (✅ **PLANNED/Step 4**)
+- **Email Testing**: Comprehensive email functionality testing with Ethereal Email
+- **Wallet Testing**: Integrated tests for Ledger balances and UI badge reactivity
 - **Visual Regression**: Add screenshot comparison testing
 - **Authentication Flows**: Test sign-in/sign-up user journeys
 - **Form Interactions**: Comprehensive form validation and submission testing

@@ -55,7 +55,7 @@ For detailed configuration, see the [Foundation Layer Documentation](stzUser/REA
 ## Documentation
 
 - **[Foundation Layer](stzUser/README.md)** - Authentication system, environment variables, and reusable components
-- **[Testing Guide](src/test/README.md)** - Comprehensive testing setup and strategies for TanStack Start applications
+- **[Testing Guide](stzUser/test/README.md)** - Comprehensive testing setup and strategies for TanStack Start applications
 
 ## Architecture
 
@@ -76,7 +76,9 @@ The foundation includes a built-in ledger system designed for "Phased Implementa
 
 ### Technical Implementation
 - **Atomic Transactions**: Consumption logic is handled via Kysely transactions to ensure integrity.
-- **Ledger-Based**: All credit changes are stored as individual transaction records, providing a full audit trail.
+- **Ledger-Based**: All credit changes are stored as individual transaction records in the `transactions` table, providing a full audit trail.
+- **Daily Allowance Tracking**: Usage counts for renewable resources are tracked in the `resource_usage` table.
+- **Allowance-First Logic**: The system automatically exhausts any remaining daily allowance (tracked in `resource_usage`) before drawing from the persistent credit balance (summed from `transactions`).
 - **Server-Side Enforcement**: All checks and deductions happen via `createServerFn` to prevent client-side tampering.
 
 ## Technology Stack

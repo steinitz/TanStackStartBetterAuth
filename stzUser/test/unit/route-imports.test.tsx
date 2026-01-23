@@ -29,6 +29,29 @@ vi.mock('~stzUtils/components/Spacer', () => ({
   Spacer: () => React.createElement('div', { 'data-testid': 'spacer-mock' }, 'Spacer Mock'),
 }))
 
+// Generic framework mock to include in stzUser/test/unit/route-imports.test.tsx
+vi.mock('@tanstack/react-start', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-start')>()
+  return {
+    ...actual,
+    createServerFn: () => {
+      const fn = vi.fn(() => Promise.resolve([]))
+      return Object.assign(fn, {
+        handler: () => fn,
+        middleware: () => ({
+          handler: () => fn,
+          validator: () => fn,
+        }),
+        validator: () => fn,
+      })
+    },
+  }
+})
+
+vi.mock('@tanstack/react-start/server', () => ({
+  getWebRequest: () => new Request('http://localhost'),
+}))
+
 // Mock TanStack Router
 const mockUseLoaderData = vi.fn()
 vi.mock('@tanstack/react-router', () => ({

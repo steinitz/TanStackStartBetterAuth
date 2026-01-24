@@ -33,6 +33,13 @@ type ClientEnv = {
   COMPANY_NAME: string
   BETTER_AUTH_BASE_URL: string
   TURNSTILE_SITE_KEY: string
+  // Support & Compliance
+  CONTACT_EMAIL: string | undefined
+  CONTACT_ADDRESS: string | undefined
+  REFUND_POLICY_URL: string | undefined
+  COPYRIGHT_START_YEAR: string
+  SUPPORT_LINK_TEXT: string
+  SUPPORT_LINK_URL: string
 }
 
 // Load environment variables based on NODE_ENV
@@ -52,6 +59,12 @@ export const clientEnv: ClientEnv = isServer()
       process.env.BETTER_AUTH_BASE_URL ||
       'http://localhost:3000',
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
+    CONTACT_EMAIL: process.env.CONTACT_EMAIL || process.env.SUPPORT_EMAIL_ADDRESS,
+    CONTACT_ADDRESS: process.env.CONTACT_ADDRESS,
+    REFUND_POLICY_URL: process.env.REFUND_POLICY_URL || '/legal/refunds',
+    COPYRIGHT_START_YEAR: process.env.COPYRIGHT_START_YEAR || new Date().getFullYear().toString(),
+    SUPPORT_LINK_TEXT: process.env.SUPPORT_LINK_TEXT || 'Contact our Support Team',
+    SUPPORT_LINK_URL: process.env.SUPPORT_LINK_URL || '/contact',
   }
   : (typeof window !== 'undefined' && window.__ENV)
     ? window.__ENV
@@ -62,6 +75,12 @@ export const clientEnv: ClientEnv = isServer()
       COMPANY_NAME: 'Your Company',
       BETTER_AUTH_BASE_URL: (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
       TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
+      CONTACT_EMAIL: undefined,
+      CONTACT_ADDRESS: undefined,
+      REFUND_POLICY_URL: '/legal/refunds',
+      COPYRIGHT_START_YEAR: new Date().getFullYear().toString(),
+      SUPPORT_LINK_TEXT: 'Contact our Support Team',
+      SUPPORT_LINK_URL: '/contact',
     }
 
 // console.log({clientEnv});

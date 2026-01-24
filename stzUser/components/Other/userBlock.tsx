@@ -2,8 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { signOut, useSession } from '~stzUser/lib/auth-client'
 import { routeStrings } from "~/constants";
 import { activeLinkStyle } from "~stzUtils/components/styles";
-import { getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet.server'
-import { useEffect, useState } from 'react'
+import { WalletWidget } from './WalletWidget'
 
 const loggedInTextTopMarginTweak = 21
 
@@ -27,15 +26,6 @@ export const navLinkStyle = {
 export function UserBlock() {
   const navigate = useNavigate()
   const { data: session } = useSession()
-  const [wallet, setWallet] = useState<WalletStatus | null>(null)
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      getWalletStatus()
-        .then(setWallet)
-        .catch(err => console.error('Failed to fetch wallet status:', err))
-    }
-  }, [session?.user?.id])
 
   return (
     <div
@@ -43,21 +33,25 @@ export function UserBlock() {
         display: 'flex',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', marginRight: '5rem' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: '1.25rem',
+        marginRight: '21px', // Match navLinkStyle
+        fontSize: '0.95rem',
+        ...adjustVerticalLocationStyle(1),
+      }}>
         <p style={{
-          ...adjustVerticalLocationStyle(1),
-          marginBottom: '0', // keep wallet badge close
           fontWeight: '200',
-          fontSize: '0.95rem',
+          margin: 0,
         }}
         >
           {session?.user.email}
         </p>
-        {wallet && (
-          <span style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '-0.3rem' }}>
-            Actions: {wallet.allowance - wallet.usageToday}/{wallet.allowance} | Credits: {wallet.credits}
-          </span>
-        )}
+        <WalletWidget style={{
+          whiteSpace: 'nowrap',
+          opacity: 0.7
+        }} />
       </div>
       <div>
         <Link

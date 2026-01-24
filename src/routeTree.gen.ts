@@ -14,7 +14,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LegalTermsRouteImport } from './routes/legal/terms'
+import { Route as LegalRefundsRouteImport } from './routes/legal/refunds'
 import { Route as LegalPrivacyRouteImport } from './routes/legal/privacy'
+import { Route as LegalPricingRouteImport } from './routes/legal/pricing'
+import { Route as LegalAcknowledgementsRouteImport } from './routes/legal/acknowledgements'
+import { Route as LegalAboutRouteImport } from './routes/legal/about'
 import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
 import { Route as AuthUsersRouteImport } from './routes/auth/users'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
@@ -43,9 +47,29 @@ const LegalTermsRoute = LegalTermsRouteImport.update({
   path: '/legal/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalRefundsRoute = LegalRefundsRouteImport.update({
+  id: '/legal/refunds',
+  path: '/legal/refunds',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
   id: '/legal/privacy',
   path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPricingRoute = LegalPricingRouteImport.update({
+  id: '/legal/pricing',
+  path: '/legal/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalAcknowledgementsRoute = LegalAcknowledgementsRouteImport.update({
+  id: '/legal/acknowledgements',
+  path: '/legal/acknowledgements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalAboutRoute = LegalAboutRouteImport.update({
+  id: '/legal/about',
+  path: '/legal/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
@@ -112,7 +136,11 @@ export interface FileRoutesByFullPath {
   '/auth/signup': typeof AuthSignupRoute
   '/auth/users': typeof AuthUsersRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/legal/about': typeof LegalAboutRoute
+  '/legal/acknowledgements': typeof LegalAcknowledgementsRoute
+  '/legal/pricing': typeof LegalPricingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refunds': typeof LegalRefundsRoute
   '/legal/terms': typeof LegalTermsRoute
 }
 export interface FileRoutesByTo {
@@ -126,7 +154,11 @@ export interface FileRoutesByTo {
   '/auth/signup': typeof AuthSignupRoute
   '/auth/users': typeof AuthUsersRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/legal/about': typeof LegalAboutRoute
+  '/legal/acknowledgements': typeof LegalAcknowledgementsRoute
+  '/legal/pricing': typeof LegalPricingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refunds': typeof LegalRefundsRoute
   '/legal/terms': typeof LegalTermsRoute
 }
 export interface FileRoutesById {
@@ -141,7 +173,11 @@ export interface FileRoutesById {
   '/auth/signup': typeof AuthSignupRoute
   '/auth/users': typeof AuthUsersRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/legal/about': typeof LegalAboutRoute
+  '/legal/acknowledgements': typeof LegalAcknowledgementsRoute
+  '/legal/pricing': typeof LegalPricingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refunds': typeof LegalRefundsRoute
   '/legal/terms': typeof LegalTermsRoute
 }
 export interface FileRouteTypes {
@@ -157,7 +193,11 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/auth/users'
     | '/auth/verify-email'
+    | '/legal/about'
+    | '/legal/acknowledgements'
+    | '/legal/pricing'
     | '/legal/privacy'
+    | '/legal/refunds'
     | '/legal/terms'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -171,7 +211,11 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/auth/users'
     | '/auth/verify-email'
+    | '/legal/about'
+    | '/legal/acknowledgements'
+    | '/legal/pricing'
     | '/legal/privacy'
+    | '/legal/refunds'
     | '/legal/terms'
   id:
     | '__root__'
@@ -185,7 +229,11 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/auth/users'
     | '/auth/verify-email'
+    | '/legal/about'
+    | '/legal/acknowledgements'
+    | '/legal/pricing'
     | '/legal/privacy'
+    | '/legal/refunds'
     | '/legal/terms'
   fileRoutesById: FileRoutesById
 }
@@ -200,7 +248,11 @@ export interface RootRouteChildren {
   AuthSignupRoute: typeof AuthSignupRoute
   AuthUsersRoute: typeof AuthUsersRoute
   AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
+  LegalAboutRoute: typeof LegalAboutRoute
+  LegalAcknowledgementsRoute: typeof LegalAcknowledgementsRoute
+  LegalPricingRoute: typeof LegalPricingRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalRefundsRoute: typeof LegalRefundsRoute
   LegalTermsRoute: typeof LegalTermsRoute
 }
 export interface FileServerRoutesByFullPath {
@@ -252,11 +304,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/refunds': {
+      id: '/legal/refunds'
+      path: '/legal/refunds'
+      fullPath: '/legal/refunds'
+      preLoaderRoute: typeof LegalRefundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/legal/privacy': {
       id: '/legal/privacy'
       path: '/legal/privacy'
       fullPath: '/legal/privacy'
       preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/pricing': {
+      id: '/legal/pricing'
+      path: '/legal/pricing'
+      fullPath: '/legal/pricing'
+      preLoaderRoute: typeof LegalPricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/acknowledgements': {
+      id: '/legal/acknowledgements'
+      path: '/legal/acknowledgements'
+      fullPath: '/legal/acknowledgements'
+      preLoaderRoute: typeof LegalAcknowledgementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/about': {
+      id: '/legal/about'
+      path: '/legal/about'
+      fullPath: '/legal/about'
+      preLoaderRoute: typeof LegalAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/verify-email': {
@@ -347,7 +427,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignupRoute: AuthSignupRoute,
   AuthUsersRoute: AuthUsersRoute,
   AuthVerifyEmailRoute: AuthVerifyEmailRoute,
+  LegalAboutRoute: LegalAboutRoute,
+  LegalAcknowledgementsRoute: LegalAcknowledgementsRoute,
+  LegalPricingRoute: LegalPricingRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalRefundsRoute: LegalRefundsRoute,
   LegalTermsRoute: LegalTermsRoute,
 }
 export const routeTree = rootRouteImport

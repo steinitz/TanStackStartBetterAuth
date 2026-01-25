@@ -140,16 +140,16 @@ export const DeveloperTools = ({
     }
   }
 
-  const handleConsumeAction = async () => {
+  const handleConsumeCredit = async () => {
     try {
-      const result = await useConsumeResource({ data: 'dev_tools_test' })
+      const result = await useConsumeResource({ data: { resourceType: 'dev_tools_test', amount: 1 } })
       if (!result.success) {
         alert(result.message)
       } else {
         window.location.reload() // Force reload to see badge update
       }
     } catch (err) {
-      console.error('Failed to consume action:', err)
+      console.error('Failed to consume credit:', err)
     }
   }
 
@@ -184,8 +184,8 @@ export const DeveloperTools = ({
                 Grant 10 Credits
               </button>
               <Spacer orientation={'horizontal'} />
-              <button type="button" onClick={handleConsumeAction}>
-                Consume 1 Action
+              <button type="button" onClick={handleConsumeCredit}>
+                Consume 1 Credit
               </button>
             </div>
           </div>

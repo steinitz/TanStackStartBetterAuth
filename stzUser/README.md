@@ -28,6 +28,27 @@ This directory contains the "pure foundation" authentication components and util
   - `profile.tsx` - User profile management
   - `api/auth/` - Authentication API endpoints
 
+## Credit Ledger & Wallet System
+
+The foundation includes a robust, "bulletproof" wallet system designed for usage-based SaaS applications.
+
+### Key Features
+- **Unified Credit Balance**: A single cached `credits` field on the user profile for high-performance UI display.
+- **Immutable Ledger**: Every change to a user's balance is recorded in the `transactions` table, providing a complete audit trail.
+- **Lazy Daily Grant**: Users receive a "Daily Grant" (e.g., +3 credits) upon their first activity of the day. This is calculated server-side using UTC time for consistency.
+- **Atomic Concurrency**: 
+  - **Double-Grant Protection**: Uses database transactions to ensure a daily grant is only applied once, even if multiple requests arrive simultaneously.
+  - **Negative Balance Safeguard**: Uses atomic `WHERE credits >= amount` updates to guarantee that a user's balance never drops below zero.
+
+### Event-Driven UI
+The wallet system uses browser-native `CustomEvents` to decouple the UI from the underlying logic:
+- `stz-event-insufficient-credits`: Dispatched when an action fails due to lack of funds. Listened to by the global `CreditsRequiredDialog`.
+- `stz-event-wallet-updated`: Dispatched after any credit change. Listened to by the `WalletWidget` to trigger an immediate re-fetch of the balance.
+
+### Components
+- `WalletWidget.tsx` - A clean, responsive display of the current credit balance.
+- `CreditsRequiredDialog.tsx` - A self-triggering singleton dialog that elegantly handles insufficient credit states across the entire application.
+
 ## Path Aliases
 
 stzUser components use the `~stzUser/` path alias:

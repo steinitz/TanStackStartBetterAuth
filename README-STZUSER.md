@@ -13,7 +13,7 @@ A modern web application built with TanStack Start and Better Auth, featuring co
 - 👥 **User Admin**: Admin tools for user roles, user deletion
 - 🎯 **Type Safety**: Comprehensive TypeScript implementation
 - 📧 **Contact System**: Built-in contact form with email functionality
-- 💳 **Usage & Credit Ledger**: Built-in system for managing renewable daily actions and persistent credits
+- 💳 **Usage & Credit Ledger**: Built-in system for managing unified credits and daily grants
 - 🛠️ **Developer Tools**: Built-in debugging and development utilities
 - 🎨 **Modern UI**: Clean, responsive design with MVP.css
 
@@ -66,20 +66,20 @@ This project follows a modular architecture:
 - **`stzUtils/`** - Shared utility components
 - **`public/`** - Static assets and styles
 
-## Usage & Credit Ledger (Wallet System)
+## Credit Ledger & Wallet System (Unified Credits)
 
-The foundation includes a built-in ledger system designed for "Phased Implementation" of resource management.
+The foundation includes a built-in ledger system designed for robust, unified resource management.
 
-### Philosophy: Actions vs. Credits
-- **Actions (Daily Allowance)**: A renewable resource that resets every 24 hours. Ideal for "Free Tier" limitations (e.g., 3 game analyses per day).
-- **Credits (Persistent Balance)**: A non-expiring balance that users can purchase or earn. Once the daily allowance is exhausted, the system automatically draws from the credit balance.
+### Philosophy: Unified Credits
+- **One Pool**: Users have a single `credits` balance. There is no distinction between "daily actions" and "purchased credits" in the balance itself.
+- **Daily Grant**: Upon their first activity of the day, users automatically receive a "Daily Grant" (e.g., +3 credits). This simplifies the UX by providing a single number to track.
+- **Consumption**: Every activity (e.g., game analysis) costs a configurable number of credits.
 
 ### Technical Implementation
-- **Atomic Transactions**: Consumption logic is handled via Kysely transactions to ensure integrity.
-- **Ledger-Based**: All credit changes are stored as individual transaction records in the `transactions` table, providing a full audit trail.
-- **Daily Allowance Tracking**: Usage counts for renewable resources are tracked in the `resource_usage` table.
-- **Allowance-First Logic**: The system automatically exhausts any remaining daily allowance (tracked in `resource_usage`) before drawing from the persistent credit balance (summed from `transactions`).
-- **Server-Side Enforcement**: All checks and deductions happen via `createServerFn` to prevent client-side tampering.
+- **Atomic Transactions**: Consumption and grants are handled via Kysely database transactions to ensure integrity and prevent race conditions.
+- **Ledger-Based**: Every change is stored as a record in the `transactions` table, providing a full audit trail (deposits, consumption, grants).
+- **Hard Safeguard**: The database query includes a `WHERE credits >= amount` clause to mathematically guarantee that balances never drop below zero.
+- **Event-Driven UI**: The UI reacts to `stz-event-wallet-updated` to show real-time balance changes without page reloads.
 
 ## Technology Stack
 

@@ -2,6 +2,8 @@
 
 This document tracks technical improvements identified during the development of ChessHurdles that should be merged back into the upstream `stzUser` / `stzUtils` templates.
 
+Bug: Developer Tools not appearing in the new footer
+
 ## Payment Compliance & Polish
 
 ### Stripe-Ready Foundation

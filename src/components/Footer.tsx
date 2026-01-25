@@ -1,7 +1,7 @@
-import { DeveloperTools } from './DeveloperTools'
 import { clientEnv } from '~stzUser/lib/env'
 import { useSession } from '~stzUser/lib/auth-client'
 import { userRoles } from '~stzUser/constants'
+import { Link } from '@tanstack/react-router'
 import {
   AboutLink,
   AcknowledgementsLink,
@@ -71,13 +71,9 @@ export const Footer = () => {
 
           {isAdmin && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <DeveloperTools
-                detailItemsStyleAttribute={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  right: '0',
-                }}
-              />
+              <Link to="/admin" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                Admin Tools
+              </Link>
             </div>
           )}
         </section>

@@ -27,25 +27,7 @@ export const getWalletStatus = createServerFn({
 export const useConsumeResource = createServerFn({
   method: 'POST',
 })
-  .validator((resourceType: string) => resourceType)
-  .handler(async ({ data: resourceType }) => {
-    const request = getWebRequest()
-    const headers = request?.headers
-    if (!headers) throw new Error('Not authenticated')
-
-    const session = await auth.api.getSession({ headers })
-    if (!session?.user) throw new Error('Not authenticated')
-
-    return consumeResourceInternal(session.user.id, resourceType)
-  })
-
-/**
- * Server function to grant credits to a user (e.g., for testing).
- */
-export const useGrantCredits = createServerFn({
-  method: 'POST',
-})
-  .validator((data: { amount: number; description: string }) => data)
+  .validator((data: { resourceType: string; amount?: number }) => data)
   .handler(async ({ data }) => {
     const request = getWebRequest()
     const headers = request?.headers
@@ -54,5 +36,28 @@ export const useGrantCredits = createServerFn({
     const session = await auth.api.getSession({ headers })
     if (!session?.user) throw new Error('Not authenticated')
 
-    return grantCreditsInternal(session.user.id, data.amount, data.description)
+    return consumeResourceInternal(session.user.id, data.resourceType, data.amount ?? 1)
+  })
+
+/**
+ * Server function to grant credits to a user (e.g., for testing).
+ */
+export const useGrantCredits = createServerFn({
+  method: 'POST',
+})
+  .validator((data: { amount: number; type?: 'manual_adjustment' | 'purchase'; description: string }) => data)
+  .handler(async ({ data }) => {
+    const request = getWebRequest()
+    const headers = request?.headers
+    if (!headers) throw new Error('Not authenticated')
+
+    const session = await auth.api.getSession({ headers })
+    if (!session?.user) throw new Error('Not authenticated')
+
+    return grantCreditsInternal(
+      session.user.id,
+      data.amount,
+      data.type || 'manual_adjustment',
+      data.description
+    )
   })

@@ -44,7 +44,6 @@ export interface ListUsersResponse {
 export interface Database {
   user: UserTable;
   transactions: TransactionTable;
-  resource_usage: ResourceUsageTable;
 }
 
 // Define the user table schema based on UserWithRole
@@ -60,22 +59,18 @@ export interface UserTable {
   banned: number | null; // SQLite stores booleans as 0/1
   banReason: string | null;
   banExpires: string | null; // SQLite stores dates as strings
+  credits: number; // For performance-optimized balance access
 }
 
 export interface TransactionTable {
   id: string;
   user_id: string;
   amount: number; // Positive for credits, negative for debits
+  type: 'daily_grant' | 'consumption' | 'purchase' | 'manual_adjustment';
   description: string;
   created_at: string;
 }
 
-export interface ResourceUsageTable {
-  id: string;
-  user_id: string;
-  resource_type: string; // e.g., 'chess_game_analysis'
-  created_at: string;
-}
 
 // Initialize Kysely instance
 export const db = new Kysely<Database>({

@@ -11,8 +11,12 @@ export const Acknowledgements = () => {
         <p>{clientEnv.APP_NAME} is built with a modern, high-performance tech stack:</p>
         <ul>
           <li><strong>React:</strong> The library for web and native user interfaces.</li>
-          <li><strong>TanStack Start:</strong> Full-stack React framework with type-safe routing.</li>
+          <li><strong>TanStack Start & Vite:</strong> Full-stack React framework and next-generation frontend tooling.</li>
           <li><strong>Better Auth:</strong> Comprehensive authentication library for TypeScript.</li>
+          <li><strong>Kysely & SQLite:</strong> Type-safe SQL query builder and lightweight database engine.</li>
+          <li><strong>Valibot:</strong> Schema library for structural compression and validation.</li>
+          <li><strong>NodeMailer & Mailpit:</strong> Reliable email delivery and local SMTP testing.</li>
+          <li><strong>Playwright:</strong> Reliable end-to-end testing for modern web apps.</li>
           <li><strong>MVP.css:</strong> A minimalist CSS framework for HTML elements.</li>
           <li><strong>Google Gemini:</strong> Powering our AI-driven move analysis and descriptions.</li>
         </ul>

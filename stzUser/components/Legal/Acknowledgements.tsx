@@ -8,7 +8,7 @@ export const Acknowledgements = () => {
 
       <section style={{ marginTop: '2rem' }}>
         <h3>Technology Stack</h3>
-        <p>{clientEnv.APP_NAME} is built with a modern, high-performance tech stack:</p>
+        <p>This platform is powered by a modern, high-performance tech stack:</p>
         <ul>
           <li><strong>React:</strong> The library for web and native user interfaces.</li>
           <li><strong>TanStack Start & Vite:</strong> Full-stack React framework and next-generation frontend tooling.</li>

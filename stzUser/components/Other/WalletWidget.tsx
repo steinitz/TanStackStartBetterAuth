@@ -29,11 +29,18 @@ export function WalletWidget({ style = {} }) {
   if (!wallet) return null
 
   return (
-    <span style={{
-      opacity: 0.8,
-      ...style
-    }}>
-      Credits: {wallet.credits}
+    <span
+      title="My Balance"
+      style={{
+        padding: '0.2rem 0.6rem',
+        borderRadius: '0.3rem',
+        border: '1px solid var(--color-bg-secondary)',
+        fontSize: '0.85rem',
+        ...style
+      }}
+    >
+      <i className="fa-solid fa-wallet" style={{ marginRight: '0.5rem', opacity: 0.7 }}></i>
+      {wallet.credits} Credits
     </span>
   )
 }

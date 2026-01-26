@@ -35,7 +35,7 @@ export function UserBlock() {
     >
       <div style={{
         display: 'flex',
-        alignItems: 'baseline',
+        alignItems: 'center',
         gap: '1.25rem',
         marginRight: '21px', // Match navLinkStyle
         fontSize: '0.95rem',

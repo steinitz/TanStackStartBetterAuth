@@ -32,8 +32,6 @@ describe('UserBlock & WalletWidget', () => {
     } as any)
 
     vi.mocked(getWalletStatus).mockResolvedValue({
-      allowance: 10,
-      usageToday: 2,
       credits: 50
     })
 
@@ -42,8 +40,7 @@ describe('UserBlock & WalletWidget', () => {
     expect(getByText('test@example.com')).toBeDefined()
 
     await waitFor(() => {
-      expect(getByText(/Actions: 8\/10/i)).toBeDefined()
-      expect(getByText(/Credits: 50/i)).toBeDefined()
+      expect(getByText(/50 Credits/i)).toBeDefined()
     })
   })
 

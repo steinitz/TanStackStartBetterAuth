@@ -110,7 +110,7 @@ export const auth = betterAuth({
     // See: https://github.com/better-auth/better-auth/issues/2538
     // This should be true for proper security, but causes email change verification to fail
     sendOnSignUp: true,
-    autoSignInAfterVerification: false,
+    autoSignInAfterVerification: true,
     sendVerificationEmail: async ({
       user,
       url,

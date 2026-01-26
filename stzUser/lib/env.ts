@@ -40,6 +40,12 @@ type ClientEnv = {
   COPYRIGHT_START_YEAR: string
   SUPPORT_LINK_TEXT: string
   SUPPORT_LINK_URL: string
+  // Bank Transfer & Pricing
+  BANK_TRANSFER_BSB: string | undefined
+  BANK_TRANSFER_ACC: string | undefined
+  CREDIT_PRICE_AUD: number
+  MIN_CREDITS_PURCHASE: number
+  IS_STRIPE_ENABLED: boolean
 }
 
 // Load environment variables based on NODE_ENV
@@ -65,6 +71,11 @@ export const clientEnv: ClientEnv = isServer()
     COPYRIGHT_START_YEAR: process.env.COPYRIGHT_START_YEAR || new Date().getFullYear().toString(),
     SUPPORT_LINK_TEXT: process.env.SUPPORT_LINK_TEXT || 'Contact our Support Team',
     SUPPORT_LINK_URL: process.env.SUPPORT_LINK_URL || '/contact',
+    BANK_TRANSFER_BSB: process.env.BANK_TRANSFER_BSB,
+    BANK_TRANSFER_ACC: process.env.BANK_TRANSFER_ACC,
+    CREDIT_PRICE_AUD: Number(process.env.CREDIT_PRICE_AUD || '1.00'),
+    MIN_CREDITS_PURCHASE: Number(process.env.MIN_CREDITS_PURCHASE || '10'),
+    IS_STRIPE_ENABLED: false, // Set to true when Stripe is fully integrated
   }
   : (typeof window !== 'undefined' && window.__ENV)
     ? window.__ENV
@@ -81,6 +92,11 @@ export const clientEnv: ClientEnv = isServer()
       COPYRIGHT_START_YEAR: new Date().getFullYear().toString(),
       SUPPORT_LINK_TEXT: 'Contact our Support Team',
       SUPPORT_LINK_URL: '/contact',
+      BANK_TRANSFER_BSB: undefined,
+      BANK_TRANSFER_ACC: undefined,
+      CREDIT_PRICE_AUD: 1.00,
+      MIN_CREDITS_PURCHASE: 10,
+      IS_STRIPE_ENABLED: false,
     }
 
 // console.log({clientEnv});

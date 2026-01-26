@@ -56,17 +56,17 @@ describe('Footer', () => {
     const currentYear = new Date().getFullYear()
     expect(getByText(new RegExp(`Copyright © 2024-${currentYear} Test Company`, 'i'))).toBeDefined()
 
-    // Admin should see Developer Tools
-    expect(getByText('Developer Tools')).toBeDefined()
+    // Admin should see Admin Tools
+    expect(getByText('Admin Tools')).toBeDefined()
   })
 
-  it('should NOT render Developer Tools for regular user', () => {
+  it('should NOT render Admin Tools for regular user', () => {
     vi.mocked(useSession).mockReturnValue({
       data: { user: { role: 'user' } }
     } as any)
 
     const { queryByText } = render(<Footer />)
-    expect(queryByText('Developer Tools')).toBeNull()
+    expect(queryByText('Admin Tools')).toBeNull()
   })
 
   it('should render single year copyright when start year is current year', () => {

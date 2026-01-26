@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useSession } from '~stzUser/lib/auth-client'
 import { getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet.server'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
@@ -6,6 +7,8 @@ import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
 export function WalletWidget({ style = {} }) {
   const { data: session } = useSession()
   const [wallet, setWallet] = useState<WalletStatus | null>(null)
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchWallet = () => {
@@ -30,12 +33,16 @@ export function WalletWidget({ style = {} }) {
 
   return (
     <span
-      title="My Balance"
+      title="View Transaction History"
+      onClick={() => navigate({ to: '/auth/credits' })}
       style={{
         padding: '0.2rem 0.6rem',
-        borderRadius: '0.3rem',
         border: '1px solid var(--color-bg-secondary)',
+        borderRadius: '0.3rem', // Add a tiny rounding
         fontSize: '0.85rem',
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
         ...style
       }}
     >

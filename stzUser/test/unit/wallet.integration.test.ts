@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
 import { db } from '~stzUser/lib/database'
-import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal } from '~stzUser/lib/wallet.logic'
+import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal } from '~stzUser/lib/wallet.logic'
 import { auth } from '~stzUser/lib/auth'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
 import { testConstants } from '~stzUser/test/constants'
@@ -148,5 +148,29 @@ describe('Wallet Ledger Integration', () => {
     // 3. Verify balance is exactly 0, not negative
     const statusAfter = await getWalletStatusInternal(testUserId)
     expect(statusAfter.credits).toBe(0)
+  })
+
+  it('should handle the one-time welcome grant', async () => {
+    // 1. Claim grant
+    const result = await claimWelcomeGrantInternal(testUserId)
+    expect(result.success).toBe(true)
+    if ('message' in result) {
+      expect(result.message).toContain('Welcome grant of 10 credits')
+    }
+
+    const status = await getWalletStatusInternal(testUserId)
+    // 3 from first action (daily grant) + 10 welcome = 13
+    expect(status.credits).toBe(13)
+
+    // 2. Try to claim again
+    const result2 = await claimWelcomeGrantInternal(testUserId)
+    expect(result2.success).toBe(false)
+    if ('message' in result2) {
+      expect(result2.message).toContain('already claimed')
+    }
+
+    // 3. Verify balance hasn't changed
+    const status2 = await getWalletStatusInternal(testUserId)
+    expect(status2.credits).toBe(13)
   })
 })

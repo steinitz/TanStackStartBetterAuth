@@ -11,7 +11,8 @@ This document tracks technical improvements identified during the development of
     - **Bare-Bones Footer**: Implemented the minimalist two-row layout using granular link components.
     - **Standalone Policy Pages**: Created audit-friendly routes and components for `/legal/about`, `/legal/acknowledgements`, `/legal/privacy`, `/legal/pricing`, and `/legal/refunds`.
     - **UI Granularity**: Extracted `TermsLink`, `PrivacyLink`, etc., and the `LegalLinksBundle` for easy placement across the app.
-    - **Wallet Widget**: Enhanced the standalone `WalletWidget` with a premium, `mvp.css`-integrated badge UI and icon.
+    - **Wallet Widget**: Enhanced the standalone `WalletWidget` with a subtle border and `cursor: pointer`, linked to the `/auth/credits` route for a seamless integrated feel.
+    - **Admin Wallet Tools**: Upgraded the `/admin` page with custom credit grant inputs (amount and description) to facilitate manual bank transfer processing.
 - **Tech Stack Polish**: Refined terminology in `Acknowledgements.tsx` for Vite ("rapid build system"), SQLite ("file-based"), and Google Gemini ("non-physical consciousness").
 
 ## Future Upstream Work

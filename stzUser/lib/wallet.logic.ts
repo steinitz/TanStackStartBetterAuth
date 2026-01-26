@@ -148,3 +148,42 @@ async function grantCreditsTx(
 
   return { success: true }
 }
+
+/**
+ * Logic: Fetches the transaction history for a specific user.
+ */
+export async function getTransactionsInternal(userId: string) {
+  return await db
+    .selectFrom('transactions')
+    .selectAll()
+    .where('user_id', '=', userId)
+    .orderBy('created_at', 'desc')
+    .execute()
+}
+
+/**
+ * Logic: Checks if a user has already claimed their one-time welcome grant.
+ */
+export async function hasClaimedWelcomeGrant(userId: string) {
+  const grant = await db
+    .selectFrom('transactions')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('type', '=', 'manual_adjustment')
+    .where('description', 'like', '%Welcome%')
+    .executeTakeFirst()
+
+  return !!grant
+}
+
+/**
+ * Logic: Claims the one-time welcome grant for a user.
+ */
+export async function claimWelcomeGrantInternal(userId: string) {
+  const alreadyClaimed = await hasClaimedWelcomeGrant(userId)
+  if (alreadyClaimed) {
+    return { success: false, message: 'Welcome grant already claimed.' }
+  }
+
+  return await grantCreditsInternal(userId, 10, 'manual_adjustment', 'One-time Welcome Grant')
+}

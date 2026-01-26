@@ -13,6 +13,8 @@ function AdminPage() {
   const { data: session } = useSession()
   const [count, setCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [grantAmount, setGrantAmount] = useState(10)
+  const [grantDescription, setGrantDescription] = useState('Manual Bank Transfer')
   const router = useRouter()
 
   useEffect(() => {
@@ -55,7 +57,7 @@ function AdminPage() {
 
   const handleGrantCredits = async () => {
     try {
-      await useGrantCredits({ data: { amount: 10, description: 'Admin Page Grant' } })
+      await useGrantCredits({ data: { amount: grantAmount, description: grantDescription } })
       window.location.reload()
     } catch (err) {
       console.error('Failed to grant credits:', err)
@@ -134,9 +136,27 @@ function AdminPage() {
         gap: '1rem'
       }}>
         <h2 style={{ margin: 0 }}>Wallet Management</h2>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+          <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            Amount:
+            <input
+              type="number"
+              value={grantAmount}
+              onChange={(e) => setGrantAmount(Number(e.target.value))}
+              style={{ width: '80px', padding: '0.4rem' }}
+            />
+          </label>
+          <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            Description:
+            <input
+              type="text"
+              value={grantDescription}
+              onChange={(e) => setGrantDescription(e.target.value)}
+              style={{ width: '200px', padding: '0.4rem' }}
+            />
+          </label>
           <button type="button" onClick={handleGrantCredits}>
-            Grant 10 Credits
+            Process Grant
           </button>
           <button type="button" onClick={handleConsumeCredit}>
             Consume 1 Credit

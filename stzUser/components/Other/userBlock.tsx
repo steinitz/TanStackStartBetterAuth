@@ -17,10 +17,10 @@ export const adjustVerticalLocationStyle = (fineAdjustment = 0) => {
 }
 
 export const navLinkStyle = {
-  ...adjustVerticalLocationStyle(),
-  marginRight: '21px',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
+  display: 'flex',
+  alignItems: 'center',
 }
 
 export function UserBlock() {
@@ -31,34 +31,36 @@ export function UserBlock() {
     <div
       style={{
         display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        ...adjustVerticalLocationStyle(1),
       }}
     >
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '1.25rem',
-        marginRight: '21px', // Match navLinkStyle
-        fontSize: '0.95rem',
-        ...adjustVerticalLocationStyle(1),
+        gap: '0.75rem',
+        marginRight: '1rem',
+        fontSize: '0.9rem',
       }}>
         <p style={{
           fontWeight: '200',
           margin: 0,
+          opacity: 0.8
         }}
         >
           {session?.user.email}
         </p>
         <WalletWidget style={{
           whiteSpace: 'nowrap',
-          opacity: 0.7
         }} />
       </div>
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
         <Link
-          style={navLinkStyle}
+          style={{ ...navLinkStyle, marginRight: '1rem' }}
           to={'/auth/profile'}
           activeProps={{
-            style: activeLinkStyle
+            style: { ...navLinkStyle, ...activeLinkStyle, marginRight: '1rem' }
           }}
         >
           Profile
@@ -66,7 +68,7 @@ export function UserBlock() {
       </div>
       {
         session?.user ?
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <Link
               onClick={() => {
                 signOut({
@@ -84,13 +86,12 @@ export function UserBlock() {
             </Link>
           </div>
           :
-          // !isSignInRoute &&
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <Link
               to={routeStrings.signin}
               style={navLinkStyle}
               activeProps={{
-                style: activeLinkStyle
+                style: { ...navLinkStyle, ...activeLinkStyle }
               }}
             >
               Sign In

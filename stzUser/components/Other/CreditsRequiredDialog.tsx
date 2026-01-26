@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
 
 export function CreditsRequiredDialog() {
   const dialogRef = makeDialogRef()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const handleInsufficientCredits = () => {
@@ -42,8 +44,7 @@ export function CreditsRequiredDialog() {
         </button>
         <button
           onClick={() => {
-            // Placeholder for top-up action
-            console.log('Redirect to payment...')
+            navigate({ to: '/auth/credits' })
             dialogRef.current?.setIsOpen(false)
           }}
           style={{

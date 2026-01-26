@@ -28,6 +28,7 @@ import { Route as AuthSetNewPasswordRouteImport } from './routes/auth/setNewPass
 import { Route as AuthRequestPasswordResetRouteImport } from './routes/auth/requestPasswordReset'
 import { Route as AuthProfileRouteImport } from './routes/auth/profile'
 import { Route as AuthForRouteTroubleshootingRouteImport } from './routes/auth/forRouteTroubleshooting'
+import { Route as AuthCreditsRouteImport } from './routes/auth/credits'
 import { ServerRoute as ApiTestEnvServerRouteImport } from './routes/api/test-env'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
@@ -120,6 +121,11 @@ const AuthForRouteTroubleshootingRoute =
     path: '/auth/forRouteTroubleshooting',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthCreditsRoute = AuthCreditsRouteImport.update({
+  id: '/auth/credits',
+  path: '/auth/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestEnvServerRoute = ApiTestEnvServerRouteImport.update({
   id: '/api/test-env',
   path: '/api/test-env',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
+  '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
   '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
+  '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
   '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
+  '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
   '/auth/requestPasswordReset': typeof AuthRequestPasswordResetRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
     | '/auth/requestPasswordReset'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
     | '/auth/requestPasswordReset'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
     | '/auth/requestPasswordReset'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
+  AuthCreditsRoute: typeof AuthCreditsRoute
   AuthForRouteTroubleshootingRoute: typeof AuthForRouteTroubleshootingRoute
   AuthProfileRoute: typeof AuthProfileRoute
   AuthRequestPasswordResetRoute: typeof AuthRequestPasswordResetRoute
@@ -415,6 +428,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForRouteTroubleshootingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/credits': {
+      id: '/auth/credits'
+      path: '/auth/credits'
+      fullPath: '/auth/credits'
+      preLoaderRoute: typeof AuthCreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -440,6 +460,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
+  AuthCreditsRoute: AuthCreditsRoute,
   AuthForRouteTroubleshootingRoute: AuthForRouteTroubleshootingRoute,
   AuthProfileRoute: AuthProfileRoute,
   AuthRequestPasswordResetRoute: AuthRequestPasswordResetRoute,

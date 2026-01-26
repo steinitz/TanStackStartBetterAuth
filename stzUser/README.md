@@ -46,8 +46,12 @@ The wallet system uses browser-native `CustomEvents` to decouple the UI from the
 - `stz-event-wallet-updated`: Dispatched after any credit change. Listened to by the `WalletWidget` to trigger an immediate re-fetch of the balance.
 
 ### Components
-- `WalletWidget.tsx` - A clean, responsive display of the current credit balance.
-- `CreditsRequiredDialog.tsx` - A self-triggering singleton dialog that elegantly handles insufficient credit states across the entire application.
+- `WalletWidget.tsx` - A clean, responsive display of the current credit balance, linking to the user's credits page.
+- `CreditsRequiredDialog.tsx` - A self-triggering singleton dialog that elegantly handles insufficient credit states across the entire application, providing a direct link to top up.
+- `/auth/credits` - A user-facing route for viewing the ledger, claiming grants, and requesting bank transfer purchases.
+
+### Admin Tools (Admin-Only)
+- Enhanced `/admin` dashboard with manual credit grant tools (amount and description) to facilitate processing offline payments.
 
 ## Path Aliases
 

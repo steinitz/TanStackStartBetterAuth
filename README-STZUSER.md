@@ -77,16 +77,17 @@ The foundation includes a built-in ledger system designed for robust, unified re
 
 ### Philosophy: Unified Credits
 - **One Pool**: Users have a single `credits` balance. There is no distinction between "daily actions" and "purchased credits" in the balance itself.
-- **Daily Grant**: Upon their first activity of the day, users automatically receive a "Daily Grant" (e.g., +3 credits). This simplifies the UX by providing a single number to track.
-- **Consumption**: Every activity (e.g., game analysis) costs a configurable number of credits.
+- **Daily Grant**: Upon their first activity or visit of the day, users automatically receive a "Daily Grant" (e.g., +100 credits).
+- **Consumption**: Every activity (e.g., game analysis) costs a configurable number of milli-credits (bits), allowing for fractional cent pricing (e.g. 35 credits = $0.035).
 
 ### Technical Implementation
 - **Atomic Transactions**: Consumption and grants are handled via Kysely database transactions to ensure integrity and prevent race conditions.
 - **Ledger-Based**: Every change is stored as a record in the `transactions` table, providing a full audit trail (deposits, consumption, grants) viewable at `/auth/credits`.
 - **Hard Safeguard**: The database query includes a `WHERE credits >= amount` clause to mathematically guarantee that balances never drop below zero.
+- **High-Precision Economy**: Standardized on a **$0.001 per credit** (milli-credit) baseline for granular resource management.
 - **Event-Driven UI**: The UI reacts to `stz-event-wallet-updated` to show real-time balance changes without page reloads.
-- **Manual Purchase System**: Allows users to initiate bank transfer credit purchases when Stripe is not yet configured.
-- **One-time Welcome Grant**: Built-in logic for a one-time onboarding gift (+10 credits).
+- **Manual Purchase System**: Allows users to initiate bank transfer credit purchases with configurable defaults (e.g. 5000 credits).
+- **Dynamic Welcome Grant**: Built-in logic for a one-time onboarding gift (configurable, e.g. +500 credits).
 
 ## Technology Stack
 

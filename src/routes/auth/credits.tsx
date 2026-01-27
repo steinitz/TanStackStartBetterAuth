@@ -85,10 +85,10 @@ function TransactionsPage() {
         backgroundColor: 'var(--color-bg-alt)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '2rem',
+        gap: '0rem',
         width: '100%',
       }}>
-        <h2 style={{ margin: '0', textAlign: 'center' }}>Top Up Credits</h2>
+        <h2 style={{ marginTop: '0', marginBottom: '3rem', textAlign: 'center' }}>Top Up Credits</h2>
 
         {/* Payment Section */}
         <div style={{ textAlign: 'left' }}>
@@ -149,7 +149,9 @@ function TransactionsPage() {
           )}
         </div>
 
-        <hr style={{ width: '100%', margin: 0, opacity: 0.1, border: 'none', borderTop: '1px solid currentColor' }} />
+        <Spacer />
+        <hr style={{ width: '100%', margin: 0, opacity: 0.1, border: 'none', borderTop: '1px solid var(--color-text)' }} />
+        <Spacer />
 
         {/* Welcome Grant Section */}
         <div style={{
@@ -175,7 +177,7 @@ function TransactionsPage() {
           </button>
         </div>
 
-        <p style={{ marginTop: '1.5rem', opacity: 0.7, fontSize: '0.85rem' }}>
+        <p style={{ marginTop: '1rem', opacity: 0.7, fontSize: '0.85rem' }}>
           You'll also receive an automatic <strong>{clientEnv.DAILY_GRANT_CREDITS} credit top-up</strong> on your first visit or action each day.
         </p>
       </section>

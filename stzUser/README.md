@@ -35,7 +35,8 @@ The foundation includes a robust, "bulletproof" wallet system designed for usage
 ### Key Features
 - **Unified Credit Balance**: A single cached `credits` field on the user profile for high-performance UI display.
 - **Immutable Ledger**: Every change to a user's balance is recorded in the `transactions` table, providing a complete audit trail.
-- **Lazy Daily Grant**: Users receive a "Daily Grant" (e.g., +3 credits) upon their first activity of the day. This is calculated server-side using UTC time for consistency.
+- **High-Precision Economy**: Standardized on a **$0.001 per credit** (milli-credit) baseline for granular resource pricing (e.g. 35 credits = $0.035).
+- **Lazy Daily Grant**: Users receive a "Daily Grant" (e.g., +100 credits) upon their first activity or visit of the day. This is calculated server-side using UTC time for consistency.
 - **Atomic Concurrency**: 
   - **Double-Grant Protection**: Uses database transactions to ensure a daily grant is only applied once, even if multiple requests arrive simultaneously.
   - **Negative Balance Safeguard**: Uses atomic `WHERE credits >= amount` updates to guarantee that a user's balance never drops below zero.
@@ -48,7 +49,8 @@ The wallet system uses browser-native `CustomEvents` to decouple the UI from the
 ### Components
 - `WalletWidget.tsx` - A clean, responsive display of the current credit balance, linking to the user's credits page.
 - `CreditsRequiredDialog.tsx` - A self-triggering singleton dialog that elegantly handles insufficient credit states across the entire application, providing a direct link to top up.
-- `/auth/credits` - A user-facing route for viewing the ledger, claiming grants, and requesting bank transfer purchases.
+- `/auth/credits` - A user-facing route for viewing the ledger, claiming grants, and requesting bank transfer purchases with smart configurable defaults.
+- **UI Logic Polish**: Includes fixes for the React "sticky zero" numeric input issue, theme-aware input styling (inherited from global CSS), and perfect vertical alignment for numeric labels.
 
 ### Admin Tools (Admin-Only)
 - Enhanced `/admin` dashboard with manual credit grant tools (amount and description) to facilitate processing offline payments.

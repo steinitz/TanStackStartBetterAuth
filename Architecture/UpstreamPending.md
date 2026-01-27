@@ -12,7 +12,15 @@ This document tracks technical improvements identified during the development of
     - **Standalone Policy Pages**: Created audit-friendly routes and components for `/legal/about`, `/legal/acknowledgements`, `/legal/privacy`, `/legal/pricing`, and `/legal/refunds`.
     - **UI Granularity**: Extracted `TermsLink`, `PrivacyLink`, etc., and the `LegalLinksBundle` for easy placement across the app.
     - **Wallet Widget**: Enhanced the standalone `WalletWidget` with a subtle border and `cursor: pointer`, linked to the `/auth/credits` route for a seamless integrated feel.
-    - **Admin Wallet Tools**: Upgraded the `/admin` page with custom credit grant inputs (amount and description) to facilitate manual bank transfer processing.
+    - **Credit Input & Behavior Polish**:
+    - **"Sticky Zero" Fixed**: Resolved the common React numeric input issue where clearing the field snapped it back to `0` (preventing easy single-digit typing).
+    - **Theme-Aware Styling**: Moved all input background and text color overrides to `mvp-css-override.css`, allowing fields to naturally inherit dark mode themes without hardcoded JSX colors.
+    - **Vertical Alignment**: Zeroed out legacy margins and synced line-heights for perfect vertical centering within the "Credits:" line.
+    - **Stepper Removal**: Cleaned up the numeric UI by hiding the spin buttons (steppers) via localized CSS.
+- **Credit Economy Refinement**:
+    - **Milli-Credit Basis**: Standardized on a $0.001 (1 milli-credit) baseline to allow high-precision charging (e.g., 35 credits for $0.035) without floating-point errors.
+    - **Configurable Defaults**: Introduced `DEFAULT_CREDITS_PURCHASE` (e.g., 5000 / $5.00) alongside `MIN_CREDITS_PURCHASE` to improve initial purchase flow UX.
+    - **Dynamic UI Text**: Replaced hardcoded grant descriptions with dynamic env-driven strings (e.g., `{clientEnv.WELCOME_GRANT_CREDITS} free credits`).
 - **Tech Stack Polish**: Refined terminology in `Acknowledgements.tsx` for Vite ("rapid build system"), SQLite ("file-based"), and Google Gemini ("non-physical consciousness").
 
 ## Future Upstream Work

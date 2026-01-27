@@ -6,7 +6,7 @@ A production-ready starter template with authentication, database integration, a
 
 - 🔐 **Complete Authentication System** - Sign up, login, password reset, email verification, and **bot protection with Cloudflare Turnstile**
 - 🗄️ **Database Ready** - SQLite with Kysely, easily switchable to PostgreSQL/MySQL
-- 💳 **Usage & Credit Ledger** - Built-in "Wallet" system with unified credits, daily grants, and transaction ledgers. **Concurrency-safe by design** to prevent double-charges or over-grants.
+- 💳 **High-Precision Credit Ledger** - Built-in "Wallet" system with unified milli-credits ($0.001 bits), daily grants, and transaction ledgers. **Concurrency-safe by design** with atomic safeguards.
 - 🎨 **Clean UI Foundation** - MVP.css styling with custom components
 - 🧪 **Full Testing Suite** - Unit tests (Vitest) and E2E tests (Playwright) with email testing
 - 📧 **Email Integration** - Transactional emails with Resend API

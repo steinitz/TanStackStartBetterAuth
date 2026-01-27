@@ -10,7 +10,7 @@ function TransactionsPage() {
   const { data: session } = useSession()
   const [transactions, setTransactions] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [purchaseAmount, setPurchaseAmount] = useState(clientEnv.MIN_CREDITS_PURCHASE)
+  const [purchaseAmount, setPurchaseAmount] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [isRequesting, setIsRequesting] = useState(false)
 
   const navigate = useNavigate()
@@ -49,7 +49,7 @@ function TransactionsPage() {
   const handleRequestPurchase = async () => {
     setIsRequesting(true)
     try {
-      const result = await requestBankTransfer({ data: { amount: purchaseAmount } })
+      const result = await requestBankTransfer({ data: { amount: Number(purchaseAmount) } })
       if (result.success) {
         bankDetailsRef.current?.setIsOpen(true)
       }
@@ -62,16 +62,17 @@ function TransactionsPage() {
 
   if (!session?.user) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h1>Access Denied</h1>
-        <p>Please sign in to view your transaction history.</p>
-        <Link to="/">Home</Link>
+      <div style={{ padding: '4rem 2rem', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+        <p style={{ fontSize: '1.2rem', marginBottom: '1.5rem', opacity: 0.9 }}>
+          Please sign in to add credits and view your transaction history.
+        </p>
+        <Link to="/" style={{ textDecoration: 'underline' }}>Back to Home</Link>
       </div>
     )
   }
 
   const showBankSection = !clientEnv.IS_STRIPE_ENABLED && clientEnv.BANK_TRANSFER_BSB && clientEnv.BANK_TRANSFER_ACC
-  const totalCost = (purchaseAmount * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
+  const totalCost = (Number(purchaseAmount || 0) * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
@@ -79,69 +80,104 @@ function TransactionsPage() {
 
       <section style={{
         border: '1px solid var(--color-bg-secondary)',
-        padding: '1.5rem',
-        borderRadius: '8px',
+        padding: '2rem',
+        borderRadius: '12px',
         backgroundColor: 'var(--color-bg-alt)',
-        textAlign: 'left' // Overall left align for the container
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2rem',
+        width: '100%',
       }}>
-        <h2 style={{ marginBottom: '1rem', textAlign: 'center' }}>Top Up Credits</h2>
-        <Spacer space={0.5} />
-        {clientEnv.IS_STRIPE_ENABLED ? (
-          <p>Stripe integration is coming soon</p>
-        ) : showBankSection ? (
-          <div>
-            <p>Purchase credits via manual bank transfer ($ {clientEnv.CREDIT_PRICE_AUD.toFixed(2)} per credit).</p>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '1.2rem', 
-              marginTop: '1.5rem', 
-              alignItems: 'flex-start' 
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                gap: '1.5rem', 
-                alignItems: 'center', 
-                flexWrap: 'wrap' 
+        <h2 style={{ margin: '0', textAlign: 'center' }}>Top Up Credits</h2>
+
+        {/* Payment Section */}
+        <div style={{ textAlign: 'left' }}>
+          {clientEnv.IS_STRIPE_ENABLED ? (
+            <p>Stripe integration is coming soon</p>
+          ) : showBankSection ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <p style={{ margin: 0, opacity: 0.9 }}>
+                Purchase credits via manual bank transfer ($ {clientEnv.CREDIT_PRICE_AUD.toFixed(3)} per credit).
+              </p>
+
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '1.5rem',
+                alignItems: 'center',
+                justifyContent: 'space-between'
               }}>
-                <label style={{ display: 'flex', alignItems: 'center', margin: 0, gap: '0.5rem' }}>
-                  Credits:
-                  <input
-                    type="number"
-                    min={clientEnv.MIN_CREDITS_PURCHASE}
-                    value={purchaseAmount}
-                    onChange={(e) => setPurchaseAmount(Number(e.target.value))}
-                    style={{ width: '60px', padding: '0.3rem' }}
-                  />
-                </label>
-                <div style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                  Total Cost: <strong style={{ marginLeft: '0.5rem' }}>${totalCost} AUD</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', margin: 0, lineHeight: 'normal' }}>
+                    Credits:
+                    <input
+                      type="number"
+                      min={clientEnv.MIN_CREDITS_PURCHASE}
+                      value={purchaseAmount}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setPurchaseAmount(val === '' ? '' : Number(val))
+                      }}
+                      style={{
+                        width: '6rem',
+                        minWidth: '0',
+                        padding: '0.4rem 0.6rem',
+                        margin: 0
+                      }}
+                    />
+                  </label>
+
+                  <span style={{ fontSize: '1.1rem', whiteSpace: 'nowrap' }}>
+                    Total Cost: <strong style={{ color: 'var(--color-primary)' }}>${totalCost} AUD</strong>
+                  </span>
                 </div>
+
+                <button
+                  onClick={handleRequestPurchase}
+                  disabled={isRequesting || !purchaseAmount || purchaseAmount < clientEnv.MIN_CREDITS_PURCHASE}
+                  style={{
+                    whiteSpace: 'nowrap',
+                    padding: '0.6rem 1.2rem',
+                  }}
+                >
+                  {isRequesting ? 'Requesting...' : 'Pay via Bank Transfer'}
+                </button>
               </div>
-              <button
-                onClick={handleRequestPurchase}
-                disabled={isRequesting || purchaseAmount < clientEnv.MIN_CREDITS_PURCHASE}
-                style={{ whiteSpace: 'nowrap', padding: '0.5rem 1rem' }}
-              >
-                {isRequesting ? 'Requesting...' : 'Pay via Bank Transfer'}
-              </button>
             </div>
-          </div>
-        ) : (
-          <p>Credit purchasing is currently unavailable.</p>
-        )}
+          ) : (
+            <p>Credit purchasing is currently unavailable.</p>
+          )}
+        </div>
 
-        <hr style={{ margin: '1.5rem 0', opacity: 0.2 }} />
+        <hr style={{ width: '100%', margin: 0, opacity: 0.1, border: 'none', borderTop: '1px solid currentColor' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-          <p style={{ margin: 0 }}>New here? Get started with ten free credits:</p>
-          <button 
+        {/* Welcome Grant Section */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '1.5rem',
+          flexWrap: 'wrap',
+          textAlign: 'left'
+        }}>
+          <p style={{ margin: 0, flex: '1 1 300px' }}>
+            New here? Get started with <strong>{clientEnv.WELCOME_GRANT_CREDITS} free credits</strong>:
+          </p>
+          <button
             onClick={handleClaimGrant}
-            style={{ whiteSpace: 'nowrap', padding: '0.5rem 1rem' }}
+            style={{
+              whiteSpace: 'nowrap',
+              padding: '0.6rem 1.2rem',
+              minWidth: '180px'
+            }}
           >
             Claim Welcome Grant
           </button>
         </div>
+
+        <p style={{ marginTop: '1.5rem', opacity: 0.7, fontSize: '0.85rem' }}>
+          You'll also receive an automatic <strong>{clientEnv.DAILY_GRANT_CREDITS} credit top-up</strong> on your first visit or action each day.
+        </p>
       </section>
 
       <Spacer orientation="vertical" />

@@ -45,6 +45,9 @@ type ClientEnv = {
   BANK_TRANSFER_ACC: string | undefined
   CREDIT_PRICE_AUD: number
   MIN_CREDITS_PURCHASE: number
+  DAILY_GRANT_CREDITS: number
+  WELCOME_GRANT_CREDITS: number
+  DEFAULT_CREDITS_PURCHASE: number
   IS_STRIPE_ENABLED: boolean
 }
 
@@ -73,8 +76,11 @@ export const clientEnv: ClientEnv = isServer()
     SUPPORT_LINK_URL: process.env.SUPPORT_LINK_URL || '/contact',
     BANK_TRANSFER_BSB: process.env.BANK_TRANSFER_BSB,
     BANK_TRANSFER_ACC: process.env.BANK_TRANSFER_ACC,
-    CREDIT_PRICE_AUD: Number(process.env.CREDIT_PRICE_AUD || '1.00'),
+    CREDIT_PRICE_AUD: Number(process.env.CREDIT_PRICE_AUD || '0.001'),
     MIN_CREDITS_PURCHASE: Number(process.env.MIN_CREDITS_PURCHASE || '10'),
+    DAILY_GRANT_CREDITS: Number(process.env.DAILY_GRANT_CREDITS || '100'),
+    WELCOME_GRANT_CREDITS: Number(process.env.WELCOME_GRANT_CREDITS || '500'),
+    DEFAULT_CREDITS_PURCHASE: Number(process.env.DEFAULT_CREDITS_PURCHASE || '5000'),
     IS_STRIPE_ENABLED: false, // Set to true when Stripe is fully integrated
   }
   : (typeof window !== 'undefined' && window.__ENV)
@@ -94,8 +100,11 @@ export const clientEnv: ClientEnv = isServer()
       SUPPORT_LINK_URL: '/contact',
       BANK_TRANSFER_BSB: undefined,
       BANK_TRANSFER_ACC: undefined,
-      CREDIT_PRICE_AUD: 1.00,
+      CREDIT_PRICE_AUD: 0.001,
       MIN_CREDITS_PURCHASE: 10,
+      DAILY_GRANT_CREDITS: 100,
+      WELCOME_GRANT_CREDITS: 500,
+      DEFAULT_CREDITS_PURCHASE: 5000,
       IS_STRIPE_ENABLED: false,
     }
 

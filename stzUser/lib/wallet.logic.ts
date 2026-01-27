@@ -1,10 +1,11 @@
 import { db } from '~stzUser/lib/database'
+import { clientEnv } from '~stzUser/lib/env'
 
 export type WalletStatus = {
   credits: number
 }
 
-const DAILY_ALLOWANCE = 3
+const DAILY_ALLOWANCE = clientEnv.DAILY_GRANT_CREDITS
 
 /**
  * Logic: Fetches wallet status for a specific user.
@@ -185,5 +186,5 @@ export async function claimWelcomeGrantInternal(userId: string) {
     return { success: false, message: 'Welcome grant already claimed.' }
   }
 
-  return await grantCreditsInternal(userId, 10, 'manual_adjustment', 'One-time Welcome Grant')
+  return await grantCreditsInternal(userId, clientEnv.WELCOME_GRANT_CREDITS, 'manual_adjustment', 'One-time Welcome Grant')
 }

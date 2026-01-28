@@ -5,6 +5,7 @@ import { LibsqlDialect } from "kysely-libsql";
 // Initialize LibSQL client
 export const libsqlClient = createClient({
   url: process.env.DATABASE_URL || "file:sqlite.db",
+  authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
 /**
@@ -83,11 +84,15 @@ export const db = new Kysely<Database>({
   }),
 });
 
-// Enable WAL mode for better concurrency with file-based LibSQL/SQLite
-try {
-  // ALWAYS try to enable WAL for file: databases in tests/dev
-  const result = await libsqlClient.execute("PRAGMA journal_mode = WAL;");
-  console.log("🛠️ LibSQL: WAL mode result:", result.rows[0]);
-} catch (e) {
-  console.error("Failed to enable WAL mode:", e);
+// Enable WAL mode for better concurrency with local file-based LibSQL/SQLite
+const isLocalFile = !process.env.DATABASE_URL?.startsWith('libsql://') && !process.env.DATABASE_URL?.startsWith('libsls://');
+
+if (isLocalFile) {
+  try {
+    // ALWAYS try to enable WAL for file: databases in tests/dev
+    const result = await libsqlClient.execute("PRAGMA journal_mode = WAL;");
+    console.log("🛠️ LibSQL: WAL mode result:", result.rows[0]);
+  } catch (e) {
+    console.error("Failed to enable WAL mode:", e);
+  }
 }

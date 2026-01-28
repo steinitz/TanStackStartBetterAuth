@@ -1,8 +1,11 @@
-import Database from "better-sqlite3";
-import { Kysely, SqliteDialect } from "kysely";
+import { createClient } from "@libsql/client";
+import { Kysely } from "kysely";
+import { LibsqlDialect } from "kysely-libsql";
 
-// Database instance (legacy)
-export const appDatabase = new Database("sqlite.db");
+// Initialize LibSQL client
+export const libsqlClient = createClient({
+  url: process.env.DATABASE_URL || "file:sqlite.db",
+});
 
 /**
  * User-related database types
@@ -75,7 +78,16 @@ export interface TransactionTable {
 
 // Initialize Kysely instance
 export const db = new Kysely<Database>({
-  dialect: new SqliteDialect({
-    database: appDatabase
+  dialect: new LibsqlDialect({
+    client: libsqlClient
   }),
 });
+
+// Enable WAL mode for better concurrency with file-based LibSQL/SQLite
+try {
+  // ALWAYS try to enable WAL for file: databases in tests/dev
+  const result = await libsqlClient.execute("PRAGMA journal_mode = WAL;");
+  console.log("🛠️ LibSQL: WAL mode result:", result.rows[0]);
+} catch (e) {
+  console.error("Failed to enable WAL mode:", e);
+}

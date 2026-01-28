@@ -88,7 +88,7 @@ This foundation uses a dual-engine migration strategy:
 
 1. **Better Auth Tables**: Managed by the Better Auth CLI (`npx @better-auth/cli migrate`). This handles users, sessions, accounts, etc.
 2. **Custom Foundation Tables**: Managed by **"Slim Sync"** logic in `stzUser/lib/migrations.ts`.
-   - **How it works**: Uses Kysely's `.ifNotExists()` pattern to declaratively define tables.
+   - **How it works**: Uses Kysely's `.ifNotExists()` pattern to declaratively define tables for LibSQL/SQLite.
    - **Execution**: Triggered automatically on application startup in `src/server.ts`.
    - **Benefits**: Zero-configuration, no migration history files, and immediate consistency across environments.
 
@@ -128,7 +128,8 @@ This foundation includes a sophisticated environment variable system designed fo
 These variables are only accessible on the server and should contain sensitive information:
 
 ```env
-DATABASE_URL=your_database_connection_string
+DATABASE_URL=your_database_connection_string (e.g., file:sqlite.db or libsql://...)
+TURSO_AUTH_TOKEN=your_turso_auth_token (required for remote LibSQL)
 BETTER_AUTH_SECRET=your_auth_secret
 SMTP_HOST=your_smtp_host
 SMTP_PORT=587

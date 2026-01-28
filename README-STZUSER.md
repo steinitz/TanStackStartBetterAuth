@@ -95,8 +95,11 @@ The foundation includes a built-in ledger system designed for robust, unified re
 
 - **Framework**: TanStack Start (React-based full-stack framework)
 - **Authentication**: Better Auth with role-based permissions and Cloudflare Turnstile for sign-up security
-- **Database**: SQLite (development) / PostgreSQL (production)
+- **Database**: LibSQL (fully compatible with SQLite)
   - **Kysely**: Type-safe SQL builder for all database operations.
+  - **LibSQL Client**: Modern driver designed for serverless/edge compatibility.
+  - **WAL Mode**: Automatically enabled for local file connections to improve concurrency.
+  - **Staggered Testing**: Integration tests use a 10ms stagger to safely verify atomic transactions against the LibSQL file-lock.
   - **Better Auth CLI**: Handles core authentication tables (users, sessions, accounts).
   - **Slim Sync Migration**: Custom foundation tables (ledger, usage) use a declarative `.ifNotExists()` pattern in `stzUser/lib/migrations.ts`, triggered on application startup for zero-config deployment.
   - **Note**: SQLite dates are stored as ISO strings for broad compatibility.

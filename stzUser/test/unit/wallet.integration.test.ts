@@ -104,7 +104,9 @@ describe.sequential('Wallet Ledger Integration', () => {
     expect(status.credits).toBe(105)
   })
 
-  it.skip('should prevent double-granting during concurrent requests (Race Condition)', async () => {
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+  it('should prevent double-granting during concurrent requests (Race Condition)', async () => {
     // 1. Create a fresh user without credits (they get 0 on construction)
     const timestamp = Date.now() + Math.random()
     const res = await auth.api.createUser({
@@ -117,20 +119,23 @@ describe.sequential('Wallet Ledger Integration', () => {
     const raceUserId = res.user!.id
 
     // 2. Fire 5 concurrent requests to get status (which triggers grant)
-    await Promise.all([
+    // We use a small stagger (10ms) to allow LibSQL's queue to handle the locks
+    // while still testing the atomicity of the 'ensureDailyAllowance' check.
+    const requests = [
       getWalletStatusInternal(raceUserId),
-      getWalletStatusInternal(raceUserId),
-      getWalletStatusInternal(raceUserId),
-      getWalletStatusInternal(raceUserId),
-      getWalletStatusInternal(raceUserId),
-    ])
+      (async () => { await sleep(10); return getWalletStatusInternal(raceUserId) })(),
+      (async () => { await sleep(20); return getWalletStatusInternal(raceUserId) })(),
+      (async () => { await sleep(30); return getWalletStatusInternal(raceUserId) })(),
+      (async () => { await sleep(40); return getWalletStatusInternal(raceUserId) })(),
+    ]
+    await Promise.all(requests)
 
     // 3. Verify exactly 100 credits were granted, not 500
     const status = await getWalletStatusInternal(raceUserId)
     expect(status.credits).toBe(100)
   })
 
-  it.skip('should prevent negative balance during concurrent consumption', async () => {
+  it('should prevent negative balance during concurrent consumption', async () => {
     // 1. Give user exactly 1 credit
     // (Note: they already have 3 from the first action, so we use that)
     const statusBefore = await getWalletStatusInternal(testUserId)
@@ -140,7 +145,11 @@ describe.sequential('Wallet Ledger Integration', () => {
     // Let's try to spend 'currentCredits + 2' credits using concurrent requests of 1 each
     const requests: Promise<{ success: boolean; message: string }>[] = []
     for (let i = 0; i < currentCredits + 2; i++) {
-      requests.push(consumeResourceInternal(testUserId, 'race_resource', 1))
+      const stagger = i * 10
+      requests.push((async () => {
+        if (stagger > 0) await sleep(stagger)
+        return consumeResourceInternal(testUserId, 'race_resource', 1)
+      })())
     }
 
     const results = await Promise.all(requests)

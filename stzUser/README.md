@@ -49,7 +49,8 @@ The wallet system uses browser-native `CustomEvents` to decouple the UI from the
 ### Components
 - `WalletWidget.tsx` - A clean, responsive display of the current credit balance, linking to the user's credits page.
 - `CreditsRequiredDialog.tsx` - A self-triggering singleton dialog that elegantly handles insufficient credit states across the entire application, providing a direct link to top up.
-- `/auth/credits` - A user-facing route for viewing the ledger, claiming grants, and requesting bank transfer purchases with smart configurable defaults.
+- `/auth/credits` - A user-facing route for viewing the ledger, claiming grants, and requesting bank transfer purchases with smart adaptive UI that dims completed tasks.
+- **Robust Claim Detection**: Uses a dedicated `welcome_claimed` database column for bulletproof one-time onboarding grant management.
 - **UI Logic Polish**: Includes fixes for the React "sticky zero" numeric input issue, theme-aware input styling (inherited from global CSS), and perfect vertical alignment for numeric labels.
 
 ### Admin Tools (Admin-Only)

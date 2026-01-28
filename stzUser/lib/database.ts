@@ -60,6 +60,7 @@ export interface UserTable {
   banReason: string | null;
   banExpires: string | null; // SQLite stores dates as strings
   credits: number; // For performance-optimized balance access
+  welcome_claimed: number; // Acting as boolean (0 or 1)
 }
 
 export interface TransactionTable {

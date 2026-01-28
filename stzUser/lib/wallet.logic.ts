@@ -3,6 +3,7 @@ import { clientEnv } from '~stzUser/lib/env'
 
 export type WalletStatus = {
   credits: number
+  welcomeClaimed: boolean
 }
 
 const DAILY_ALLOWANCE = clientEnv.DAILY_GRANT_CREDITS
@@ -18,12 +19,13 @@ export async function getWalletStatusInternal(userId: string) {
   // 2. Simply fetch credits from user record
   const user = await db
     .selectFrom('user')
-    .select('credits')
+    .select(['credits', 'welcome_claimed'])
     .where('id', '=', userId)
     .executeTakeFirst()
 
   return {
     credits: Number(user?.credits || 0),
+    welcomeClaimed: Boolean(user?.welcome_claimed),
   }
 }
 /**
@@ -166,25 +168,41 @@ export async function getTransactionsInternal(userId: string) {
  * Logic: Checks if a user has already claimed their one-time welcome grant.
  */
 export async function hasClaimedWelcomeGrant(userId: string) {
-  const grant = await db
-    .selectFrom('transactions')
-    .select('id')
-    .where('user_id', '=', userId)
-    .where('type', '=', 'manual_adjustment')
-    .where('description', 'like', '%Welcome%')
+  const user = await db
+    .selectFrom('user')
+    .select('welcome_claimed')
+    .where('id', '=', userId)
     .executeTakeFirst()
 
-  return !!grant
+  return Boolean(user?.welcome_claimed)
 }
 
 /**
  * Logic: Claims the one-time welcome grant for a user.
  */
 export async function claimWelcomeGrantInternal(userId: string) {
-  const alreadyClaimed = await hasClaimedWelcomeGrant(userId)
-  if (alreadyClaimed) {
-    return { success: false, message: 'Welcome grant already claimed.' }
-  }
+  return await db.transaction().execute(async (trx) => {
+    // 1. Re-check claimed status inside transaction for safety
+    const user = await trx
+      .selectFrom('user')
+      .select('welcome_claimed')
+      .where('id', '=', userId)
+      .executeTakeFirst()
 
-  return await grantCreditsInternal(userId, clientEnv.WELCOME_GRANT_CREDITS, 'manual_adjustment', 'One-time Welcome Grant')
+    if (user?.welcome_claimed) {
+      return { success: false, message: 'Welcome grant already claimed.' }
+    }
+
+    // 2. Grant credits (this updates both user balance and transaction ledger)
+    await grantCreditsTx(trx, userId, clientEnv.WELCOME_GRANT_CREDITS, 'manual_adjustment', 'One-time Welcome Grant')
+
+    // 3. Mark as claimed
+    await trx
+      .updateTable('user')
+      .set({ welcome_claimed: 1 })
+      .where('id', '=', userId)
+      .execute()
+
+    return { success: true }
+  })
 }

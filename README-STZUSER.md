@@ -85,6 +85,8 @@ The foundation includes a built-in ledger system designed for robust, unified re
 - **Ledger-Based**: Every change is stored as a record in the `transactions` table, providing a full audit trail (deposits, consumption, grants) viewable at `/auth/credits`.
 - **Hard Safeguard**: The database query includes a `WHERE credits >= amount` clause to mathematically guarantee that balances never drop below zero.
 - **High-Precision Economy**: Standardized on a **$0.001 per credit** (milli-credit) baseline for granular resource management.
+- **Robust One-Time Grant**: Uses a dedicated `welcome_claimed` boolean flag on the user record to ensure onboarding gifts are only claimed once, regardless of ledger depth.
+- **Adaptive UI**: The Credits page dynamically dims instructional text and gray-outs buttons once onboarding is completed, keeping the interface clean for returning users.
 - **Event-Driven UI**: The UI reacts to `stz-event-wallet-updated` to show real-time balance changes without page reloads.
 - **Manual Purchase System**: Allows users to initiate bank transfer credit purchases with configurable defaults (e.g. 5000 credits).
 - **Dynamic Welcome Grant**: Built-in logic for a one-time onboarding gift (configurable, e.g. +500 credits).

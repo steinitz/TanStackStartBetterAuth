@@ -19,8 +19,9 @@ This document tracks technical improvements identified during the development of
     - **Stepper Removal**: Cleaned up the numeric UI by hiding the spin buttons (steppers) via localized CSS.
 - **Credit Economy Refinement**:
     - **Milli-Credit Basis**: Standardized on a $0.001 (1 milli-credit) baseline to allow high-precision charging (e.g., 35 credits for $0.035) without floating-point errors.
+    - **Robust Welcome Grant**: Replaced fragile string-matching in transactions with a dedicated `welcome_claimed` boolean column on the `user` record for bulletproof one-time grant detection.
+    - **Adaptive UI State**: Implemented conditional dimming for the "New here?" text and grayed-out buttons once claimed, plus dynamic text shifts (removing "also") once onboarding is over.
     - **Configurable Defaults**: Introduced `DEFAULT_CREDITS_PURCHASE` (e.g., 5000 / $5.00) alongside `MIN_CREDITS_PURCHASE` to improve initial purchase flow UX.
-    - **Dynamic UI Text**: Replaced hardcoded grant descriptions with dynamic env-driven strings (e.g., `{clientEnv.WELCOME_GRANT_CREDITS} free credits`).
 - **Tech Stack Polish**: Refined terminology in `Acknowledgements.tsx` for Vite ("rapid build system"), SQLite ("file-based"), and Google Gemini ("non-physical consciousness").
 
 ## Future Upstream Work

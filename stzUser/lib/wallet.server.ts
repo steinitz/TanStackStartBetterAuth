@@ -123,13 +123,13 @@ export const requestBankTransfer = createServerFn({
         to: clientEnv.SUPPORT_EMAIL_ADDRESS,
         from: clientEnv.SUPPORT_EMAIL_ADDRESS,
         subject: `💰 Credit Purchase Request: ${session.user.email}`,
-        text: `User ${session.user.email} (ID: ${session.user.id}) has requested to purchase ${data.amount} credits for $${cost} AUD via bank transfer.`,
+        text: `User ${session.user.email} (ID: ${session.user.id}) has requested to purchase ${data.amount} credits for AUD$${cost} via bank transfer.`,
         html: `
           <h3>Credit Purchase Request</h3>
           <p><strong>User:</strong> ${session.user.email}</p>
           <p><strong>User ID:</strong> ${session.user.id}</p>
           <p><strong>Requested Credits:</strong> ${data.amount}</p>
-          <p><strong>Total Cost:</strong> $${cost} AUD</p>
+          <p><strong>Total Cost:</strong> AUD$${cost}</p>
           <p>Please wait for payment verification before manually granting credits via the Admin panel.</p>
         `
       }

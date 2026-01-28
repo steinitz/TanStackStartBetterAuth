@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useSession } from '~stzUser/lib/auth-client'
-import { getTransactions, claimWelcomeGrant, requestBankTransfer } from '~stzUser/lib/wallet.server'
+import { getTransactions, claimWelcomeGrant, requestBankTransfer, getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet.server'
 import { clientEnv } from '~stzUser/lib/env'
 import { useEffect, useState } from 'react'
 import { Spacer } from '~stzUtils/components/Spacer'
@@ -12,6 +12,7 @@ function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [purchaseAmount, setPurchaseAmount] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [isRequesting, setIsRequesting] = useState(false)
+  const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null)
 
   const navigate = useNavigate()
 
@@ -21,10 +22,14 @@ function TransactionsPage() {
     const fetchHistory = async () => {
       if (!session?.user) return
       try {
-        const data = await getTransactions()
-        setTransactions(data || [])
+        const [transactionsData, statusData] = await Promise.all([
+          getTransactions(),
+          getWalletStatus()
+        ])
+        setTransactions(transactionsData || [])
+        setWalletStatus(statusData)
       } catch (err) {
-        console.error('Failed to fetch transactions:', err)
+        console.error('Failed to fetch data:', err)
       } finally {
         setIsLoading(false)
       }
@@ -97,7 +102,7 @@ function TransactionsPage() {
           ) : showBankSection ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <p style={{ margin: 0, opacity: 0.9 }}>
-                Purchase credits via manual bank transfer ($ {clientEnv.CREDIT_PRICE_AUD.toFixed(3)} per credit).
+                Purchase credits via manual bank transfer (<strong>AUD${clientEnv.CREDIT_PRICE_AUD.toFixed(3)}</strong> per credit).
               </p>
 
               <div style={{
@@ -128,7 +133,7 @@ function TransactionsPage() {
                   </label>
 
                   <span style={{ fontSize: '1.1rem', whiteSpace: 'nowrap' }}>
-                    Total Cost: <strong style={{ color: 'var(--color-primary)' }}>${totalCost} AUD</strong>
+                    Total Cost: <strong style={{ color: 'var(--color-primary)' }}>AUD${totalCost}</strong>
                   </span>
                 </div>
 
@@ -162,23 +167,30 @@ function TransactionsPage() {
           flexWrap: 'wrap',
           textAlign: 'left'
         }}>
-          <p style={{ margin: 0, flex: '1 1 300px' }}>
+          <p style={{
+            margin: 0,
+            flex: '1 1 300px',
+            opacity: walletStatus?.welcomeClaimed ? 0.5 : 1
+          }}>
             New here? Get started with <strong>{clientEnv.WELCOME_GRANT_CREDITS} free credits</strong>:
           </p>
           <button
             onClick={handleClaimGrant}
+            disabled={walletStatus?.welcomeClaimed || isRequesting}
             style={{
               whiteSpace: 'nowrap',
               padding: '0.6rem 1.2rem',
-              minWidth: '180px'
+              minWidth: '180px',
+              opacity: walletStatus?.welcomeClaimed ? 0.5 : 1,
+              cursor: walletStatus?.welcomeClaimed ? 'not-allowed' : 'pointer'
             }}
           >
-            Claim Welcome Grant
+            {walletStatus?.welcomeClaimed ? 'Welcome Grant Claimed' : 'Claim Welcome Grant'}
           </button>
         </div>
 
         <p style={{ marginTop: '1rem', opacity: 0.7, fontSize: '0.85rem' }}>
-          You'll also receive an automatic <strong>{clientEnv.DAILY_GRANT_CREDITS} credit top-up</strong> on your first visit or action each day.
+          You{walletStatus?.welcomeClaimed ? '' : "'ll also"} receive an automatic <strong>{clientEnv.DAILY_GRANT_CREDITS} credit top-up</strong> on your first visit or action each day.
         </p>
       </section>
 

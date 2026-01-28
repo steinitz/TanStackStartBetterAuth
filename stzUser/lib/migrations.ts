@@ -48,7 +48,17 @@ export async function ensureAdditionalTables(): Promise<void> {
       // Ignore if exists
     }
 
-    // 3. Drop legacy resource_usage table
+    // 3. Add 'welcome_claimed' column to user table
+    try {
+      await db.schema
+        .alterTable('user')
+        .addColumn('welcome_claimed', 'integer', (col) => col.notNull().defaultTo(0))
+        .execute();
+    } catch (e) {
+      // Ignore if exists
+    }
+
+    // 4. Drop legacy resource_usage table
     await db.schema.dropTable('resource_usage').ifExists().execute();
 
     console.log('✅ Additional foundation tables are ready');

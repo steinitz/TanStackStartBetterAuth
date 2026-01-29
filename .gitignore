@@ -66,3 +66,5 @@ BuilderSuggestions.md
 
 # Reference directory (contains external git repos)
 reference/
+# Local Netlify folder
+.netlify

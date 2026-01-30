@@ -13,7 +13,16 @@ export default defineConfig({
     tanstackStart({
       customViteReactPlugin: true
     }),
-    viteReact()],
+    viteReact()
+  ],
+  resolve: {
+    alias: process.env.NODE_ENV === 'production'
+      ? {
+        '@libsql/client': '@libsql/client/web',
+        'better-sqlite3': '/Users/steinitz/Documents/Projects/Web/TanStackStartBetterAuth/TanStackStartBetterAuth/stzUser/lib/mock-sqlite.ts'
+      }
+      : undefined,
+  },
   build: {
     rollupOptions: {
       external: [
@@ -27,7 +36,6 @@ export default defineConfig({
     exclude: ['reference'],
   },
   ssr: {
-    external: ['libsql', '@libsql/client'],
-    noExternal: ['better-auth', 'kysely-libsql'],
+    noExternal: ['better-auth', 'kysely-libsql', '@libsql/client'],
   },
 })

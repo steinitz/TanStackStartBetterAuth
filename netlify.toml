@@ -1,12 +1,3 @@
 [build]
-  command = "pnpm run build"
-  publish = ".output/public"
-
-[functions]
-  directory = ".output/server"
-  node_bundler = "esbuild"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/server"
-  status = 200
+  command = "NITRO_PRESET=netlify pnpm run build"
+  publish = "dist"

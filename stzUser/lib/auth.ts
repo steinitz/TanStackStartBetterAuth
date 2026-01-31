@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-import { betterAuth } from "better-auth"
+import { betterAuth, type BetterAuthOptions } from "better-auth"
 import { reactStartCookies } from "better-auth/react-start"
 import { admin } from "better-auth/plugins"
 import { createAccessControl } from "better-auth/plugins/access"
@@ -43,7 +43,9 @@ async function getEmailTransport() {
   return emailTransport
 }
 
-export const auth = betterAuth({
+let _auth: any = null
+
+export const authOptions: BetterAuthOptions = {
   database: {
     db: db,
     type: "sqlite",
@@ -158,46 +160,50 @@ ${url}`,
         const temp = new URL(url)
         const searchParams = new URLSearchParams(temp.search)
         const token = searchParams.get("token") ?? ""
-        await auth.api.verifyEmail({
-          query: {
-            token
+        if (_auth) {
+          await _auth.api.verifyEmail({
+            query: {
+              token
+            }
+          })
+        }
+      },
+    },
+    // session: {
+    //   expiresIn: 60 * 60 * 24 * 7, // 7 days
+    //   updateAge: 60 * 60 * 24, // 1 day (how often the session expiration is updated)
+    // },
+    hooks: {
+      before: async (context) => {
+        // Better Auth paths are relative to the auth base path (usually /api/auth)
+        // but the context.request URL might vary depending on how it's called.
+        if (context.request?.url.includes("/sign-up/email")) {
+          const token = context.request.headers.get("x-turnstile-token");
+          if (!token) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Anti-bot verification required",
+            });
           }
+          const isValid = await verifyTurnstileToken(token);
+          if (!isValid) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Anti-bot verification failed",
+            });
+          }
+        }
+        return { context };
+      },
+    },
+    plugins: [
+      admin({
+        ac: createAccessControl({
+          ...adminAc.statements
         })
-      }
-    },
-  },
-  // session: {
-  //   expiresIn: 60 * 60 * 24 * 7, // 7 days
-  //   updateAge: 60 * 60 * 24, // 1 day (how often the session expiration is updated)
-  // },
-  hooks: {
-    before: async (context) => {
-      // Better Auth paths are relative to the auth base path (usually /api/auth)
-      // but the context.request URL might vary depending on how it's called.
-      if (context.request?.url.includes("/sign-up/email")) {
-        const token = context.request.headers.get("x-turnstile-token");
-        if (!token) {
-          throw new APIError("BAD_REQUEST", {
-            message: "Anti-bot verification required",
-          });
-        }
-        const isValid = await verifyTurnstileToken(token);
-        if (!isValid) {
-          throw new APIError("BAD_REQUEST", {
-            message: "Anti-bot verification failed",
-          });
-        }
-      }
-      return { context };
-    },
-  },
-  plugins: [
-    admin({
-      ac: createAccessControl({
-        ...adminAc.statements
-      })
-    }), // Admin plugin for user management
-    oneTimeToken(), // One-time token plugin for email verification testing
-    reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
-  ],
-})
+      }), // Admin plugin for user management
+      oneTimeToken(), // One-time token plugin for email verification testing
+      reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
+    ],
+  }
+
+export const auth = betterAuth(authOptions)
+_auth = auth

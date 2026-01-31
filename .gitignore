@@ -59,6 +59,9 @@ sqlite.db
 sqlite.db-shm
 sqlite.db-wal
 count.txt
+local.db
+local.db-shm
+local.db-wal
 
 # Development notes
 ToDo.md

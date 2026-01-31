@@ -169,41 +169,42 @@ ${url}`,
         }
       }
     },
-    // session: {
-    //   expiresIn: 60 * 60 * 24 * 7, // 7 days
-    //   updateAge: 60 * 60 * 24, // 1 day (how often the session expiration is updated)
-    // },
-    hooks: {
-      before: async (context) => {
-        // Better Auth paths are relative to the auth base path (usually /api/auth)
-        // but the context.request URL might vary depending on how it's called.
-        if (context.request?.url.includes("/sign-up/email")) {
-          const token = context.request.headers.get("x-turnstile-token");
-          if (!token) {
-            throw new APIError("BAD_REQUEST", {
-              message: "Anti-bot verification required",
-            });
-          }
-          const isValid = await verifyTurnstileToken(token);
-          if (!isValid) {
-            throw new APIError("BAD_REQUEST", {
-              message: "Anti-bot verification failed",
-            });
-          }
+  },
+  // session: {
+  //   expiresIn: 60 * 60 * 24 * 7, // 7 days
+  //   updateAge: 60 * 60 * 24, // 1 day (how often the session expiration is updated)
+  // },
+  hooks: {
+    before: async (context) => {
+      // Better Auth paths are relative to the auth base path (usually /api/auth)
+      // but the context.request URL might vary depending on how it's called.
+      if (context.request?.url.includes("/sign-up/email")) {
+        const token = context.request.headers.get("x-turnstile-token");
+        if (!token) {
+          throw new APIError("BAD_REQUEST", {
+            message: "Anti-bot verification required",
+          });
         }
-        return { context };
-      },
+        const isValid = await verifyTurnstileToken(token);
+        if (!isValid) {
+          throw new APIError("BAD_REQUEST", {
+            message: "Anti-bot verification failed",
+          });
+        }
+      }
+      return { context };
     },
-    plugins: [
-      admin({
-        ac: createAccessControl({
-          ...adminAc.statements
-        })
-      }), // Admin plugin for user management
-      oneTimeToken(), // One-time token plugin for email verification testing
-      reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
-    ],
-  }
+  },
+  plugins: [
+    admin({
+      ac: createAccessControl({
+        ...adminAc.statements
+      })
+    }), // Admin plugin for user management
+    oneTimeToken(), // One-time token plugin for email verification testing
+    reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
+  ],
+}
 
 export const auth = betterAuth(authOptions)
 _auth = auth

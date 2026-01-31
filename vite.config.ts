@@ -16,7 +16,7 @@ export default defineConfig({
     viteReact()
   ],
   resolve: {
-    alias: process.env.NODE_ENV === 'production'
+    alias: process.env.NETLIFY
       ? {
         '@libsql/client': '@libsql/client/web',
         'better-sqlite3': '/Users/steinitz/Documents/Projects/Web/TanStackStartBetterAuth/TanStackStartBetterAuth/stzUser/lib/mock-sqlite.ts'

@@ -51,3 +51,15 @@ For VPS deployment (e.g., Coolify, Docker), the standard build process applies:
 2.  **Start**: `pnpm start`
 3.  **Database**: Can be a local `sqlite.db` file (native client) or remote Turso.
     *   If using local file, ensure the volume is persistent.
+
+## Future Merges & Maintenance
+
+When merging this upstream functionality into downstream projects (like `ChessHurdles`), strictly verify these critical files which often have conflicts:
+
+1.  **`stzUser/lib/auth.ts`**: We refactored this to export `authOptions`. **DO NOT** simply overwrite this file if the downstream project has custom plugins or configuration. You must manually merge the export pattern:
+    ```typescript
+    export const authOptions = { ... }
+    export const auth = betterAuth(authOptions)
+    ```
+2.  **`vite.config.ts`**: Ensure the conditional alias logic for `process.env.NETLIFY` is preserved.
+3.  **`stzUser/lib/migrations.ts`**: Ensure the `getMigrations` call is present at the top of `ensureAdditionalTables`.

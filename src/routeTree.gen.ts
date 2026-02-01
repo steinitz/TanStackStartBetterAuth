@@ -11,6 +11,7 @@
 import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OtherRouteImport } from './routes/other'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -34,6 +35,11 @@ import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/
 
 const rootServerRouteImport = createServerRootRoute()
 
+const OtherRoute = OtherRouteImport.update({
+  id: '/other',
+  path: '/other',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
+  '/other': typeof OtherRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
+  '/other': typeof OtherRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
+  '/other': typeof OtherRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/other'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/other'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contact'
+    | '/other'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
+  OtherRoute: typeof OtherRoute
   AuthCreditsRoute: typeof AuthCreditsRoute
   AuthForRouteTroubleshootingRoute: typeof AuthForRouteTroubleshootingRoute
   AuthProfileRoute: typeof AuthProfileRoute
@@ -309,6 +322,13 @@ export interface RootServerRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/other': {
+      id: '/other'
+      path: '/other'
+      fullPath: '/other'
+      preLoaderRoute: typeof OtherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -460,6 +480,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
+  OtherRoute: OtherRoute,
   AuthCreditsRoute: AuthCreditsRoute,
   AuthForRouteTroubleshootingRoute: AuthForRouteTroubleshootingRoute,
   AuthProfileRoute: AuthProfileRoute,

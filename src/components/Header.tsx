@@ -12,6 +12,7 @@ export const Header = () => {
         backgroundColor: 'var(--color-bg)',
         flexDirection: 'row',
         marginBottom: '-13px',
+        alignItems: 'center',
       }}
     >
       <Link
@@ -28,6 +29,13 @@ export const Header = () => {
           src="/logo.png"
           alt="logo"
         />
+      </Link>
+      <Spacer orientation={'horizontal'} space={1} />
+      <Link
+        to="/other"
+        style={navLinkStyle}
+      >
+        Other
       </Link>
       <Spacer orientation={'horizontal'} space={1} />
       <UserBlock />

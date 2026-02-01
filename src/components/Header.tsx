@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { UserBlock, navLinkStyle } from "~stzUser/components/Other/userBlock";
 import { Spacer } from "~stzUtils/components/Spacer";
+import { activeLinkStyle } from "~stzUtils/components/styles";
 
 export const Header = () => {
 
@@ -34,6 +35,9 @@ export const Header = () => {
       <Link
         to="/other"
         style={navLinkStyle}
+        activeProps={{
+          style: { ...navLinkStyle, ...activeLinkStyle }
+        }}
       >
         Other
       </Link>

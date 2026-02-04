@@ -7,9 +7,9 @@ import {
   HeadContent,
   Scripts,
 } from '@tanstack/react-router'
-import { clientEnv } from '~stzUser/lib/env'
+import { clientEnv } from '~/lib/env.app'
 
-import {MainLayout} from '~/components/MainLayout'
+import { MainLayout } from '~/components/MainLayout'
 
 export const Route = createRootRoute({
   head: () => ({

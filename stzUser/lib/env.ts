@@ -27,7 +27,7 @@ export function getOptionalEnvVar(name: string, defaultValue?: string): string |
 }
 
 // Client-safe environment variables
-type ClientEnv = {
+export type ClientEnv = {
   APP_NAME: string
   SMTP_FROM_ADDRESS: string | undefined
   SUPPORT_EMAIL_ADDRESS: string | undefined
@@ -115,6 +115,8 @@ export const clientEnv: ClientEnv = isServer()
       WELCOME_GRANT_CREDITS: 500,
       DEFAULT_CREDITS_PURCHASE: 5000,
       IS_STRIPE_ENABLED: false,
+      // Merge with window.__ENV if available to override defaults
+      ...(typeof window !== 'undefined' ? (window.__ENV || {}) : {})
     }
 
 // console.log({clientEnv});

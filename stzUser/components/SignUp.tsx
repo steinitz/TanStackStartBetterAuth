@@ -117,17 +117,8 @@ export const SignUp = () => {
           console.log('signup.email - onSuccess', { ctx })
           setSuccess(true)
 
-          // WORKAROUND: Manually send verification email since sendOnSignUp is disabled due to bug
+          // Manual verification workaround removed as backend handles it
           // See: https://github.com/better-auth/better-auth/issues/2538
-          try {
-            await sendVerificationEmail({
-              email: fields.email,
-              callbackURL: '/'
-            })
-            console.log('Manual verification email sent successfully')
-          } catch (error) {
-            console.error('Error sending verification email:', error)
-          }
           // window.location.href = routeStrings.signin
         },
         onError: (ctx) => {

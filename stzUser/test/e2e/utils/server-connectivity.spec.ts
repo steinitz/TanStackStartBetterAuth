@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { testConstants } from '~stzUser/test/constants';
 
 // Configure this test to use the E2E setup (which starts the dev server)
-test.use({ baseURL: 'http://localhost:3000' });
+// (Inherits baseURL from playwright.config.ts)
 
 test.describe('Server Connectivity Tests', () => {
   test('should be able to reach the server', async ({ request }) => {

@@ -4,7 +4,7 @@ import { EmailTester } from '~stzUser/test/e2e/utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 
 // Configure this test to use the E2E setup (which starts the dev server)
-test.use({ baseURL: 'http://localhost:3000' });
+// (Inherits baseURL from playwright.config.ts)
 
 test.describe('createVerifiedTestUser Unit Tests', () => {
   test.beforeEach(async () => {

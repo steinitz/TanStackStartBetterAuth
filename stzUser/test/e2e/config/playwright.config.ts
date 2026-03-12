@@ -33,6 +33,9 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
 
+    /* Ignore HTTPS errors for dev server's self-signed certificates */
+    ignoreHTTPSErrors: true,
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },

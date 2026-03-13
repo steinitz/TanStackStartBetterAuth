@@ -6,6 +6,18 @@ import { useEffect, useState } from 'react'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
 
+export const creditsStrings = {
+  claimWelcomeGrant: 'Claim Welcome Grant',
+  welcomeGrantClaimed: 'Welcome Grant Claimed',
+  payViaBankTransfer: 'Pay via Bank Transfer',
+  requesting: 'Requesting...',
+}
+
+export const creditsSelectors = {
+  claimWelcomeGrantButton: creditsStrings.claimWelcomeGrant,
+  payViaBankTransferButton: creditsStrings.payViaBankTransfer,
+}
+
 function TransactionsPage() {
   const { data: session } = useSession()
   const [transactions, setTransactions] = useState<any[]>([])
@@ -145,7 +157,7 @@ function TransactionsPage() {
                     padding: '0.6rem 1.2rem',
                   }}
                 >
-                  {isRequesting ? 'Requesting...' : 'Pay via Bank Transfer'}
+                  {isRequesting ? creditsStrings.requesting : creditsStrings.payViaBankTransfer}
                 </button>
               </div>
             </div>
@@ -185,7 +197,7 @@ function TransactionsPage() {
               cursor: walletStatus?.welcomeClaimed ? 'not-allowed' : 'pointer'
             }}
           >
-            {walletStatus?.welcomeClaimed ? 'Welcome Grant Claimed' : 'Claim Welcome Grant'}
+            {walletStatus?.welcomeClaimed ? creditsStrings.welcomeGrantClaimed : creditsStrings.claimWelcomeGrant}
           </button>
         </div>
 

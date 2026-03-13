@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { newTestUser, EmailTester } from './utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 import { clientEnv } from '~stzUser/lib/env';
+import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits';
 
 test.use({
   launchOptions: {
@@ -50,12 +51,12 @@ test.describe('Credits Flow', () => {
     await expect(page.locator('h1')).toContainText('Credits');
 
     // 6. Claim Welcome Grant
-    const claimButton = page.getByRole('button', { name: /Claim Welcome Grant/i });
+    const claimButton = page.getByRole('button', { name: creditsSelectors.claimWelcomeGrantButton });
     await expect(claimButton).toBeVisible();
 
     // Handle the alert
     page.once('dialog', dialog => {
-      expect(dialog.message()).toContain('Welcome grant claimed');
+      expect(dialog.message()).toContain(creditsStrings.welcomeGrantClaimed);
       dialog.accept();
     });
 
@@ -65,7 +66,7 @@ test.describe('Credits Flow', () => {
     await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + clientEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
 
     // 7. Request Bank Transfer
-    const requestButton = page.getByRole('button', { name: /Request Bank Transfer/i });
+    const requestButton = page.getByRole('button', { name: creditsSelectors.payViaBankTransferButton });
     await expect(requestButton).toBeVisible();
     await requestButton.click();
 

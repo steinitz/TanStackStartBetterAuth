@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { newTestUser, EmailTester } from './utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
+import { clientEnv } from '~stzUser/lib/env';
 
 test.use({
   launchOptions: {
@@ -41,7 +42,7 @@ test.describe('Credits Flow', () => {
 
     const walletWidget = page.locator('span', { hasText: /Credits/ });
     await expect(walletWidget).toBeVisible({ timeout: 15000 });
-    await expect(walletWidget).toContainText('3 Credits');
+    await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS} Credits`);
     await walletWidget.click();
 
     // 5. Verify we are on the Credits page
@@ -60,8 +61,8 @@ test.describe('Credits Flow', () => {
 
     await claimButton.click();
 
-    // Verify balance updated (3 + 10 = 13)
-    await expect(walletWidget).toContainText('13 Credits', { timeout: 10000 });
+    // Verify balance updated
+    await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + clientEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
 
     // 7. Request Bank Transfer
     const requestButton = page.getByRole('button', { name: /Request Bank Transfer/i });

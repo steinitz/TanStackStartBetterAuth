@@ -5,8 +5,11 @@ test.describe('Smoke Test Navigation', () => {
     // Navigate to home page
     await page.goto('/');
 
-    // Verify page loads successfully
-    await expect(page).toHaveTitle(/TanStack Start/);
+    // Verify page loads successfully via stable footer element
+    await expect(
+      page.locator('footer'), 
+      "This test relies on the word 'copyright' in the / page.  At the time of writing 'copyright' is in the footer.  You can modify smoke-navigation.spec.ts to change this"
+    ).toContainText(/copyright/i);
 
     // Verify main content area is present
     await expect(page.locator('main').first()).toBeVisible();
@@ -22,8 +25,11 @@ test.describe('Smoke Test Navigation', () => {
     // Navigate to contact page
     await page.goto('/contact');
 
-    // Verify page loads successfully
-    await expect(page).toHaveTitle(/TanStack Start/);
+    // Verify page loads successfully via stable footer element
+    await expect(
+      page.locator('footer'), 
+      "This test relies on the word 'copyright' in the / page.  At the time of writing 'copyright' is in the footer.  You can modify smoke-navigation.spec.ts to change this"
+    ).toContainText(/copyright/i);
 
     // Verify main content area is present
     await expect(page.locator('main').first()).toBeVisible();

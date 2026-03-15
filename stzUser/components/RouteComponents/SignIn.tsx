@@ -124,7 +124,7 @@ export const SignIn = () => {
           <summary>Can't sign in?</summary>
           <p>Create an account <Link to="/auth/signup">Sign Up</Link></p>
           <p>Forgot password?&nbsp;
-            <Link to={`/auth/requestPasswordReset`}>
+            <Link to="/auth/requestPasswordReset">
               Reset Password
             </Link>
           </p>

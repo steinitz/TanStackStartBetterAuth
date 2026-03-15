@@ -1,4 +1,6 @@
 import { FullConfig } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Global test teardown that handles cleanup after all tests complete
@@ -18,6 +20,22 @@ async function globalTeardown(config: FullConfig) {
     console.log('   • Mailpit server: Left running for development use');
     console.log('   • Web interface: http://localhost:8025');
     console.log('   • To stop manually: pkill mailpit');
+    
+    // Phase 3: Clean up test database
+    console.log('\n🧹 Phase 3: Test Database Cleanup');
+    const dbPath = path.resolve(process.cwd(), 'test-e2e.db');
+    const dbFiles = [dbPath, `${dbPath}-wal`, `${dbPath}-shm`, `${dbPath}-journal`];
+    
+    dbFiles.forEach(file => {
+      if (fs.existsSync(file)) {
+        try {
+          fs.unlinkSync(file);
+          console.log(`   • Removed: ${path.basename(file)}`);
+        } catch (err) {
+          console.warn(`   • Warning: Could not remove ${path.basename(file)}:`, err instanceof Error ? err.message : String(err));
+        }
+      }
+    });
     
     console.log('\n✅ E2E Test Environment Teardown Complete');
     console.log('=' .repeat(50));

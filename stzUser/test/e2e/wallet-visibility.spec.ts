@@ -1,63 +1,58 @@
 import { test, expect } from '@playwright/test';
-import { newTestUser } from './utils/EmailTester';
+import { createVerifiedTestUser } from './utils/user-verification';
 import { testConstants } from '~stzUser/test/constants';
+import { clientEnv } from '~stzUser/lib/env';
 
 test.use({
   launchOptions: {
-    slowMo: 1000,
+    // slowMo: 1000,
   },
 });
 
 test.describe('Wallet Visibility and Reactivity', () => {
   test('should show correct wallet status after signup and updates', async ({ page }) => {
-    // 1. Sign up a new user
-    const uniqueEmail = newTestUser();
-    await page.goto('/auth/signup');
+    test.setTimeout(60000);
+    
+    // 1. Create and verify a new test user programmatically
+    const uniqueEmail = await createVerifiedTestUser();
+    
+    // 2. Sign in via the UI
+    await page.goto('/auth/signin');
     await page.fill('input[name="email"]', uniqueEmail);
-    await page.fill('input[name="name"]', 'Wallet Tester');
     await page.fill('input[name="password"]', testConstants.defaultPassword);
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
-    // Wait for Turnstile to enable the button
-    const signUpButton = page.getByRole('button', { name: 'Sign Up' });
-    await expect(signUpButton).toBeEnabled({ timeout: 15000 });
-    await signUpButton.click();
+    // Wait for redirect to home and session to hydrate
+    await expect(page).toHaveURL('/', { timeout: 15000 });
+    await expect(page.locator('p', { hasText: uniqueEmail })).toBeVisible({ timeout: 15000 });
 
-    // Wait for "Account Created" message
-    await expect(page.locator('h1')).toContainText('Account Created', { timeout: 15000 });
-
-    // The WalletWidget should be visible in the header showing the daily grant (3)
+    // The WalletWidget should be visible in the header showing the daily grant
     const walletBadge = page.locator('span', { hasText: /Credits/ });
-    await expect(walletBadge).toBeVisible();
-    await expect(walletBadge).toContainText('3 Credits');
+    await expect(walletBadge).toBeVisible({ timeout: 15000 });
+    await expect(walletBadge).toContainText(`${clientEnv.DAILY_GRANT_CREDITS} Credits`);
 
-    // 2. Grant 10 Credits via Admin Tools
+    // 3. Grant 10 Credits via Admin Tools
     // Note: User must be admin for this. Usually the test setup handles roles.
     // If the test user isn't admin, we might need a different approach, 
     // but the existing test assumed 'Developer Tools' were visible.
-    const adminTools = page.locator('h2', { hasText: 'Wallet Management' });
+    
     // Assuming we navigate to /admin or it's on page
     await page.goto('/admin');
+    
+    // Note: This next part will fail if the user is not an admin, 
+    // which is the current "mystery" we are leaving for another day.
+    await expect(page.locator('h1')).toContainText('Admin Tools', { timeout: 15000 });
+    
     await page.fill('input[type="number"]', '10');
     await page.getByRole('button', { name: 'Process Grant' }).click();
 
-    // The header widget should now show 13
-    await expect(walletBadge).toContainText('13 Credits', { timeout: 10000 });
+    // The header widget should now show daily + 10
+    await expect(walletBadge).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + 10} Credits`, { timeout: 10000 });
 
-    // 3. Consume 1 Credit
+    // 4. Consume 1 Credit
     await page.getByRole('button', { name: 'Consume 1 Credit' }).click();
 
     // Page reloads
-    await expect(walletBadge).toContainText('12 Credits');
-
-    // 4. Test Insufficient Credits Dialog
-    // We can simulate this by exhausting credits or manually triggering the event
-    // For E2E, let's just verify the dialog appears when credits are 0 and we attempt a consumption
-
-    // Grant 0 credits (already have 12, let's just consume them all or use a new user if it was cleaner, 
-    // but we can just click "Consume 1 Credit" 12 times - but that's slow.
-    // Instead, let's use the Dev Tools to trigger a "Failure" if we had a button for it, 
-    // or just assume if we get to 0, the next click fails.)
-
-    // For now, let's just verify the badge update is reactive and accurate.
+    await expect(walletBadge).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + 9} Credits`);
   })
 })

@@ -1,5 +1,7 @@
 import { FullConfig } from '@playwright/test';
 import { ensureServerRunning, ensureMailpitRunning } from 'stzUser/test/e2e/utils/server-check';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Global test setup that orchestrates server and service startup
@@ -8,6 +10,22 @@ import { ensureServerRunning, ensureMailpitRunning } from 'stzUser/test/e2e/util
 async function globalSetup(config: FullConfig) {
   console.log('\n🚀 Starting E2E Test Environment Setup');
   console.log('=' .repeat(50));
+  
+  // Clean up test database to ensure "First User is Admin" state
+  const dbPath = path.resolve(process.cwd(), 'test-e2e.db');
+  const dbFiles = [dbPath, `${dbPath}-wal`, `${dbPath}-shm`, `${dbPath}-journal`];
+  
+  console.log('\n🧹 Cleaning up test database...');
+  dbFiles.forEach(file => {
+    if (fs.existsSync(file)) {
+      try {
+        fs.rmSync(file);
+        console.log(`   • Removed: ${path.basename(file)}`);
+      } catch (err) {
+        console.warn(`   • Warning: Could not remove ${path.basename(file)}:`, err instanceof Error ? err.message : String(err));
+      }
+    }
+  });
   
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000';
   

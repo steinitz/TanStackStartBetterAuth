@@ -13,14 +13,20 @@ test.describe('Wallet Visibility and Reactivity', () => {
   test('should show correct wallet status after signup and updates', async ({ page }) => {
     test.setTimeout(60000);
     
-    // 1. Create and verify a new test user programmatically
-    const uniqueEmail = await createVerifiedTestUser();
+    // 1. Create and verify a new test user programmatically as an admin
+    const uniqueEmail = await createVerifiedTestUser({ shouldBeAdmin: true });
     
     // 2. Sign in via the UI
     await page.goto('/auth/signin');
     await page.fill('input[name="email"]', uniqueEmail);
     await page.fill('input[name="password"]', testConstants.defaultPassword);
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    
+    // Ensure the page is ready and stable before clicking
+    const signInButton = page.getByRole('button', { name: 'Sign In' });
+    await expect(signInButton).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(500); // Wait for hydration stabilization
+    
+    await signInButton.click();
 
     // Wait for redirect to home and session to hydrate
     await expect(page).toHaveURL('/', { timeout: 15000 });

@@ -197,6 +197,10 @@ ${url}`,
   },
   plugins: [
     admin({
+      // Better Auth v1.x Bridge: New signups default to "user". 
+      // This Access Control (AC) mapping tells the plugin that any user with the 
+      // database role 'admin' should inherit all standard administrative permissions.
+      // Without this, the 'admin' column in the DB is just a string without plugin power.
       ac: createAccessControl({
         ...adminAc.statements
       })

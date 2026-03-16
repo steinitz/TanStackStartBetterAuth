@@ -100,7 +100,7 @@ export const SignIn = () => {
 
   return (
     <section>
-      <form onSubmit={handleSignIn}>
+      <form onSubmit={handleSignIn} method="POST">
         <h1>Sign In</h1>
         <label>Email
           <input

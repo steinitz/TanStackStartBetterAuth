@@ -100,10 +100,12 @@ export async function createVerifiedTestUser(options?: {
   name?: string;
   email?: string;
   password?: string;
+  shouldBeAdmin?: boolean;
 }): Promise<string> {
   const email = options?.email || newTestUser();
   const name = options?.name || testConstants.defaultUserName;
   const password = options?.password || testConstants.defaultPassword;
+  const shouldBeAdmin = options?.shouldBeAdmin || false;
 
   try {
     // Create user using Better Auth signup
@@ -157,6 +159,15 @@ export async function createVerifiedTestUser(options?: {
       const isVerified = await isEmailVerified(data.user.email);
       expect(isVerified).toBe(true);
       console.log('✅ createVerifiedTestUser- database confirms email address is verified');
+
+      // Promote to admin if requested
+      if (shouldBeAdmin) {
+        await db.updateTable('user')
+          .set({ role: 'admin' })
+          .where('email', '=', data.user.email)
+          .execute();
+        console.log('👑 createVerifiedTestUser - user promoted to admin in database');
+      }
     }
     catch (tokenErr) {
       console.error('❌ Token extraction approach failed:', tokenErr);

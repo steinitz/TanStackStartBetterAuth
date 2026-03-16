@@ -149,8 +149,6 @@ export async function checkServerReadiness(baseURL: string = 'http://localhost:3
   }
 }
 
-
-
 /**
  * Check if Mailpit server is running
  * @param mailpitURL - The Mailpit API URL to check (defaults to http://localhost:8025)
@@ -234,39 +232,30 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
     return;
   }
 
-  // Check if server is running but not ready
-  if (await checkServerStatus(baseURL)) {
-    const pid = await findProcessOnPort(3000);
+  // If not ready, check if ANY process is occupying the port
+  const url = new URL(baseURL);
+  const port = url.port ? parseInt(url.port, 10) : (url.protocol === 'https:' ? 443 : 80);
+  const pid = await findProcessOnPort(port);
 
-    if (pid && process.env.SKIP_SERVER_TERMINATION_COUNTDOWN === 'true') {
-      console.log('⚠️  Server running without test environment. Auto-terminating due to SKIP_SERVER_TERMINATION_COUNTDOWN=true');
+  if (pid) {
+    if (process.env.SKIP_SERVER_TERMINATION_COUNTDOWN === 'true') {
+      console.log(`⚠️  Port ${port} is occupied. Auto-terminating process ${pid} due to SKIP_SERVER_TERMINATION_COUNTDOWN=true`);
       await terminateProcess(pid);
-      // Wait a moment for port to be freed
       await sleep(1000);
-    } else if (pid) {
-      // Graduated termination approach with warning and countdown
-      console.log('⚠️  Server is running but not with test environment.');
+    } else {
+      console.log(`⚠️  Port ${port} is occupied by process ${pid}.`);
       console.log('🔄 Starting countdown to auto-terminate server...');
-      console.log('💡 Set SKIP_SERVER_TERMINATION_COUNTDOWN=true to skip countdown, or Ctrl+C to cancel');
-
-      // 10-second countdown
       for (let i = 10; i > 0; i--) {
         console.log(`⏰ Terminating server in ${i} seconds... (Ctrl+C to cancel)`);
         await sleep(1000);
       }
-
       console.log('🛑 Terminating existing server...');
       await terminateProcess(pid);
-      // Wait a moment for port to be freed
       await sleep(1000);
-    } else {
-      const errorMessage = 'Server is running but not fully ready or not with test environment. Please restart your dev server with: pnpx dotenv-cli -e .env.test -- pnpm dev';
-      console.log(`⚠️  ${errorMessage}`);
-      throw new Error(errorMessage);
     }
   }
 
-  console.log('🚀 Server not detected, starting development server with .env.test...');
+  console.log('🚀 Server not detected or ready, starting development server with .env.test...');
 
   // Start the development server with .env.test using dotenv-cli
   const serverProcess = spawn('pnpx', ['dotenv-cli', '-e', '.env.test', '--', 'pnpm', 'dev'], {
@@ -291,7 +280,7 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
   serverProcess.unref();
 
   // Wait for server to start (with timeout)
-  const maxAttempts = 15; // 15 seconds should be sufficient for development
+  const maxAttempts = 30; // 30 seconds should be sufficient for development
   let attempts = 0;
   let serverDetected = false;
 

@@ -16,6 +16,6 @@ export const Spacer = (props: SpacerProps) => {
       }}
     />
   ) : (
-    <div style={{ minWidth: `${space}rem`, flexGrow: '1' }} />
+    <div style={{ width: `${space}rem`, minWidth: `${space}rem`, flexShrink: 0 }} />
   )
 }

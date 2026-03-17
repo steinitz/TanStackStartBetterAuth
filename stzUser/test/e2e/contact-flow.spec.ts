@@ -29,6 +29,7 @@ test.describe('Contact Form Success Message', () => {
 
     // Submit the form
     await expect(page.getByRole('button')).toBeEnabled();
+    await page.waitForTimeout(500); // Allow React to hydrate and attach onSubmit handler
     await page.click('button[type="submit"]');
     
     // Wait for and verify the success message

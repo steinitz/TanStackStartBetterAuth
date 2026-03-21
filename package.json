@@ -29,7 +29,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@10.32.1",
   "dependencies": {
     "@libsql/client": "^0.17.0",
     "@tanstack/react-router": "^1.131.27",

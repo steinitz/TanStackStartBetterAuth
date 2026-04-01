@@ -6,6 +6,11 @@ dist/
 build/
 .output/
 
+# TypeScript source directories — compiled .js output should never sit alongside .ts source
+src/**/*.js
+stzUser/**/*.js
+stzUtils/**/*.js
+
 # Environment files
 .env
 .env.local

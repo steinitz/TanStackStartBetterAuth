@@ -2,8 +2,6 @@ import {describe, it, expect} from 'vitest'
 import {queryUsersWithKysely, queryUserWithKysely} from '~stzUser/lib/users'
 import {auth} from '~stzUser/lib/auth'
 import {testConstants} from '~stzUser/test/constants'
-import {T} from 'vitest/dist/chunks/reporters.d.BFLkQcL6.js'
-
 describe('queryUsersWithKysely basic test', () => {
   it('should allow Kysely to query better-auth users from database and return expected structure', async () => {
     // Query all users using the function we want to test
@@ -52,7 +50,7 @@ describe('queryUsersWithKysely basic test', () => {
     if (!testUser) {
       console.log(`Test user ${email} does not exist, creating it now`)
       
-      await auth.api.createUser({
+      await (auth.api as any).createUser({
         body: {
           email,
           password,

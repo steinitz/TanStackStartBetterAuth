@@ -32,7 +32,8 @@ describe('UserBlock & WalletWidget', () => {
     } as any)
 
     vi.mocked(getWalletStatus).mockResolvedValue({
-      credits: 50
+      credits: 50,
+      welcomeClaimed: false,
     })
 
     const { getByText } = render(<UserBlock />)

@@ -65,7 +65,7 @@ export async function queryUserWithKysely(email: string): Promise<UserWithRole |
 export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
   try {
     // Use Better Auth API to get users with role information
-    const result = await auth.api.listUsers({
+    const result = await (auth.api as any).listUsers({
       query: {},
       headers
     }) as ListUsersResponse
@@ -96,7 +96,7 @@ export async function deleteUserById(userId: string, headers: Headers) {
     }
 
     // Use Better-auth's admin API to remove user by ID
-    const result = await auth.api.removeUser({
+    const result = await (auth.api as any).removeUser({
       body: {
         userId: userId
       },
@@ -113,7 +113,7 @@ export async function deleteUserById(userId: string, headers: Headers) {
 export async function setUserRole(data: { userId: string; role: "admin" | "user" }, headers: Headers) {
   try {
     // Use Better Auth admin API to set user role with proper authentication
-    const result = await auth.api.setRole({
+    const result = await (auth.api as any).setRole({
       body: {
         userId: data.userId,
         role: data.role
@@ -131,7 +131,7 @@ export async function setUserRole(data: { userId: string; role: "admin" | "user"
 export async function demoteUserToUserRole(data: { userId: string }, headers: Headers) {
   try {
     // Use Better Auth admin API to set user role to default "user"
-    const result = await auth.api.setRole({
+    const result = await (auth.api as any).setRole({
       body: {
         userId: data.userId,
         role: "user"

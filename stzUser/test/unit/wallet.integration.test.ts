@@ -20,7 +20,7 @@ describe.sequential('Wallet Ledger Integration', () => {
     const testEmail = `wallet-test-${timestamp}@${testConstants.defaultUserDomain}`
 
     // Create a fresh test user
-    const res = await auth.api.createUser({
+    const res = await (auth.api as any).createUser({
       body: {
         email: testEmail,
         password: testConstants.defaultPassword,
@@ -109,7 +109,7 @@ describe.sequential('Wallet Ledger Integration', () => {
   it('should prevent double-granting during concurrent requests (Race Condition)', async () => {
     // 1. Create a fresh user without credits (they get 0 on construction)
     const timestamp = Date.now() + Math.random()
-    const res = await auth.api.createUser({
+    const res = await (auth.api as any).createUser({
       body: {
         email: `race-test-${timestamp}@example.com`,
         password: testConstants.defaultPassword,

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useSession } from '~stzUser/lib/auth-client'
-import { getTransactions, claimWelcomeGrant, requestBankTransfer, getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet.server'
+import { getTransactions, claimWelcomeGrant, requestBankTransfer, getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet'
 import { clientEnv } from '~stzUser/lib/env'
 import { useEffect, useState } from 'react'
 import { Spacer } from '~stzUtils/components/Spacer'

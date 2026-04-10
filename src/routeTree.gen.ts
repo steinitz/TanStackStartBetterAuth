@@ -8,8 +8,6 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from '@tanstack/react-start/server'
-
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OtherRouteImport } from './routes/other'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -30,10 +28,8 @@ import { Route as AuthRequestPasswordResetRouteImport } from './routes/auth/requ
 import { Route as AuthProfileRouteImport } from './routes/auth/profile'
 import { Route as AuthForRouteTroubleshootingRouteImport } from './routes/auth/forRouteTroubleshooting'
 import { Route as AuthCreditsRouteImport } from './routes/auth/credits'
-import { ServerRoute as ApiTestEnvServerRouteImport } from './routes/api/test-env'
-import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
-
-const rootServerRouteImport = createServerRootRoute()
+import { Route as ApiTestEnvRouteImport } from './routes/api/test-env'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const OtherRoute = OtherRouteImport.update({
   id: '/other',
@@ -132,15 +128,15 @@ const AuthCreditsRoute = AuthCreditsRouteImport.update({
   path: '/auth/credits',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTestEnvServerRoute = ApiTestEnvServerRouteImport.update({
+const ApiTestEnvRoute = ApiTestEnvRouteImport.update({
   id: '/api/test-env',
   path: '/api/test-env',
-  getParentRoute: () => rootServerRouteImport,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
-  getParentRoute: () => rootServerRouteImport,
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -148,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/other': typeof OtherRoute
+  '/api/test-env': typeof ApiTestEnvRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
@@ -163,12 +160,14 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/refunds': typeof LegalRefundsRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/other': typeof OtherRoute
+  '/api/test-env': typeof ApiTestEnvRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
@@ -184,6 +183,7 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/refunds': typeof LegalRefundsRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -191,6 +191,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/other': typeof OtherRoute
+  '/api/test-env': typeof ApiTestEnvRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
   '/auth/profile': typeof AuthProfileRoute
@@ -206,6 +207,7 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/refunds': typeof LegalRefundsRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,6 +216,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/other'
+    | '/api/test-env'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
@@ -229,12 +232,14 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/refunds'
     | '/legal/terms'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/contact'
     | '/other'
+    | '/api/test-env'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
@@ -250,12 +255,14 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/refunds'
     | '/legal/terms'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/contact'
     | '/other'
+    | '/api/test-env'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
     | '/auth/profile'
@@ -271,6 +278,7 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/refunds'
     | '/legal/terms'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -278,6 +286,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
   OtherRoute: typeof OtherRoute
+  ApiTestEnvRoute: typeof ApiTestEnvRoute
   AuthCreditsRoute: typeof AuthCreditsRoute
   AuthForRouteTroubleshootingRoute: typeof AuthForRouteTroubleshootingRoute
   AuthProfileRoute: typeof AuthProfileRoute
@@ -293,31 +302,7 @@ export interface RootRouteChildren {
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalRefundsRoute: typeof LegalRefundsRoute
   LegalTermsRoute: typeof LegalTermsRoute
-}
-export interface FileServerRoutesByFullPath {
-  '/api/test-env': typeof ApiTestEnvServerRoute
-  '/api/auth/$': typeof ApiAuthSplatServerRoute
-}
-export interface FileServerRoutesByTo {
-  '/api/test-env': typeof ApiTestEnvServerRoute
-  '/api/auth/$': typeof ApiAuthSplatServerRoute
-}
-export interface FileServerRoutesById {
-  __root__: typeof rootServerRouteImport
-  '/api/test-env': typeof ApiTestEnvServerRoute
-  '/api/auth/$': typeof ApiAuthSplatServerRoute
-}
-export interface FileServerRouteTypes {
-  fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/test-env' | '/api/auth/$'
-  fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/test-env' | '/api/auth/$'
-  id: '__root__' | '/api/test-env' | '/api/auth/$'
-  fileServerRoutesById: FileServerRoutesById
-}
-export interface RootServerRouteChildren {
-  ApiTestEnvServerRoute: typeof ApiTestEnvServerRoute
-  ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -455,23 +440,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCreditsRouteImport
       parentRoute: typeof rootRouteImport
     }
-  }
-}
-declare module '@tanstack/react-start/server' {
-  interface ServerFileRoutesByPath {
     '/api/test-env': {
       id: '/api/test-env'
       path: '/api/test-env'
       fullPath: '/api/test-env'
-      preLoaderRoute: typeof ApiTestEnvServerRouteImport
-      parentRoute: typeof rootServerRouteImport
+      preLoaderRoute: typeof ApiTestEnvRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatServerRouteImport
-      parentRoute: typeof rootServerRouteImport
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -481,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
   OtherRoute: OtherRoute,
+  ApiTestEnvRoute: ApiTestEnvRoute,
   AuthCreditsRoute: AuthCreditsRoute,
   AuthForRouteTroubleshootingRoute: AuthForRouteTroubleshootingRoute,
   AuthProfileRoute: AuthProfileRoute,
@@ -496,14 +478,17 @@ const rootRouteChildren: RootRouteChildren = {
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalRefundsRoute: LegalRefundsRoute,
   LegalTermsRoute: LegalTermsRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-const rootServerRouteChildren: RootServerRouteChildren = {
-  ApiTestEnvServerRoute: ApiTestEnvServerRoute,
-  ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
 }
-export const serverRouteTree = rootServerRouteImport
-  ._addFileChildren(rootServerRouteChildren)
-  ._addFileTypes<FileServerRouteTypes>()

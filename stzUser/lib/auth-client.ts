@@ -8,7 +8,7 @@ export const {
 	signIn,
 	signOut,
 	signUp,
-	forgetPassword,
+	requestPasswordReset,
 	resetPassword,
 	changeEmail,
 	changePassword,

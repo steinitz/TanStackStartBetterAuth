@@ -1,6 +1,6 @@
 // src/lib/auth.ts
 import { betterAuth, type BetterAuthOptions } from "better-auth"
-import { reactStartCookies } from "better-auth/react-start"
+import { tanstackStartCookies } from "better-auth/tanstack-start"
 import { admin } from "better-auth/plugins"
 import { createAccessControl } from "better-auth/plugins/access"
 import { adminAc } from "better-auth/plugins/admin/access"
@@ -59,7 +59,7 @@ export const authOptions: BetterAuthOptions = {
   user: {
     changeEmail: {
       enabled: true,
-      sendChangeEmailVerification: async (
+      sendChangeEmailConfirmation: async (
         { user, newEmail, url }
       ) => {
         console.log('🔧 sendChangeEmailVerification called:', { user: user.email, newEmail, url });
@@ -111,10 +111,9 @@ export const authOptions: BetterAuthOptions = {
     },
   },
   emailVerification: {
-    // WORKAROUND: Set to false due to Better Auth bug where sendOnSignUp affects email change verification
-    // See: https://github.com/better-auth/better-auth/issues/2538
-    // This should be true for proper security, but causes email change verification to fail
-    sendOnSignUp: false,
+    // Fixed in better-auth 1.6: sendChangeEmailVerification renamed to sendChangeEmailConfirmation,
+    // separating email-change confirmation from signup verification (was issue #2538)
+    sendOnSignUp: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({
       user,
@@ -206,7 +205,7 @@ ${url}`,
       })
     }), // Admin plugin for user management
     oneTimeToken(), // One-time token plugin for email verification testing
-    reactStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
+    tanstackStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 }
 

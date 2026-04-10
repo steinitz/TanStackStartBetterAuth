@@ -14,12 +14,12 @@ vi.mock('~stzUser/lib/auth-client', () => ({
   signOut: vi.fn(),
 }))
 
-vi.mock('~stzUser/lib/wallet.server', () => ({
+vi.mock('~stzUser/lib/wallet', () => ({
   getWalletStatus: vi.fn(),
 }))
 
 import { useSession } from '~stzUser/lib/auth-client'
-import { getWalletStatus } from '~stzUser/lib/wallet.server'
+import { getWalletStatus } from '~stzUser/lib/wallet'
 
 describe('UserBlock & WalletWidget', () => {
   beforeEach(() => {

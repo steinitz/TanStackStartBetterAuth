@@ -3,12 +3,15 @@ import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
-import { createRouter } from './router'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
 
 // Ensure database tables exist on startup
 await ensureAdditionalTables()
 
-export default createStartHandler({
-  createRouter,
-})(defaultStreamHandler)
+const fetch = createStartHandler(defaultStreamHandler)
+
+export default {
+  async fetch(...args: Parameters<typeof fetch>) {
+    return await fetch(...args)
+  },
+}

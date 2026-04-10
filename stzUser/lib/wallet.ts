@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getWebRequest } from '@tanstack/react-start/server'
+import { getRequest } from '@tanstack/react-start/server'
 import { auth } from './auth'
 import { getWalletStatusInternal, consumeResourceInternal, grantCreditsInternal, type WalletStatus, getTransactionsInternal, claimWelcomeGrantInternal } from './wallet.logic'
 import { clientEnv } from './env'
@@ -13,9 +13,9 @@ export type { WalletStatus }
 export const getWalletStatus = createServerFn({
   method: 'GET',
 })
-  .validator((data?: number) => data) // Accepts optional timezone offset
+  .inputValidator((data?: number) => data) // Accepts optional timezone offset
   .handler(async ({ data: timezoneOffset }) => {
-    const request = getWebRequest()
+    const request = getRequest()
     const headers = request?.headers
     if (!headers) throw new Error('Not authenticated')
 
@@ -33,9 +33,9 @@ export const getWalletStatus = createServerFn({
 export const useConsumeResource = createServerFn({
   method: 'POST',
 })
-  .validator((data: { resourceType: string; amount?: number }) => data)
+  .inputValidator((data: { resourceType: string; amount?: number }) => data)
   .handler(async ({ data }) => {
-    const request = getWebRequest()
+    const request = getRequest()
     const headers = request?.headers
     if (!headers) throw new Error('Not authenticated')
 
@@ -51,9 +51,9 @@ export const useConsumeResource = createServerFn({
 export const useGrantCredits = createServerFn({
   method: 'POST',
 })
-  .validator((data: { amount: number; type?: 'manual_adjustment' | 'purchase'; description: string }) => data)
+  .inputValidator((data: { amount: number; type?: 'manual_adjustment' | 'purchase'; description: string }) => data)
   .handler(async ({ data }) => {
-    const request = getWebRequest()
+    const request = getRequest()
     const headers = request?.headers
     if (!headers) throw new Error('Not authenticated')
 
@@ -74,7 +74,7 @@ export const useGrantCredits = createServerFn({
 export const getTransactions = createServerFn({
   method: 'GET',
 }).handler(async () => {
-  const request = getWebRequest()
+  const request = getRequest()
   const headers = request?.headers
   if (!headers) throw new Error('Not authenticated')
 
@@ -90,7 +90,7 @@ export const getTransactions = createServerFn({
 export const claimWelcomeGrant = createServerFn({
   method: 'POST',
 }).handler(async () => {
-  const request = getWebRequest()
+  const request = getRequest()
   const headers = request?.headers
   if (!headers) throw new Error('Not authenticated')
 
@@ -106,9 +106,9 @@ export const claimWelcomeGrant = createServerFn({
 export const requestBankTransfer = createServerFn({
   method: 'POST',
 })
-  .validator((data: { amount: number }) => data)
+  .inputValidator((data: { amount: number }) => data)
   .handler(async ({ data }) => {
-    const request = getWebRequest()
+    const request = getRequest()
     const headers = request?.headers
     if (!headers) throw new Error('Not authenticated')
 

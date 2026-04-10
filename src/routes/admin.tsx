@@ -6,7 +6,7 @@ import { updateCount, getCount } from '~/lib/count'
 import { admin, useSession } from '~stzUser/lib/auth-client'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { useEffect, useState } from 'react'
-import { useConsumeResource, useGrantCredits } from '~stzUser/lib/wallet.server'
+import { useConsumeResource, useGrantCredits } from '~stzUser/lib/wallet'
 import { userRoles } from '~stzUser/constants'
 
 function AdminPage() {

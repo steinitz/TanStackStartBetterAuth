@@ -116,6 +116,7 @@ export async function createVerifiedTestUser(options?: {
     }, {
       headers: {
         'x-turnstile-token': 'test-token',
+        'Origin': process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000',
       }
     });
 

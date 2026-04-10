@@ -49,7 +49,7 @@ vi.mock('@tanstack/react-start', async (importOriginal) => {
 })
 
 vi.mock('@tanstack/react-start/server', () => ({
-  getWebRequest: () => new Request('http://localhost'),
+  getRequest: () => new Request('http://localhost'),
 }))
 
 // Mock TanStack Router
@@ -127,15 +127,15 @@ describe('Route Import Tests', () => {
     
     // Verify the loader exists
     expect(RouteConfig.options?.loader).toBeDefined()
-    expect(typeof RouteConfig.options?.loader).toBe('function')
-    
-    // Test that the loader can be called (it should not throw)
+
+    // Loader may be a function or a RouteLoaderObject in newer TanStack Router versions
     const loader = RouteConfig.options?.loader
-    if (loader) {
+    const loaderFn = typeof loader === 'function' ? loader : (loader as any)?.fn
+    if (loaderFn) {
       expect(async () => {
         // Mock loader context - TanStack Router loaders expect a context parameter
         const mockContext = {} as any
-        await loader(mockContext)
+        await loaderFn(mockContext)
       }).not.toThrow()
     }
   })

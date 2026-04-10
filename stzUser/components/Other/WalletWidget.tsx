@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useSession } from '~stzUser/lib/auth-client'
-import { getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet.server'
+import { getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
 
 export function WalletWidget({ style = {} }) {

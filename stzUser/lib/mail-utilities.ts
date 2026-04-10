@@ -25,7 +25,7 @@ export const transportOptions = isServer() ? getSmtpConfig() : null
 
 // Send email server function
 export const sendEmail = createServerFn({ method: 'POST' })
-  .validator((d: any) => d)
+  .inputValidator((d: any) => d)
   .handler(async ({ data }) => {
     debugLog && console.log('sendEmail: server function called with data:', { data });
 
@@ -64,7 +64,7 @@ export const sendEmail = createServerFn({ method: 'POST' })
 
 // Get email vars that are safe to expose to the client
 export const getEmailEnvironmentVars = createServerFn({ method: 'POST' })
-  .validator((d: any) => d)
+  .inputValidator((d: any) => d)
   .handler(() => {
     return {
       from: getEnvVar('SMTP_FROM_ADDRESS'),
@@ -90,7 +90,7 @@ export const testMessage = () => {
 
 // Verify mail server connection
 export const verifyMailServer = createServerFn({ method: 'POST' })
-  .validator((d: string) => d)
+  .inputValidator((d: string) => d)
   .handler(async ({ data }) => {
     let result = { error: null, success: null }
     const mailSender = nodemailer.createTransport(getSmtpConfig())
@@ -107,7 +107,7 @@ export const verifyMailServer = createServerFn({ method: 'POST' })
 
 // Send test email
 export const sendTestEmail = createServerFn({ method: 'POST' })
-  .validator((d: any) => d)
+  .inputValidator((d: any) => d)
   .handler(async () => {
     const mailSender = nodemailer.createTransport(getSmtpConfig())
     const result = await mailSender?.sendMail(testMessage())

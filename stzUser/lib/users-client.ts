@@ -1,7 +1,7 @@
 'use client'
 
 import { createServerFn } from '@tanstack/react-start'
-import { getWebRequest } from '@tanstack/react-start/server'
+import { getRequest } from '@tanstack/react-start/server'
 import { getAllUsers, deleteUserById, setUserRole, demoteUserToUserRole, updateEmailVerificationStatus, type User } from './users'
 import {userRolesType} from '~stzUser/constants'
 
@@ -10,11 +10,11 @@ export const useGetAllUsers = createServerFn({
   method: 'GET',
 }).handler(async () => {
   // Better Auth requires authentication headers for admin operations like listUsers
-  // getWebRequest() provides access to the incoming HTTP request context,
+  // getRequest() provides access to the incoming HTTP request context,
   // including cookies and session data needed for authentication
   // This is required because Better Auth's admin.listUsers API validates
   // that the requesting user has admin privileges before returning user data
-  const request = getWebRequest()
+  const request = getRequest()
   if (!request?.headers) {
     throw new Error('Request headers not available')
   }
@@ -23,10 +23,10 @@ export const useGetAllUsers = createServerFn({
 })
 
 export const useDeleteUserById = createServerFn({ method: 'POST' })
-  .validator((userId: string) => userId)
+  .inputValidator((userId: string) => userId)
   .handler(async ({ data: userId }) => {
     // Get request context for authentication
-    const request = getWebRequest()
+    const request = getRequest()
     if (!request?.headers) {
       throw new Error('Request headers not available')
     }
@@ -35,10 +35,10 @@ export const useDeleteUserById = createServerFn({ method: 'POST' })
   })
 
 export const useSetUserRole = createServerFn({ method: 'POST' })
-  .validator((data: { userId: string; role: userRolesType }) => data)
+  .inputValidator((data: { userId: string; role: userRolesType }) => data)
   .handler(async ({ data }) => {
     // Get request context for authentication
-    const request = getWebRequest()
+    const request = getRequest()
     if (!request?.headers) {
       throw new Error('Request headers not available')
     }
@@ -47,10 +47,10 @@ export const useSetUserRole = createServerFn({ method: 'POST' })
   })
 
 export const useDemoteUserToUserRole = createServerFn({ method: 'POST' })
-  .validator((data: { userId: string }) => data)
+  .inputValidator((data: { userId: string }) => data)
   .handler(async ({ data }) => {
     // Get request context for authentication
-    const request = getWebRequest()
+    const request = getRequest()
     if (!request?.headers) {
       throw new Error('Request headers not available')
     }
@@ -59,10 +59,10 @@ export const useDemoteUserToUserRole = createServerFn({ method: 'POST' })
   })
 
 export const useUpdateEmailVerificationStatus = createServerFn({ method: 'POST' })
-  .validator((data: { userId: string; emailVerified: boolean }) => data)
+  .inputValidator((data: { userId: string; emailVerified: boolean }) => data)
   .handler(async ({ data }) => {
     // Get request context for authentication
-    const request = getWebRequest()
+    const request = getRequest()
     if (!request?.headers) {
       throw new Error('Request headers not available')
     }

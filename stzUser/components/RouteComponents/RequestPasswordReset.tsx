@@ -3,7 +3,7 @@ import {FormFieldError} from '~stzUtils/components/FormFieldError'
 import {SyntheticEvent, useState} from 'react'
 import {niceValidationIssues, sharedFormSubmission} from '~stzUser/lib/form'
 import * as v from 'valibot'
-import {forgetPassword} from '~stzUser/lib/auth-client'
+import {requestPasswordReset} from '~stzUser/lib/auth-client'
 import {Spacer} from "~stzUtils/components/Spacer";
 import {isEmptyString} from "~stzUser/lib/utils";
 import Spinner from "~stzUser/components/Other/Spinner";
@@ -79,7 +79,7 @@ export const RequestPasswordReset = () => {
       console.log('Inside if (isValid) block - form validation passed')
       setShouldShowSpinner(true)
       try {
-        /*const {data, error} = */ await forgetPassword({
+        /*const {data, error} = */ await requestPasswordReset({
           email,
           redirectTo: '/auth/setNewPassword',
         })

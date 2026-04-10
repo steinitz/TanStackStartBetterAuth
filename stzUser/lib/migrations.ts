@@ -1,5 +1,5 @@
 import { db } from './database'
-import { getMigrations } from "better-auth/db"
+import { getMigrations } from "better-auth/db/migration"
 import { authOptions } from "./auth"
 
 /**

@@ -1,7 +1,7 @@
 // src/lib/auth.ts
 import { betterAuth, type BetterAuthOptions } from "better-auth"
 import { tanstackStartCookies } from "better-auth/tanstack-start"
-import { admin } from "better-auth/plugins"
+import { admin, testUtils } from "better-auth/plugins"
 import { createAccessControl } from "better-auth/plugins/access"
 import { adminAc } from "better-auth/plugins/admin/access"
 import { oneTimeToken } from "better-auth/plugins/one-time-token"
@@ -205,6 +205,9 @@ ${url}`,
       })
     }), // Admin plugin for user management
     oneTimeToken(), // One-time token plugin for email verification testing
+    // Test utilities: programmatic user creation and login for E2E tests.
+    // Gated on PLAYWRIGHT_RUNNING so it is never active in production.
+    ...(process.env.PLAYWRIGHT_RUNNING === 'true' ? [testUtils()] : []),
     tanstackStartCookies() // This plugin handles cookie setting for TanStack Start.  Leave it as the last plugin.
   ],
 }

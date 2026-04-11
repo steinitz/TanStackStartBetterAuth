@@ -5,6 +5,7 @@
 export const creditsStrings = {
   claimWelcomeGrant: 'Claim Welcome Grant',
   welcomeGrantClaimed: 'Welcome Grant Claimed',
+  welcomeGrantClaimedAlert: 'Welcome grant claimed! 🎁',
   payViaBankTransfer: 'Pay via Bank Transfer',
   requesting: 'Requesting...',
 }

@@ -1,4 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadDotenv } from 'dotenv';
+
+// Load .env.test so that test workers inherit PLAYWRIGHT_RUNNING, DATABASE_URL,
+// BETTER_AUTH_SECRET, etc.  The auth instance imported directly in testAuthUtils
+// must use the same database and secret as the dev server.
+loadDotenv({ path: '.env.test' });
 
 // Email handling uses isPlaywrightRunning() detection instead of NODE_ENV=test
 

@@ -1,5 +1,7 @@
 import { spawn, ChildProcess, exec } from 'child_process';
 import { promisify } from 'util';
+import https from 'https';
+import http from 'http';
 
 const sleep = promisify(setTimeout);
 const execAsync = promisify(exec);
@@ -75,78 +77,108 @@ export async function terminateProcess(pid: number, timeoutMs: number = 5000): P
 }
 
 /**
- * Lightweight server check using fetch (for use within test contexts)
- * @param baseURL - The URL to check
- * @returns Promise that resolves if server is running
+ * Lightweight server check using http/https module.
+ * Uses rejectUnauthorized: false to handle the self-signed cert on the
+ * HTTPS dev server — this is intentional and safe in a local test context.
  */
 export async function checkServerStatus(baseURL: string = 'http://localhost:3000'): Promise<boolean> {
+  return new Promise((resolve) => {
+    const isHttps = baseURL.startsWith('https')
+    const requester = isHttps ? https : http
+    const req = requester.get(
+      baseURL,
+      isHttps ? { rejectUnauthorized: false } : {},
+      (res) => { resolve((res.statusCode ?? 0) < 500) }
+    )
+    req.on('error', () => resolve(false))
+    req.setTimeout(3000, () => { req.destroy(); resolve(false) })
+  })
+}
+
+/**
+ * Comprehensive server readiness check that verifies multiple components.
+ * Uses tlsFetch() for all requests so self-signed HTTPS certs are accepted.
+ */
+export async function checkServerReadiness(baseURL: string = 'http://localhost:3000'): Promise<boolean> {
   try {
-    const response = await fetch(baseURL);
-    return response.ok;
+    // 1. Basic connectivity
+    if (!await checkServerStatus(baseURL)) return false;
+
+    // 2. Test environment validation
+    const testEnvResponse = await tlsFetch(`${baseURL}/api/test-env`);
+    if (!testEnvResponse.ok) return false;
+    const testEnvData = await testEnvResponse.json();
+    if (!testEnvData.isPlaywrightRunning) return false;
+
+    // 3. Better Auth API availability
+    const authResponse = await tlsFetch(`${baseURL}/api/auth`);
+    if (!authResponse) return false;
+
+    // 4. Database connectivity via session endpoint
+    const dbTestResponse = await tlsFetch(`${baseURL}/api/auth/session`);
+    if (!dbTestResponse) return false;
+
+    // 5. Better Auth signup endpoint operational test
+    const signupTestResponse = await tlsFetch(`${baseURL}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-turnstile-token': '1x00000000000000000000AA'
+      },
+      body: JSON.stringify({
+        email: 'readiness-test@example.com',
+        password: 'TestPassword123!',
+        name: 'Readiness Test'
+      })
+    });
+    if (!signupTestResponse || signupTestResponse.status >= 500) return false;
+
+    return true;
   } catch {
     return false;
   }
 }
 
 /**
- * Comprehensive server readiness check that verifies multiple components
- * @param baseURL - The base URL to check
- * @returns Promise that resolves when server is fully ready
+ * fetch()-like wrapper using Node's https/http module directly.
+ * Disables TLS cert verification for https: URLs — safe for local dev/test only.
  */
-export async function checkServerReadiness(baseURL: string = 'http://localhost:3000'): Promise<boolean> {
-  try {
-    // 1. Basic HTTP connectivity
-    const healthResponse = await fetch(baseURL);
-    if (!healthResponse.ok) return false;
-
-    // 2. Test environment validation
-    const testEnvResponse = await fetch(`${baseURL}/api/test-env`);
-    if (!testEnvResponse.ok) return false;
-    const testEnvData = await testEnvResponse.json();
-    if (!testEnvData.isPlaywrightRunning) return false;
-
-    // 3. Better Auth API availability
-    const authResponse = await fetch(`${baseURL}/api/auth`);
-    if (authResponse.status === 0) return false; // Connection error
-
-    // 4. Database connectivity test via a simple auth endpoint
-    try {
-      const dbTestResponse = await fetch(`${baseURL}/api/auth/session`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      // Should return some response (even if no session), not a connection error
-      if (dbTestResponse.status === 0) return false;
-    } catch {
-      return false;
+async function tlsFetch(
+  url: string,
+  init?: { method?: string; headers?: Record<string, string>; body?: string }
+): Promise<{ ok: boolean; status: number; json: () => Promise<any> }> {
+  return new Promise((resolve, reject) => {
+    const isHttps = url.startsWith('https')
+    const requester = isHttps ? https : http
+    const parsed = new URL(url)
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (isHttps ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: init?.method ?? 'GET',
+      headers: init?.headers ?? {},
+      rejectUnauthorized: false,
     }
 
-    // 5. Better Auth signup endpoint operational test
-    try {
-      const signupTestResponse = await fetch(`${baseURL}/api/auth/sign-up/email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-turnstile-token': '1x00000000000000000000AA'
-        },
-        body: JSON.stringify({
-          email: 'readiness-test@example.com',
-          password: 'TestPassword123!',
-          name: 'Readiness Test'
+    const req = requester.request(options, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => {
+        const status = res.statusCode ?? 0
+        resolve({
+          ok: status >= 200 && status < 300,
+          status,
+          json: () => Promise.resolve(JSON.parse(data)),
         })
-      });
-      // Should return some response (success or validation error), not a connection error
-      if (signupTestResponse.status === 0) return false;
-      // Expect either success or validation error, not server error
-      if (signupTestResponse.status >= 500) return false;
-    } catch {
-      return false;
-    }
+      })
+    })
 
-    return true;
-  } catch {
-    return false;
-  }
+    req.on('error', reject)
+    req.setTimeout(5000, () => { req.destroy(); reject(new Error('timeout')) })
+
+    if (init?.body) req.write(init.body)
+    req.end()
+  })
 }
 
 /**

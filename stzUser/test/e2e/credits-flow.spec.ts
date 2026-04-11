@@ -1,43 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { newTestUser, EmailTester } from './utils/EmailTester';
-import { testConstants } from '~stzUser/test/constants';
+import { createAuthenticatedUser } from './utils/testAuthUtils';
 import { clientEnv } from '~stzUser/lib/env';
 import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits';
 
-test.use({
-  launchOptions: {
-    slowMo: 1000,
-  },
-});
-
 test.describe('Credits Flow', () => {
   test('should allow claiming welcome grant and requesting bank transfer', async ({ page }) => {
-    // 1. Sign up a new user
-    const uniqueEmail = newTestUser();
-    await page.goto('/auth/signup');
-    await page.fill('input[name="email"]', uniqueEmail);
-    await page.fill('input[name="name"]', 'Credits Tester');
-    await page.fill('input[name="password"]', testConstants.defaultPassword);
+    // 1. Create a verified user and inject session — no signup UI, no Mailpit
+    const { email: uniqueEmail } = await createAuthenticatedUser(page, { name: 'Credits Tester' });
+    await page.goto('/');
 
-    const signUpButton = page.getByRole('button', { name: 'Sign Up' });
-    await expect(signUpButton).toBeEnabled({ timeout: 15000 });
-    await signUpButton.click();
-
-    await expect(page.locator('h1')).toContainText('Account Created', { timeout: 15000 });
-
-    // 2. Automated Email Verification via Mailpit
-    // Wait a brief moment for email to arrive
-    await page.waitForTimeout(2000);
-    const verificationLink = await EmailTester.getFirstVerificationLink(uniqueEmail);
-    if (!verificationLink) {
-      throw new Error(`Verification link not found in Mailpit for ${uniqueEmail}`);
-    }
-
-    // 3. Navigate to verification link (this verifies the user and redirects to home)
-    await page.goto(verificationLink);
-    await expect(page).toHaveURL('/');
-
-    // 4. Click the Wallet Widget in the header
+    // 2. Click the Wallet Widget in the header
     // Wait for session to hydrate - we should see the user email
     await expect(page.locator('p', { hasText: uniqueEmail })).toBeVisible({ timeout: 15000 });
 
@@ -46,17 +18,17 @@ test.describe('Credits Flow', () => {
     await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS} Credits`);
     await walletWidget.click();
 
-    // 5. Verify we are on the Credits page
+    // 3. Verify we are on the Credits page
     await expect(page).toHaveURL(/\/auth\/credits/);
     await expect(page.locator('h1')).toContainText('Credits');
 
-    // 6. Claim Welcome Grant
+    // 4. Claim Welcome Grant
     const claimButton = page.getByRole('button', { name: creditsSelectors.claimWelcomeGrantButton });
     await expect(claimButton).toBeVisible();
 
     // Handle the alert
     page.once('dialog', dialog => {
-      expect(dialog.message()).toContain(creditsStrings.welcomeGrantClaimed);
+      expect(dialog.message()).toContain(creditsStrings.welcomeGrantClaimedAlert);
       dialog.accept();
     });
 
@@ -65,7 +37,7 @@ test.describe('Credits Flow', () => {
     // Verify balance updated
     await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + clientEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
 
-    // 7. Request Bank Transfer
+    // 5. Request Bank Transfer
     const requestButton = page.getByRole('button', { name: creditsSelectors.payViaBankTransferButton });
     await expect(requestButton).toBeVisible();
     await requestButton.click();

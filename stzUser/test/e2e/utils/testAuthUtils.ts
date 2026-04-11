@@ -3,6 +3,16 @@ import type { Page } from '@playwright/test'
 import { testConstants } from '~stzUser/test/constants'
 
 /**
+ * Shared overrides accepted by both helpers.
+ */
+interface UserOverrides {
+  email?: string
+  name?: string
+  role?: string
+  password?: string
+}
+
+/**
  * Returns the testUtils test helpers from the auth context.
  * Requires PLAYWRIGHT_RUNNING=true (which adds the testUtils plugin to auth).
  * Typed via any — the plugin augments @better-auth/core but the conditional
@@ -15,18 +25,18 @@ async function getTestHelpers(): Promise<any> {
 }
 
 /**
- * Creates a verified user and injects their session cookies into the Playwright
- * page context. Uses better-auth's testUtils plugin — no signup UI, no email,
- * no Mailpit. The page is authenticated before the first goto() call.
+ * Creates a verified user in the DB and, if a password is provided, also creates
+ * the credential account entry (password hash in the `account` table).
  *
- * Cookie domain and secure flags are mapped to match the test server so that
- * Playwright's addCookies() accepts them without silent failure.
+ * Returns the saved user's email and ID. Does NOT inject cookies or touch
+ * the Playwright page — use this when the test needs a user to exist but
+ * does not want to be authenticated (e.g. password-reset-flow).
  */
-export async function createAuthenticatedUser(
-  page: Page,
-  overrides?: { email?: string; name?: string; role?: string }
+export async function createUserWithCredentials(
+  overrides?: UserOverrides
 ): Promise<{ email: string; userId: string }> {
-  const t = await getTestHelpers()
+  const ctx = await auth.$context
+  const t = (ctx as any).test
 
   const user = t.createUser({
     email: overrides?.email ?? `test-${Date.now()}@${testConstants.defaultUserDomain}`,
@@ -37,11 +47,43 @@ export async function createAuthenticatedUser(
 
   const savedUser = await t.saveUser(user)
 
-  // Pilot logging: confirm createUser id is preserved through saveUser
-  // (safe to remove once the pilot run confirms they match)
   console.log(`🔑 testUtils user ids — created: ${user.id}  saved: ${savedUser.id}`)
 
-  const { cookies } = await t.login({ userId: savedUser.id })
+  // If password provided, hash it and create the credential account entry.
+  // This mirrors what auth.api.signUpEmail() does internally via
+  // ctx.internalAdapter.linkAccount().
+  if (overrides?.password) {
+    const hash = await ctx.password.hash(overrides.password)
+    await ctx.internalAdapter.linkAccount({
+      userId: savedUser.id,
+      providerId: 'credential',
+      accountId: savedUser.id,
+      password: hash,
+    })
+  }
+
+  return { email: savedUser.email, userId: savedUser.id }
+}
+
+/**
+ * Creates a verified user and injects their session cookies into the Playwright
+ * page context. Uses better-auth's testUtils plugin — no signup UI, no email,
+ * no Mailpit. The page is authenticated before the first goto() call.
+ *
+ * If a password is provided, also creates the credential account entry so the
+ * user can sign in via email/password, change password, or trigger a reset.
+ *
+ * Cookie domain and secure flags are mapped to match the test server so that
+ * Playwright's addCookies() accepts them without silent failure.
+ */
+export async function createAuthenticatedUser(
+  page: Page,
+  overrides?: UserOverrides
+): Promise<{ email: string; userId: string }> {
+  const { email, userId } = await createUserWithCredentials(overrides)
+
+  const t = await getTestHelpers()
+  const { cookies } = await t.login({ userId })
 
   // Map cookies to match the test server's domain and protocol.
   // Playwright's addCookies() silently drops cookies with mismatched domains,
@@ -59,5 +101,5 @@ export async function createAuthenticatedUser(
 
   await page.context().addCookies(mappedCookies)
 
-  return { email: savedUser.email, userId: savedUser.id }
+  return { email, userId }
 }

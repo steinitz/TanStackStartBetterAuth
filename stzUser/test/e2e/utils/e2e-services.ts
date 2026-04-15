@@ -1,3 +1,16 @@
+/**
+ * E2E service lifecycle: Mailpit and the dev server.
+ *
+ * The `ensure*` functions check whether a service is already running and
+ * start it if not. They are the reason `globalSetup` does not require the
+ * developer to launch anything manually — running `pnpm test:e2e` from a
+ * cold machine is sufficient, provided Mailpit is installed and the
+ * required ports (3000, 1025, 8025) are free.
+ *
+ * Also provides process discovery and termination helpers used when a
+ * stale dev server is occupying port 3000.
+ */
+
 import { spawn, ChildProcess, exec } from 'child_process';
 import { promisify } from 'util';
 import https from 'https';

@@ -1,11 +1,19 @@
 import { FullConfig } from '@playwright/test';
-import { ensureServerRunning, ensureMailpitRunning } from 'stzUser/test/e2e/utils/server-check';
+import { ensureServerRunning, ensureMailpitRunning } from 'stzUser/test/e2e/utils/e2e-services';
 import fs from 'fs';
 import path from 'path';
 
 /**
- * Global test setup that orchestrates server and service startup
- * Ensures all required services are running before any tests execute
+ * Global test setup.
+ *
+ * Auto-starts the dev server and Mailpit if they are not already running.
+ * The developer does not need to start either service manually — running
+ * `pnpm test:e2e` from a cold machine is sufficient. Mailpit must be
+ * installed (`brew install mailpit` on macOS); ports 3000, 1025, and 8025
+ * must be free.
+ *
+ * Also resets the test database (`test-e2e.db`) so every run starts from
+ * a clean "First User is Admin" state.
  */
 async function globalSetup(config: FullConfig) {
   console.log('\n🚀 Starting E2E Test Environment Setup');
@@ -52,11 +60,11 @@ async function globalSetup(config: FullConfig) {
     console.error('\n❌ Global Setup Failed');
     console.error('=' .repeat(50));
     console.error('Error:', error instanceof Error ? error.message : String(error));
-    console.error('\n💡 Troubleshooting Tips:');
-    console.error('   • Ensure no other services are using ports 3000, 8025, or 1025');
-    console.error('   • Check that .env.test file exists and contains PLAYWRIGHT_RUNNING=true');
-    console.error('   • Verify mailpit is installed: brew install mailpit (macOS)');
-    console.error('   • Try manually starting: pnpx dotenv-cli -e .env.test -- pnpm dev');
+    console.error('\n💡 Auto-start failed. Recovery steps:');
+    console.error('   • Free up ports if another process is holding 3000, 8025, or 1025');
+    console.error('   • Confirm .env.test exists and sets PLAYWRIGHT_RUNNING=true');
+    console.error('   • Install mailpit if missing: brew install mailpit (macOS)');
+    console.error('   • As a last resort, start the dev server by hand: pnpx dotenv-cli -e .env.test -- pnpm dev');
     console.error('=' .repeat(50));
     
     // Re-throw to fail the test suite

@@ -3,12 +3,13 @@ import { isEmailVerified } from './utils/user-verification';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
 import { testConstants } from '~stzUser/test/constants';
 import { EmailTester } from './utils/EmailTester';
-import { waitForElementVisible, waitWithExponentialBackoff } from './utils/testActions';
+import { waitForElementVisible } from './utils/testActions';
 import { profileTestIds, profileStructuralSelectors } from '~stzUser/components/RouteComponents/Profile/Profile';
 import { checkForEmailChangeConfirmationDialogText } from '~stzUser/components/RouteComponents/Profile/checkForEmailChangeConfirmationLinkDialog';
 
-// Set test timeout (Fibonacci sequence: 8000 -> 13000 for dialog timing)
-test.setTimeout(13000);
+// 25 s — this flow spans user creation, profile nav, form fill, email
+// send + delivery via Mailpit, verification link visit, and DB checks.
+test.setTimeout(25000);
 
 // Construct test selectors from component exports
 const profileSelectors = {
@@ -98,42 +99,11 @@ test.describe('Change Email Flow', () => {
 
     await saveChangesButton.click();
 
-    try {
-      // First wait for spinner to appear (indicating email-sending started)
-      const spinnerContainer = page.locator(profileSelectors.spinnerContainer);
-      await waitForElementVisible(spinnerContainer, {
-        errorMessage: 'Spinner never appeared - email sending may not have started',
-        maxAttempts: 5,
-        baseWaitMs: 300,
-        timeout: 2000
-      });
-
-      console.log('Spinner appeared - email sending started');
-
-      // Then wait for spinner to disappear (indicating email-sending completed)
-      await waitWithExponentialBackoff(
-        async () => {
-          const isVisible = await spinnerContainer.isVisible();
-          if (isVisible) {
-            throw new Error('Spinner still visible');
-          }
-        },
-        {
-          errorMessage: 'Spinner never disappeared - email sending may not have completed',
-          maxAttempts: 8,
-          baseWaitMs: 500,
-          maxWaitMs: 2000
-        }
-      );
-    } catch (error) {
-      console.log('Spinner visibility error:', error.message);
-      // Fallback waiting strategy if spinner detection fails
-      await page.waitForTimeout(2000);
-    }
-
-    console.log('checking for success dialog')
-    // Check for the dialog using text content
-    const dialogVisible = await page.getByText(checkForEmailChangeConfirmationDialogText).isVisible().catch(() => false);
+    // Wait for the confirmation dialog — the real signal that the email
+    // change was processed and the verification email was sent.
+    await expect(
+      page.getByText(checkForEmailChangeConfirmationDialogText)
+    ).toBeVisible({ timeout: 8000 });
 
     // Step 4: Verify email change verification was sent to both addresses
     const allSentEmails = await EmailTester.getSentEmails();

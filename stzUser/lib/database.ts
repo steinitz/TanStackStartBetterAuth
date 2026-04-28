@@ -101,8 +101,7 @@ if (isLocalFile) {
   (async () => {
     try {
       // ALWAYS try to enable WAL for file: databases in tests/dev
-      const result = await libsqlClient.execute("PRAGMA journal_mode = WAL;");
-      console.log("🛠️ LibSQL: WAL mode result:", result.rows[0]);
+      await libsqlClient.execute("PRAGMA journal_mode = WAL;");
     } catch (e) {
       console.error("Failed to enable WAL mode:", e);
     }

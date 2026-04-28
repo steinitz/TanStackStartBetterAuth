@@ -9,6 +9,15 @@
  *
  * Also provides process discovery and termination helpers used when a
  * stale dev server is occupying port 3000.
+ *
+ * Logging strategy:
+ * - Dev server stdout is filtered: only `[Client INFO]` lines (structured
+ *   application telemetry) are forwarded to the test runner. Everything
+ *   else — Vite startup, migrations, dotenvx tips — is buffered silently
+ *   and only dumped if the server fails to start.
+ * - Happy-path status messages are buffered, not printed.
+ * - Error-path messages go directly to stderr (startup failures, port
+ *   conflicts, process termination issues).
  */
 
 import { spawn, ChildProcess, exec } from 'child_process';
@@ -18,6 +27,31 @@ import http from 'http';
 
 const sleep = promisify(setTimeout);
 const execAsync = promisify(exec);
+
+/**
+ * Module-level buffer for dev server output. Populated by the stdout/stderr
+ * handlers on the spawned process. Flushed to stderr only when the server
+ * fails to start, so the developer sees what went wrong.
+ */
+const serverLogBuffer: string[] = [];
+
+/**
+ * Append a line to the internal log buffer (silent on happy path).
+ */
+function bufferLog(line: string): void {
+  serverLogBuffer.push(line);
+}
+
+/**
+ * Flush the accumulated server log buffer to stderr.
+ * Called only on startup failure to aid diagnosis.
+ */
+function flushServerLogs(): void {
+  if (serverLogBuffer.length === 0) return;
+  console.error('\n--- Dev server log (startup failed) ---');
+  serverLogBuffer.forEach(line => console.error(line));
+  console.error('--- End dev server log ---\n');
+}
 
 /**
  * Find process ID running on a specific port
@@ -52,7 +86,7 @@ export async function terminateProcess(pid: number, timeoutMs: number = 5000): P
   try {
     // First try graceful termination with SIGTERM
     process.kill(pid, 'SIGTERM');
-    console.log(`📤 Sent SIGTERM to process ${pid}`);
+    bufferLog(`Sent SIGTERM to process ${pid}`);
 
     // Wait for graceful shutdown
     const startTime = Date.now();
@@ -63,15 +97,14 @@ export async function terminateProcess(pid: number, timeoutMs: number = 5000): P
         await sleep(100); // Wait 100ms before checking again
       } catch {
         // Process no longer exists - graceful termination succeeded
-        console.log(`✅ Process ${pid} terminated gracefully`);
+        bufferLog(`Process ${pid} terminated gracefully`);
         return;
       }
     }
 
     // If we reach here, graceful termination failed - use SIGKILL
-    console.log(`⚠️  Process ${pid} didn't respond to SIGTERM, using SIGKILL`);
+    console.error(`Process ${pid} didn't respond to SIGTERM, using SIGKILL`);
     process.kill(pid, 'SIGKILL');
-    console.log(`💀 Sent SIGKILL to process ${pid}`);
 
     // Wait a bit to ensure process is killed
     await sleep(500);
@@ -79,7 +112,7 @@ export async function terminateProcess(pid: number, timeoutMs: number = 5000): P
   } catch (error: any) {
     if (error.code === 'ESRCH') {
       // Process doesn't exist - already terminated
-      console.log(`✅ Process ${pid} was already terminated`);
+      bufferLog(`Process ${pid} was already terminated`);
       return;
     } else if (error.code === 'EPERM') {
       throw new Error(`Permission denied: Cannot terminate process ${pid}. Try running with elevated privileges.`);
@@ -216,11 +249,10 @@ export async function checkMailpitStatus(mailpitURL: string = 'http://localhost:
 export async function ensureMailpitRunning(mailpitURL: string = 'http://localhost:8025'): Promise<void> {
   // First check if Mailpit is already running
   if (await checkMailpitStatus(mailpitURL)) {
-    console.log('✅ Mailpit server already running');
     return;
   }
 
-  console.log('🚀 Mailpit not detected, starting Mailpit server...');
+  bufferLog('Mailpit not detected, starting...');
 
   // Start Mailpit server
   const mailpitProcess = spawn('mailpit', [], {
@@ -229,16 +261,16 @@ export async function ensureMailpitRunning(mailpitURL: string = 'http://localhos
     cwd: process.cwd()
   });
 
-  // Pipe Mailpit output to console with prefixes
+  // Buffer Mailpit output (only surfaced if startup fails)
   if (mailpitProcess.stdout) {
     mailpitProcess.stdout.on('data', (data) => {
-      console.log(`[mailpit] ${data.toString().trim()}`);
+      bufferLog(`[mailpit] ${data.toString().trim()}`);
     });
   }
 
   if (mailpitProcess.stderr) {
     mailpitProcess.stderr.on('data', (data) => {
-      console.error(`[mailpit error] ${data.toString().trim()}`);
+      bufferLog(`[mailpit error] ${data.toString().trim()}`);
     });
   }
 
@@ -253,15 +285,13 @@ export async function ensureMailpitRunning(mailpitURL: string = 'http://localhos
     attempts++;
 
     if (await checkMailpitStatus(mailpitURL)) {
-      console.log('✅ Mailpit server started successfully');
-      console.log('📧 SMTP server: localhost:1025');
-      console.log('🌐 Web interface: http://localhost:8025');
       return;
     }
 
-    console.log(`⏳ Waiting for Mailpit to start... (${attempts}/${maxAttempts})`);
+    bufferLog(`Waiting for Mailpit to start... (${attempts}/${maxAttempts})`);
   }
 
+  flushServerLogs();
   throw new Error('Failed to start Mailpit server within timeout period');
 }
 
@@ -273,7 +303,6 @@ export async function ensureMailpitRunning(mailpitURL: string = 'http://localhos
 export async function ensureServerRunning(baseURL: string = 'http://localhost:3000'): Promise<void> {
   // First check if server is already running and fully ready
   if (await checkServerReadiness(baseURL)) {
-    console.log('✅ Development server ready with test environment');
     return;
   }
 
@@ -284,23 +313,21 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
 
   if (pid) {
     if (process.env.SKIP_SERVER_TERMINATION_COUNTDOWN === 'true') {
-      console.log(`⚠️  Port ${port} is occupied. Auto-terminating process ${pid} due to SKIP_SERVER_TERMINATION_COUNTDOWN=true`);
+      bufferLog(`Port ${port} is occupied. Auto-terminating process ${pid}`);
       await terminateProcess(pid);
       await sleep(1000);
     } else {
-      console.log(`⚠️  Port ${port} is occupied by process ${pid}.`);
-      console.log('🔄 Starting countdown to auto-terminate server...');
+      console.error(`Port ${port} is occupied by process ${pid}. Terminating in 10s (Ctrl+C to cancel)...`);
       for (let i = 10; i > 0; i--) {
-        console.log(`⏰ Terminating server in ${i} seconds... (Ctrl+C to cancel)`);
+        console.error(`  ${i}...`);
         await sleep(1000);
       }
-      console.log('🛑 Terminating existing server...');
       await terminateProcess(pid);
       await sleep(1000);
     }
   }
 
-  console.log('🚀 Server not detected or ready, starting development server with .env.test...');
+  bufferLog('Starting development server with .env.test...');
 
   // Start the development server with .env.test using dotenv-cli
   const serverProcess = spawn('pnpx', ['dotenv-cli', '-e', '.env.test', '--', 'pnpm', 'dev'], {
@@ -309,16 +336,23 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
     cwd: process.cwd()
   });
 
-  // Pipe server output to console with prefixes
+  // Filter server stdout: only forward [Client INFO] lines (structured
+  // application telemetry). Everything else is buffered silently and
+  // only dumped if the server fails to start.
   if (serverProcess.stdout) {
     serverProcess.stdout.on('data', (data) => {
-      console.log(`[dev server] ${data.toString().trim()}`);
+      const line = data.toString().trim();
+      if (line.includes('[Client INFO]')) {
+        console.log(`[dev server] ${line}`);
+      } else {
+        bufferLog(`[dev server] ${line}`);
+      }
     });
   }
 
   if (serverProcess.stderr) {
     serverProcess.stderr.on('data', (data) => {
-      console.error(`[dev server error] ${data.toString().trim()}`);
+      bufferLog(`[dev server error] ${data.toString().trim()}`);
     });
   }
 
@@ -336,25 +370,24 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
     // First check basic server availability
     if (!serverDetected && await checkServerStatus(baseURL)) {
       serverDetected = true;
-      console.log('🌐 Server detected, waiting for full readiness...');
+      bufferLog('Server detected, waiting for full readiness...');
     }
 
     // Then check comprehensive readiness
     if (serverDetected && await checkServerReadiness(baseURL)) {
       // Additional stabilization time for better-auth and database
-      console.log('🔄 Server ready, allowing stabilization time...');
       await sleep(2000); // 2 seconds for better-auth to fully initialize
 
       // Final readiness verification
       if (await checkServerReadiness(baseURL)) {
-        console.log('✅ Development server started and fully ready');
         return;
       }
     }
 
     const status = serverDetected ? 'initializing components' : 'starting';
-    console.log(`⏳ Waiting for server (${status})... (${attempts}/${maxAttempts})`);
+    bufferLog(`Waiting for server (${status})... (${attempts}/${maxAttempts})`);
   }
 
+  flushServerLogs();
   throw new Error('Failed to start development server within timeout period');
 }

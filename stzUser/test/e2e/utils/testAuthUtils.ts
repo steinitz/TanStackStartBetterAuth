@@ -47,8 +47,6 @@ export async function createUserWithCredentials(
 
   const savedUser = await t.saveUser(user)
 
-  console.log(`🔑 testUtils user ids — created: ${user.id}  saved: ${savedUser.id}`)
-
   // If password provided, hash it and create the credential account entry.
   // This mirrors what auth.api.signUpEmail() does internally via
   // ctx.internalAdapter.linkAccount().

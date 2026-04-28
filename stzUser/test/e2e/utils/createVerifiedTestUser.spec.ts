@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './console-buffer';
 import { createVerifiedTestUser, getUserByEmail, isEmailVerified } from '~stzUser/test/e2e/utils/user-verification';
 import { EmailTester } from '~stzUser/test/e2e/utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';

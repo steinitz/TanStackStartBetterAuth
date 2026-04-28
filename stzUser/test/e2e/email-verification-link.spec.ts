@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/console-buffer';
 import { EmailTester, TestEmailMessage } from './utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 import { getUserByEmail, isEmailVerified } from './utils/user-verification';
@@ -53,18 +53,11 @@ test.describe('Email Verification Link Extraction', () => {
     const verificationLinks = EmailTester.extractVerificationLinks(verificationEmail!);
     expect(verificationLinks.length).toBeGreaterThan(0);
     
-    console.log('📧 Verification email found:', {
-      subject: verificationEmail?.subject,
-      links: verificationLinks
-    });
-    
-    console.log('🔗 Better Auth verification URL extracted:', verificationLinks[0]);
     
     // Get the first verification link
     const verificationLink = await EmailTester.getFirstVerificationLink(testEmailAddress);
     expect(verificationLink).toBeTruthy();
     
-    console.log('🔗 Verification link extracted:', verificationLink);
     
     // Navigate to the verification link
     await page.goto(verificationLink!);
@@ -76,7 +69,6 @@ test.describe('Email Verification Link Extraction', () => {
     const verifiedUser = await getUserByEmail(testEmailAddress);
     expect(verifiedUser?.emailVerified).toBe(true);
     
-    console.log('✅ Email verification completed successfully');
   });
 
   test('should handle multiple verification links in email', async () => {
@@ -112,7 +104,6 @@ test.describe('Email Verification Link Extraction', () => {
     expect(links).toContain('https://example.com/confirm?code=xyz789');
     expect(links).not.toContain('https://example.com/help');
     
-    console.log('🔗 Multiple verification links extracted:', links);
   });
 
   test('should return empty array when no verification links found', async () => {
@@ -135,6 +126,5 @@ test.describe('Email Verification Link Extraction', () => {
     // Should find no verification links
     expect(links).toHaveLength(0);
     
-    console.log('📧 No verification links found (as expected)');
   });
 });

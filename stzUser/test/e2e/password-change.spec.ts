@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './utils/console-buffer'
 import { createAuthenticatedUser } from './utils/testAuthUtils'
 import { testConstants } from '~stzUser/test/constants'
 import { signInUser, waitForElementVisible } from './utils/testActions'
@@ -49,7 +49,6 @@ test.describe('Password Change Flow', () => {
     await expect(currentPasswordInput).toHaveValue(testConstants.defaultPassword)
     await expect(newPasswordInput).toHaveValue(newPassword)
 
-    console.log('✅ Password form fields are visible and interactive')
   })
 
   test('should successfully change password with correct current password', async ({ page }) => {
@@ -92,14 +91,12 @@ test.describe('Password Change Flow', () => {
     await expect(currentPasswordInput).toHaveValue('', { timeout: 10000 })
     await expect(newPasswordInput).toHaveValue('', { timeout: 10000 })
 
-    console.log('✅ Password change form submitted and fields cleared')
 
     // Sign out to test the new password
     await page.goto('/auth/signout')
     // Verify we can sign in with the new password
     await signInUser(page, testUserEmail, newPassword)
 
-    console.log('✅ Successfully signed in with new password')
 
     // Verify old password no longer works by attempting to change password again with old password
     await page.goto('/auth/profile')
@@ -120,7 +117,6 @@ test.describe('Password Change Flow', () => {
     const currentPasswordValue = await currentPasswordInput.inputValue()
     const hasError = currentPasswordValue !== '' // Fields not cleared indicates error
     expect(hasError).toBe(true)
-    console.log('✅ Old password correctly rejected')
   })
 
   // TODO: Consider finishing these draft unit tests or convert them to E2E tests, as done for the above

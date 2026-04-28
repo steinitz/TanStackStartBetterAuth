@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/console-buffer';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
 import { clientEnv } from '~stzUser/lib/env';
 

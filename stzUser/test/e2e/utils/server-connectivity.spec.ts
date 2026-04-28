@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../utils/console-buffer';
 import { testConstants } from '~stzUser/test/constants';
 
 // Configure this test to use the E2E setup (which starts the dev server)
@@ -34,12 +34,9 @@ test.describe('Server Connectivity Tests', () => {
         }
       });
       
-      console.log('Direct signup response status:', response.status());
-      console.log('Direct signup response headers:', await response.headers());
       
       if (response.status() !== 200) {
         const responseText = await response.text();
-        console.log('Direct signup response body:', responseText);
       }
       
       // The signup might fail for various reasons (user exists, validation, etc.)
@@ -48,7 +45,6 @@ test.describe('Server Connectivity Tests', () => {
       expect(response.status()).toBeGreaterThan(0);
       
     } catch (error) {
-      console.error('Direct signup request failed:', error);
       throw error;
     }
   });

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/console-buffer';
 import { newTestUser, EmailTester } from './utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 import { isEmailVerified } from './utils/user-verification';
@@ -17,20 +17,6 @@ test.use({
 test.describe('Signup Flow', () => {
 
   test('should complete signup flow and show success message', async ({ page }) => {
-    // Listen for console messages and errors
-    // page.on('console', (msg) => {
-    //   console.log(`🖥️ Browser console [${msg.type()}]:`, msg.text());
-    // });
-    
-    page.on('console', (msg) => {
-      console.log(msg);
-    });
-
-    page.on('pageerror', error => {
-      console.log('🚨 Page error:', error.message);
-    });
-
-    console.log('Signup test logging from Playwright')
 
     // Clear any previous emails from EmailTester
     await EmailTester.clearSentEmails();

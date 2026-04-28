@@ -1,15 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/console-buffer';
 import {contactSentConfirmationH1Default} from '~stzUser/components/Other/ContactSent';
 import { testConstants } from '~stzUser/test/constants';
 import { contactFormSelectors } from '~stzUser/components/RouteComponents/ContactForm';
 
 test.describe('Contact Form Success Message', () => {
   test('should show success message after form submission', async ({ page }) => {
-    // Adds browser logs to the playwright logs
-    page.on('console', msg => {
-      console.log(`🖥️ Browser console [${msg.type()}]:`, msg.text());
-    });
-
     // Navigate to contact page
     await page.goto('/contact');
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/console-buffer';
 import { createUserWithCredentials } from './utils/testAuthUtils';
 import { testConstants } from '~stzUser/test/constants';
 import { EmailTester } from './utils/EmailTester';
@@ -123,17 +123,12 @@ test.describe('Password Reset Flow', () => {
     );
 
     const allEmails = await EmailTester.getSentEmails();
-    console.log('📧 Total emails found:', allEmails.length);
-    console.log('🔍 Looking for subject containing:', passwordResetSubject);
 
-    // Debug the findEmailBySubject function
     const matchingEmails = allEmails.filter(email => {
       const toMatch = email.envelope?.to?.includes?.(testEmailAddress);
       const subjectMatch = email.subject?.toLowerCase().includes(passwordResetSubject.toLowerCase());
-      console.log('📧 Email check:', { to: email.envelope?.to, subject: email.subject, toMatch, subjectMatch });
       return toMatch && subjectMatch;
     });
-    console.log('📧 Matching emails:', matchingEmails.map(e => ({ to: e.envelope?.to, subject: e.subject, body: e.text || e.html || 'No body content' })));
 
     expect(passwordResetEmail).toBeTruthy();
     expect(passwordResetEmail?.envelope?.to).toContain(testEmailAddress);
@@ -144,7 +139,6 @@ test.describe('Password Reset Flow', () => {
     expect(passwordResetUrl).toBeTruthy();
 
     if (passwordResetUrl) {
-      console.log('🔗 Password reset URL found:', passwordResetUrl);
 
       // Step 9: Click the password reset link (automatically redirects to set new password page)
       await page.goto(passwordResetUrl);
@@ -177,13 +171,11 @@ test.describe('Password Reset Flow', () => {
         await expect(page.locator('h1')).toContainText(['Sign In', 'Success', 'Password Updated'], { timeout: 10000 });
       } catch {
         // If no clear success indicator, proceed to signin test
-        console.log('No clear success message found, proceeding to signin test');
       }
 
       // Step 13: Test that we can sign in with the new password using signInUser utility
       await signInUser(page, testEmailAddress, newPassword);
 
-      console.log('✅ Password reset flow completed successfully');
     } else {
       console.warn('⚠️ No password reset URL was captured - skipping password reset completion test');
     }

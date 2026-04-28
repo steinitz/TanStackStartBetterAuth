@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/console-buffer';
 import { isEmailVerified } from './utils/user-verification';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
 import { testConstants } from '~stzUser/test/constants';

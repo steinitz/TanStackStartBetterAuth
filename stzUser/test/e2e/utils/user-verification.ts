@@ -141,7 +141,6 @@ export async function createVerifiedTestUser(options?: {
 
       const verificationLinks = EmailTester.extractVerificationLinks(verificationEmail!);
       expect(verificationLinks.length).toBeGreaterThan(0);
-      console.log(`🔗 createVerifiedTestUser - found ${verificationLinks.length} verification link(s) in email`);
 
       const verificationUrl = verificationLinks[0];
       const urlParams = new URL(verificationUrl);
@@ -154,12 +153,9 @@ export async function createVerifiedTestUser(options?: {
       });
       expect(verifyResult).toBeTruthy();
 
-      console.log('✅ createVerifiedTestUser - email address verified using extracted token from verification email address');
-
       // Confirm verification worked by checking database
       const isVerified = await isEmailVerified(data.user.email);
       expect(isVerified).toBe(true);
-      console.log('✅ createVerifiedTestUser- database confirms email address is verified');
 
       // Promote to admin if requested
       if (shouldBeAdmin) {

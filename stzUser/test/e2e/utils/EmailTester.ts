@@ -179,7 +179,6 @@ export class EmailTester {
         throw new Error(`Failed to clear emails: ${response.statusText}`);
       }
       this.sentEmails = [];
-      console.log('🧹 Cleared all sent emails from Mailpit');
     } catch (error) {
       console.error('❌ Failed to clear emails from Mailpit:', error);
       throw error;
@@ -198,7 +197,6 @@ export class EmailTester {
    */
   static async cleanup(): Promise<void> {
     await this.clearSentEmails();
-    console.log('🧹 Email test utilities cleaned up');
   }
 
   /**

@@ -77,7 +77,6 @@ test.describe('Password Change Flow', () => {
 
     // Set up alert handler to dismiss the success alert
     page.on('dialog', async dialog => {
-      console.log(`Dialog appeared: ${dialog.type()} - ${dialog.message()}`)
       await dialog.accept()
     })
 

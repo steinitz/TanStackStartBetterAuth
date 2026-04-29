@@ -317,11 +317,8 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
       await terminateProcess(pid);
       await sleep(1000);
     } else {
-      console.error(`Port ${port} is occupied by process ${pid}. Terminating in 10s (Ctrl+C to cancel)...`);
-      for (let i = 10; i > 0; i--) {
-        console.error(`  ${i}...`);
-        await sleep(1000);
-      }
+      console.error(`Port ${port} occupied (PID ${pid}). Terminating in 10s… (Ctrl+C to cancel)`);
+      await sleep(10000);
       await terminateProcess(pid);
       await sleep(1000);
     }
@@ -342,7 +339,7 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
   if (serverProcess.stdout) {
     serverProcess.stdout.on('data', (data) => {
       const line = data.toString().trim();
-      if (line.includes('[Client INFO]')) {
+      if (line.includes('[Client INFO]') && !line.includes('game.localStorage.write')) {
         console.log(`[dev server] ${line}`);
       } else {
         bufferLog(`[dev server] ${line}`);

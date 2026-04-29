@@ -20,36 +20,7 @@ test.describe('Password Change Flow', () => {
   const originalPassword = testConstants.defaultPassword
   const newPassword = 'NewSecurePassword123!'
 
-  test.skip('should display password change form fields', async ({ page }) => {
-    const { email: testUserEmail } = await createAuthenticatedUser(page, {
-      password: originalPassword
-    })
 
-    // Navigate to profile page (already authenticated via cookies)
-    await page.goto('/auth/profile')
-
-    // Wait for the profile form using abstracted exponential backoff utility
-    const profileForm = page.locator('[data-testid="profile-form"]');
-    await waitForElementVisible(profileForm, {
-      errorMessage: 'Profile form not found after maximum attempts'
-    });
-
-    // Verify password input fields are present
-    const currentPasswordInput = page.locator(profileStructuralSelectors.currentPasswordInput)
-    const newPasswordInput = page.locator(profileStructuralSelectors.newPasswordInput)
-
-    await expect(currentPasswordInput).toBeVisible()
-    await expect(newPasswordInput).toBeVisible()
-
-    // Test basic interaction - fill in the fields
-    await currentPasswordInput.fill(testConstants.defaultPassword)
-    await newPasswordInput.fill(newPassword)
-
-    // Verify the values were entered
-    await expect(currentPasswordInput).toHaveValue(testConstants.defaultPassword)
-    await expect(newPasswordInput).toHaveValue(newPassword)
-
-  })
 
   test('should successfully change password with correct current password', async ({ page }) => {
     const { email: testUserEmail } = await createAuthenticatedUser(page, {

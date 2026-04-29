@@ -13,7 +13,7 @@
 
 import { test as base } from '@playwright/test';
 
-export const test = base.extend({
+export const test = base.extend<{ _consoleBuffer: void }>({
   // Auto-fixture — runs for every test without the test referencing it.
   // The leading underscore signals "not consumed directly by tests."
   _consoleBuffer: [async ({ page }, use, testInfo) => {

@@ -1,5 +1,6 @@
 import { FullConfig } from '@playwright/test';
 import { ensureServerRunning, ensureMailpitRunning } from 'stzUser/test/e2e/utils/e2e-services';
+import { testConstants } from 'stzUser/test/constants';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,7 +10,7 @@ import path from 'path';
  * Auto-starts the dev server and Mailpit if they are not already running.
  * The developer does not need to start either service manually — running
  * `pnpm test:e2e` from a cold machine is sufficient. Mailpit must be
- * installed (`brew install mailpit` on macOS); ports 3000, 1025, and 8025
+ * installed (`brew install mailpit` on macOS); ports 3019, 1025, and 8025
  * must be free.
  *
  * Also resets the test database (`test-e2e.db`) so every run starts from
@@ -30,7 +31,7 @@ async function globalSetup(config: FullConfig) {
     }
   });
   
-  const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000';
+  const baseURL = config.projects[0]?.use?.baseURL || testConstants.testBaseURL;
   
   try {
     await ensureMailpitRunning();
@@ -40,7 +41,7 @@ async function globalSetup(config: FullConfig) {
     console.error('='.repeat(50));
     console.error('Error:', error instanceof Error ? error.message : String(error));
     console.error('\n💡 Recovery steps:');
-    console.error('   • Free up ports if another process is holding 3000, 8025, or 1025');
+    console.error(`   • Free up ports if another process is holding ${testConstants.testPort}, 8025, or 1025`);
     console.error('   • Confirm .env.test exists and sets PLAYWRIGHT_RUNNING=true');
     console.error('   • Install mailpit if missing: brew install mailpit (macOS)');
     console.error('   • As a last resort, start the dev server by hand: pnpx dotenv-cli -e .env.test -- pnpm dev');

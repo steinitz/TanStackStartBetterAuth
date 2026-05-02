@@ -86,7 +86,7 @@ export async function createAuthenticatedUser(
   // Map cookies to match the test server's domain and protocol.
   // Playwright's addCookies() silently drops cookies with mismatched domains,
   // and sameSite: 'None' requires secure: true (broken on HTTP).
-  const baseURL = process.env.BETTER_AUTH_BASE_URL ?? 'http://localhost:3000'
+  const baseURL = process.env.BETTER_AUTH_BASE_URL ?? testConstants.testBaseURL
   const isHttps = baseURL.startsWith('https')
 
   const mappedCookies = cookies.map(c => ({

@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { config as loadDotenv } from 'dotenv';
+import { testConstants } from 'stzUser/test/constants';
 
 // Load .env.test so that test workers inherit PLAYWRIGHT_RUNNING, DATABASE_URL,
 // BETTER_AUTH_SECRET, etc.  The auth instance imported directly in testAuthUtils
@@ -37,7 +38,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BETTER_AUTH_BASE_URL || testConstants.testBaseURL,
 
     /* Ignore HTTPS errors for dev server's self-signed certificates */
     ignoreHTTPSErrors: true,

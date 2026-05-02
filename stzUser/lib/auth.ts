@@ -46,6 +46,14 @@ async function getEmailTransport() {
 let _auth: any = null
 
 export const authOptions: BetterAuthOptions = {
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://localhost:3000",
+    "https://192.168.0.176:3000",
+    // Test runs on port 3019 — BETTER_AUTH_TRUSTED_ORIGINS in .env.test
+    // adds the test port so auth accepts requests from the test browser.
+    ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',').map(s => s.trim()) ?? []),
+  ],
   database: {
     db: db,
     type: "sqlite",

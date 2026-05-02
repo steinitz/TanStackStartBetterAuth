@@ -1,4 +1,5 @@
 import { FullConfig } from '@playwright/test';
+import { testConstants } from 'stzUser/test/constants';
 import fs from 'fs';
 import path from 'path';
 
@@ -36,7 +37,7 @@ async function globalTeardown(config: FullConfig) {
 async function stopDevServer(): Promise<void> {
   try {
     // Check if we have a test environment server running
-    const baseURL = 'http://localhost:3000';
+    const baseURL = process.env.BETTER_AUTH_BASE_URL || testConstants.testBaseURL;
     const testEnvResponse = await fetch(`${baseURL}/api/test-env`);
     
     if (testEnvResponse.ok) {

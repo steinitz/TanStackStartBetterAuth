@@ -5,10 +5,10 @@
  * start it if not. They are the reason `globalSetup` does not require the
  * developer to launch anything manually — running `pnpm test:e2e` from a
  * cold machine is sufficient, provided Mailpit is installed and the
- * required ports (3000, 1025, 8025) are free.
+ * required ports (configured via .env.test, default 3019; plus 1025, 8025) are free.
  *
  * Also provides process discovery and termination helpers used when a
- * stale dev server is occupying port 3000.
+ * stale dev server is occupying the test port.
  *
  * Logging strategy:
  * - Dev server stdout is filtered: only `[Client INFO]` lines (structured

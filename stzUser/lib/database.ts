@@ -17,6 +17,10 @@ export const libsqlClient = createClient({
   authToken: authToken,
 });
 
+// Announce which DB this process bound, so the file: fallback (no DATABASE_URL)
+// vs a server URL is visible at a glance instead of silent.
+console.log(`DB: ${url || 'file:sqlite.db (no DATABASE_URL set)'}`)
+
 /**
  * User-related database types
  * 
@@ -93,8 +97,11 @@ export const db = new Kysely<Database>({
   }),
 });
 
-// Enable WAL mode for better concurrency with local file-based LibSQL/SQLite
-const isLocalFile = !process.env.DATABASE_URL?.startsWith('libsql://') && !process.env.DATABASE_URL?.startsWith('libsls://');
+// Enable WAL mode for better concurrency with local file-based LibSQL/SQLite.
+// A local file DB is the no-URL default (file:sqlite.db) or an explicit file: URL.
+// Any server URL — libsql://, http:// (local sqld via `turso dev`), ws:// — skips
+// WAL: it's a file-level pragma and sqld's Hrana/HTTP API rejects it outright.
+const isLocalFile = !url || url.startsWith('file:');
 
 if (isLocalFile) {
   // Wrap in IIFE to avoid top-level await issues in some environments

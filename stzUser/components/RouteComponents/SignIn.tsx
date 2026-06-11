@@ -62,23 +62,31 @@ export const SignIn = () => {
           window.location.href = '/' // TanStack navigation doesn't work here
         },
         onError: async (ctx) => {
-          if (ctx.error.status === 403) {
-            // Send verification email for existing unverified users
+          // Footgun: better-auth returns 403 for *several* reasons — an unverified
+          // email, but also an untrusted Origin (CSRF guard) and other forbidden
+          // states. Key off the error CODE, never the bare 403 status, or those
+          // other failures masquerade as "needs verification" and we tell the user
+          // we sent an email we never sent. (An untrusted-origin 403 cost a full
+          // debugging session before this discriminator existed.)
+          if (ctx.error.code === 'EMAIL_NOT_VERIFIED') {
             try {
-              await sendVerificationEmail({
+              const { error: resendError } = await sendVerificationEmail({
                 email: email,
                 callbackURL: '/'
               })
+              // The better-auth client resolves with { error } rather than throwing,
+              // so a failed resend lands here — don't claim success on it.
+              if (resendError) throw resendError
               alert(`Your account needs email verification. We've sent a new verification email to ${email}. Please check your inbox (and spam folder) and click the verification link to complete sign-in.`)
             } catch (error) {
               console.error('Error sending verification email:', error)
-              alert(`Your account needs email verification. Please check your email inbox for a verification link, or try signing up again.`)
+              alert(`Your account needs email verification, but we couldn't send a new verification email right now. Please try again shortly.`)
             }
           }
           else {
             alert(ctx.error.message)
           }
-          console.log({ ctxError: ctx.error.message })
+          console.log({ ctxError: ctx.error })
         },
       }
     )

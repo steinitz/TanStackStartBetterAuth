@@ -47,12 +47,17 @@ let _auth: any = null
 
 export const authOptions: BetterAuthOptions = {
   trustedOrigins: [
+    // Localhost floor — always trusted for local dev. Machine- and deploy-specific
+    // origins are deliberately NOT hardcoded here: a developer's LAN IP (for an iPad
+    // hitting the Mac dev server, on whatever port) belongs in
+    // BETTER_AUTH_ADDITIONAL_TRUSTED_ORIGINS in .env.development, and every *deployed*
+    // origin is auto-trusted by better-auth via BETTER_AUTH_URL. That keeps this
+    // reusable module free of one person's network address and one site's hostname.
     "http://localhost:3000",
     "https://localhost:3000",
-    "https://192.168.0.176:3000",
-    // Test runs on port 3019 — BETTER_AUTH_TRUSTED_ORIGINS in .env.test
-    // adds the test port so auth accepts requests from the test browser.
-    ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',').map(s => s.trim()) ?? []),
+    // Optional dev/test/preview extras: the test port (.env.test), a LAN IP
+    // (.env.development). Additive to the floor above, so unset is fine.
+    ...(process.env.BETTER_AUTH_ADDITIONAL_TRUSTED_ORIGINS?.split(',').map(s => s.trim()) ?? []),
   ],
   database: {
     db: db,

@@ -74,7 +74,6 @@ export const clientEnv: ClientEnv = isServer()
     COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',
     BETTER_AUTH_BASE_URL:
       process.env.BETTER_AUTH_URL ||
-      process.env.BETTER_AUTH_BASE_URL ||
       'http://localhost:3000',
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
     CONTACT_EMAIL: process.env.CONTACT_EMAIL || process.env.SUPPORT_EMAIL_ADDRESS,

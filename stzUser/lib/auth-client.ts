@@ -29,9 +29,10 @@ export const {
 		// to itself, not the Mac — so auth POSTs went to the iPad's own loopback.
 		// Nothing listened, nothing errored, nothing logged. Total silent sign-in failure.
 		//
-		// Fallback to BETTER_AUTH_BASE_URL for SSR (typeof window === 'undefined')
-		// and for E2E test scripts.  BETTER_AUTH_BASE_URL is still needed for those
-		// server-side contexts.
+		// Fallback to clientEnv.BETTER_AUTH_BASE_URL for SSR (typeof window ===
+		// 'undefined') and for E2E test scripts. That clientEnv field is now sourced
+		// from BETTER_AUTH_URL — the BETTER_AUTH_BASE_URL env var was removed
+		// 2026-06-24 (the clientEnv field of the same name remains).
 		//
 		// Edge case: this approach assumes auth is same-origin (same host as the
 		// frontend).  It would break if auth were hosted on a separate domain.

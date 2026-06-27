@@ -356,7 +356,13 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
   serverProcess.unref();
 
   // Wait for server to start (with timeout)
-  const maxAttempts = 5; // 5 seconds should be sufficient for development
+  // Cold vite + better-auth become *ready* (full checkServerReadiness, incl. a
+  // real sign-up POST) noticeably later than the old 5s — the server begins
+  // listening around then but isn't serving yet. Too short a budget makes setup
+  // throw exactly as the server comes up, orphaning the detached process on the
+  // port (Playwright skips globalTeardown when globalSetup throws). Match/exceed
+  // Mailpit's 15.
+  const maxAttempts = 30;
   let attempts = 0;
   let serverDetected = false;
 
@@ -385,6 +391,16 @@ export async function ensureServerRunning(baseURL: string = 'http://localhost:30
     bufferLog(`Waiting for server (${status})... (${attempts}/${maxAttempts})`);
   }
 
+  // Readiness never reached. Terminate the server we just spawned — the whole
+  // process group (negative pid), so the detached pnpx/dotenv-cli wrappers die
+  // with vite. Playwright skips globalTeardown when globalSetup throws, so this
+  // is the only chance to clean up; without it the unref'd server orphans on the
+  // port and blocks the next run.
+  try {
+    if (serverProcess.pid) process.kill(-serverProcess.pid, 'SIGKILL');
+  } catch {
+    // already gone
+  }
   flushServerLogs();
   throw new Error('Failed to start development server within timeout period');
 }

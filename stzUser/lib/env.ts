@@ -50,6 +50,9 @@ export type ClientEnv = {
   WELCOME_GRANT_CREDITS: number
   DEFAULT_CREDITS_PURCHASE: number
   IS_STRIPE_ENABLED: boolean
+  // Publishable key is client-safe by design (Stripe means it to ship to the browser).
+  // The secret + webhook keys are server-only and never appear in ClientEnv — see stripe.server.ts.
+  STRIPE_PUBLISHABLE_KEY: string | undefined
 }
 
 // Load environment variables based on NODE_ENV
@@ -89,7 +92,8 @@ export const clientEnv: ClientEnv = isServer()
     DAILY_GRANT_CREDITS: Number(process.env.DAILY_GRANT_CREDITS || '100'),
     WELCOME_GRANT_CREDITS: Number(process.env.WELCOME_GRANT_CREDITS || '500'),
     DEFAULT_CREDITS_PURCHASE: Number(process.env.DEFAULT_CREDITS_PURCHASE || '5000'),
-    IS_STRIPE_ENABLED: false, // Set to true when Stripe is fully integrated
+    IS_STRIPE_ENABLED: process.env.IS_STRIPE_ENABLED === 'true', // master kill-switch, env-driven (Step 0)
+    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
   }
   : (typeof window !== 'undefined' && window.__ENV)
     ? window.__ENV
@@ -114,6 +118,7 @@ export const clientEnv: ClientEnv = isServer()
       WELCOME_GRANT_CREDITS: 500,
       DEFAULT_CREDITS_PURCHASE: 5000,
       IS_STRIPE_ENABLED: false,
+      STRIPE_PUBLISHABLE_KEY: undefined, // real value arrives via window.__ENV injection (Correction 2)
       // Merge with window.__ENV if available to override defaults
       ...(typeof window !== 'undefined' ? (window.__ENV || {}) : {})
     }

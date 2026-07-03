@@ -57,6 +57,26 @@ export async function ensureAdditionalTables(): Promise<void> {
       .column('user_id')
       .execute();
 
+    // Add stripe_payment_intent_id column for webhook idempotency (dedupe on the payment).
+    try {
+      await db.schema
+        .alterTable('transactions')
+        .addColumn('stripe_payment_intent_id', 'text')
+        .execute()
+    } catch (e) { /* ignore if exists */ }
+
+    // Unique index on stripe_payment_intent_id (partial, NULLs allowed — SQLite treats
+    // NULLs as distinct, so many un-Stripe rows coexist while each real PI id is unique).
+    try {
+      await db.schema
+        .createIndex('idx_transactions_stripe_pi_id_unique')
+        .ifNotExists()
+        .on('transactions')
+        .column('stripe_payment_intent_id')
+        .unique()
+        .execute()
+    } catch (e) { /* ignore if exists */ }
+
     // 2. Add 'credits' column to user table
     try {
       await db.schema

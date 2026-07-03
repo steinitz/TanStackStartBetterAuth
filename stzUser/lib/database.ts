@@ -87,6 +87,7 @@ export interface TransactionTable {
   type: 'daily_grant' | 'consumption' | 'purchase' | 'manual_adjustment';
   description: string;
   created_at: string;
+  stripe_payment_intent_id?: string | null; // webhook idempotency lock; NULL for non-Stripe rows
 }
 
 

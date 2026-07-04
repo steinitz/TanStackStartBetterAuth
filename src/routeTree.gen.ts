@@ -29,6 +29,7 @@ import { Route as AuthProfileRouteImport } from './routes/auth/profile'
 import { Route as AuthForRouteTroubleshootingRouteImport } from './routes/auth/forRouteTroubleshooting'
 import { Route as AuthCreditsRouteImport } from './routes/auth/credits'
 import { Route as ApiTestEnvRouteImport } from './routes/api/test-env'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe-webhook'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const OtherRoute = OtherRouteImport.update({
@@ -133,6 +134,11 @@ const ApiTestEnvRoute = ApiTestEnvRouteImport.update({
   path: '/api/test-env',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe-webhook',
+  path: '/api/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/other': typeof OtherRoute
+  '/api/stripe-webhook': typeof ApiStripeWebhookRoute
   '/api/test-env': typeof ApiTestEnvRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/other': typeof OtherRoute
+  '/api/stripe-webhook': typeof ApiStripeWebhookRoute
   '/api/test-env': typeof ApiTestEnvRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/other': typeof OtherRoute
+  '/api/stripe-webhook': typeof ApiStripeWebhookRoute
   '/api/test-env': typeof ApiTestEnvRoute
   '/auth/credits': typeof AuthCreditsRoute
   '/auth/forRouteTroubleshooting': typeof AuthForRouteTroubleshootingRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/other'
+    | '/api/stripe-webhook'
     | '/api/test-env'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/other'
+    | '/api/stripe-webhook'
     | '/api/test-env'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/other'
+    | '/api/stripe-webhook'
     | '/api/test-env'
     | '/auth/credits'
     | '/auth/forRouteTroubleshooting'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
   OtherRoute: typeof OtherRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiTestEnvRoute: typeof ApiTestEnvRoute
   AuthCreditsRoute: typeof AuthCreditsRoute
   AuthForRouteTroubleshootingRoute: typeof AuthForRouteTroubleshootingRoute
@@ -447,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTestEnvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stripe-webhook': {
+      id: '/api/stripe-webhook'
+      path: '/api/stripe-webhook'
+      fullPath: '/api/stripe-webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
   OtherRoute: OtherRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiTestEnvRoute: ApiTestEnvRoute,
   AuthCreditsRoute: AuthCreditsRoute,
   AuthForRouteTroubleshootingRoute: AuthForRouteTroubleshootingRoute,

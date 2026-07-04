@@ -21,6 +21,11 @@ export const LogSchema = v.object({
   message: v.string(),
   context: v.optional(v.record(v.string(), v.unknown())),
   notify: v.optional(v.boolean()),
+  // Origin label for the console tag: 'Client' (browser telemetry, the default) vs 'Server'
+  // (server-originated alerts, e.g. the Stripe webhook). This fn began as client-only telemetry, so
+  // an unset source keeps the historical '[Client …]' tag; server callers pass 'Server' so the tag
+  // doesn't lie about where the log came from.
+  source: v.optional(v.string()),
 });
 
 /** Check whether a message passes both throttle layers. Returns true if the email should be sent. */
@@ -99,7 +104,7 @@ async function sendNotifyEmail(data: { level: string; message: string; context?:
 export const logToServer = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(LogSchema, data))
   .handler(async ({ data }) => {
-    const tag = `[Client ${data.level.toUpperCase()}]`;
+    const tag = `[${data.source ?? 'Client'} ${data.level.toUpperCase()}]`;
     const ctx = data.context ? ' ' + JSON.stringify(data.context) : '';
     console[data.level](`${tag} ${data.message}${ctx}`);
 

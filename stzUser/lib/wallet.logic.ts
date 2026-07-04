@@ -352,6 +352,7 @@ export async function notifyStripeFulfillmentFailure(details: {
     await logToServer({
       data: {
         level: 'error',
+        source: 'Server',
         message: `Stripe fulfillment failed: ${details.reason}`,
         notify: true,
         context: {

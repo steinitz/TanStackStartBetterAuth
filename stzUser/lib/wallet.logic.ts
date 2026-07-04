@@ -42,6 +42,17 @@ export type PurchasePaymentIntent = {
   metadata: Record<string, string> | null | undefined
 }
 
+/**
+ * The single source of truth for credits→AUD-cents pricing. Pure and rounded **exactly once** (F8):
+ * create-time stamps this into `metadata.amountCents`, and the webhook then verifies the amount
+ * Stripe actually collected equals that stamp (grantPurchaseCredits) rather than recomputing — so
+ * create and grant can never diverge on the arithmetic even if `CREDIT_PRICE_AUD` changes between
+ * them. Callers enforce the min/max floors; this only converts.
+ */
+export function computeStripeAmountCents(creditsRequested: number): number {
+  return Math.round(creditsRequested * clientEnv.CREDIT_PRICE_AUD * 100)
+}
+
 const DAILY_ALLOWANCE = clientEnv.DAILY_GRANT_CREDITS
 
 /**
@@ -375,6 +386,26 @@ export async function notifyStripeFulfillmentFailure(details: {
 /**
  * Logic: Fetches the transaction history for a specific user.
  */
+/**
+ * Logic: has the webhook already granted credits for this PaymentIntent? The UI's unambiguous
+ * "did the grant land?" signal after a purchase, keyed on the same PI id the grant row carries.
+ *
+ * The `user_id` scope is load-bearing, not cosmetic: without it any authenticated user could poll
+ * another user's PI id and learn `{ granted, amount }` — a cross-user leak. A caller only ever
+ * checks its own purchase, so scoping to the session user closes it for free.
+ */
+export async function checkPurchaseInternal(userId: string, paymentIntentId: string) {
+  const row = await db
+    .selectFrom('transactions')
+    .select('amount')
+    .where('stripe_payment_intent_id', '=', paymentIntentId)
+    .where('type', '=', 'purchase')
+    .where('user_id', '=', userId)
+    .executeTakeFirst()
+
+  return row ? { granted: true, amount: row.amount } : { granted: false }
+}
+
 export async function getTransactionsInternal(userId: string) {
   return await db
     .selectFrom('transactions')

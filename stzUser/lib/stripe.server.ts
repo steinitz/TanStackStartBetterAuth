@@ -9,7 +9,7 @@
 // boot before IS_STRIPE_ENABLED ever gets a vote. Keeping construction behind getters means
 // the throw only fires when a Stripe operation is actually attempted.
 import Stripe from 'stripe'
-import { getEnvVar } from './env'
+import { getEnvVar, getOptionalEnvVar } from './env'
 
 let stripeSingleton: Stripe | null = null
 
@@ -20,6 +20,27 @@ export function getStripe(): Stripe {
     stripeSingleton = new Stripe(getEnvVar('STRIPE_SECRET_KEY'))
   }
   return stripeSingleton
+}
+
+const STRIPE_MIN_CENTS_DEFAULT = 50
+
+/**
+ * The minimum charge, in AUD cents, that Stripe will accept — used as the create-time floor so we
+ * never mint an intent Stripe would reject. Server-only (never client-exposed). Conservative default
+ * of 50 cents; confirm the exact AUD minimum at stage (F1, `[open]`).
+ *
+ * A malformed env value must NOT silently disable the floor (Codex Step-3 P3): `Number('abc')` is
+ * NaN, and `amountCents < NaN` is always false — the guard would vanish. So reject any non-positive-
+ * integer value and fall back loudly to the safe default rather than let a typo remove the floor.
+ */
+export function getStripeMinCents(): number {
+  const raw = getOptionalEnvVar('STRIPE_MIN_CENTS', String(STRIPE_MIN_CENTS_DEFAULT))
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    console.warn(`⚠️ STRIPE_MIN_CENTS is "${raw}" — not a positive integer; falling back to ${STRIPE_MIN_CENTS_DEFAULT}.`)
+    return STRIPE_MIN_CENTS_DEFAULT
+  }
+  return parsed
 }
 
 export function getStripeWebhookSecret(): string {

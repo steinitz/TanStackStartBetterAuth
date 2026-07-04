@@ -36,3 +36,29 @@ describe.sequential('stripe.server (lazy init — boot safety)', () => {
     expect(a).toBe(b)
   })
 })
+
+describe('getStripeMinCents (floor must not be silently disabled)', () => {
+  beforeEach(() => {
+    delete process.env.STRIPE_MIN_CENTS
+  })
+
+  it('defaults to 50 when unset', async () => {
+    const { getStripeMinCents } = await import('~stzUser/lib/stripe.server')
+    expect(getStripeMinCents()).toBe(50)
+  })
+
+  it('reads a valid positive integer', async () => {
+    process.env.STRIPE_MIN_CENTS = '75'
+    const { getStripeMinCents } = await import('~stzUser/lib/stripe.server')
+    expect(getStripeMinCents()).toBe(75)
+  })
+
+  it.each(['abc', '', '  ', '0', '-10', '12.5'])(
+    'falls back to 50 (never NaN / non-positive) for the malformed value %j',
+    async (bad) => {
+      process.env.STRIPE_MIN_CENTS = bad
+      const { getStripeMinCents } = await import('~stzUser/lib/stripe.server')
+      expect(getStripeMinCents()).toBe(50)
+    },
+  )
+})

@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
     environment: 'jsdom',
+    // Integration tests share one on-disk libSQL file (sqlite.db). SQLite is single-writer, so
+    // running test *files* in parallel causes SQLITE_BUSY. Serialize files. Note: the per-file
+    // `describe.sequential` only orders tests *within* a file — it does NOT prevent cross-file
+    // contention, so this flag is the actual guard.
+    fileParallelism: false,
     setupFiles: ['./stzUser/test/unit/setup.ts'],
     globals: true, // Re-enable globals for jest-dom compatibility
     watch: false,

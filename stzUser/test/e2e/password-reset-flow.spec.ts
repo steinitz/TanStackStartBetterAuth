@@ -87,6 +87,12 @@ test.describe('Password Reset Flow', () => {
     // Step 3: Verify we're on the request password reset page
     await expect(page).toHaveURL('/auth/requestPasswordReset');
     await expect(page.locator('h1')).toContainText(requestPasswordResetStrings.pageTitle);
+    // 'networkidle' is deliberate and load-bearing here — do NOT downgrade to 'load'.
+    // This is a logged-out page whose network genuinely settles, and the form's async
+    // setup must finish before we submit; with 'load' the submit fires too early and
+    // silently no-ops (the h1 never reaches "Link Sent"). The general caution against
+    // networkidle applies to session-polling authenticated pages, not this one.
+    await page.waitForLoadState('networkidle');
 
     // Step 4: Fill out the password reset form with specific form assertions
     await expect(page.locator(requestPasswordResetSelectors.passwordResetForm)).toBeVisible();

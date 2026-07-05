@@ -7,7 +7,9 @@ import viteReact from '@vitejs/plugin-react-swc'
 
 export default defineConfig({
   server: {
-    port: 3000,
+    // Vite does not auto-read PORT; the e2e rig sets it in .env.test to move the
+    // test server to 3019 without disturbing the default HTTP dev server on 3000.
+    port: parseInt(process.env.PORT || '3000'),
     strictPort: true,
   },
   plugins: [

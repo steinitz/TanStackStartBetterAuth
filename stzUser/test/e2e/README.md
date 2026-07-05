@@ -346,9 +346,11 @@ test('debug email flow', async ({ page }) => {
 
 The E2E tests use robust server management with environment variable validation to ensure proper test execution:
 
+> **Test server URL (updated 2026-07-05):** E2E tests run against `http://localhost:3019` over plain HTTP, not `:3000`. See the "Test server URL" note in `stzUser/test/README.md` for the full explanation and the stale-`constants.js` footgun.
+
 ### How It Works
 - **Environment Validation**: Verifies servers are running with `.env.test` environment variables
-- **Smart Detection**: Checks if a test-configured server is already running on `http://localhost:3000`
+- **Smart Detection**: Checks if a test-configured server is already running on `http://localhost:3019`
 - **Automatic Startup**: Starts server with `pnpx dotenv-cli -e .env.test -- pnpm dev` if needed
 - **Environment Enforcement**: Prevents tests from running against misconfigured servers
 - **Clean Shutdown**: Only stops servers it started, preserving manual dev servers
@@ -363,7 +365,7 @@ PLAYWRIGHT_RUNNING=true
 ```
 
 ### Server Utilities
-Server management is handled by `utils/server-check.ts`:
+Server management is handled by `utils/e2e-services.ts`:
 - **`ensureServerRunning()`** - Starts server with `.env.test` if needed
 - **`checkServerTestEnvironment()`** - Validates running servers use test environment
 - **`isPlaywrightRunning()`** - Simple detection: `process.env.PLAYWRIGHT_RUNNING === 'true'`

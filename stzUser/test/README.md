@@ -75,9 +75,13 @@ pnpm test:all
 
 Playwright automatically handles development server lifecycle for E2E tests with robust environment variable management:
 
+> **Test server URL (updated 2026-07-05):** E2E tests run against `http://localhost:3019`, not `:3000`. `.env.test` sets `PORT=3019` (read by `vite.config.ts`) and `TEST_BASE_PROTOCOL=http`; `stzUser/test/constants.ts` builds `testBaseURL` from those. Default `pnpm dev` still serves plain HTTP on `:3000` — the test port is separate so it does not disturb normal dev. Upstream stays HTTP throughout (no basicSsl); the `TEST_BASE_PROTOCOL` default is `https` only so ChessHurdles, which needs TLS for its Maia worker, is unaffected by the same shared file.
+>
+> **Footgun learned the hard way:** a stale, gitignored `stzUser/test/constants.js` (an old compiled copy) will silently shadow `constants.ts` in module resolution, leaving `testBaseURL`/`testPort` undefined and every navigation failing with "Cannot navigate to invalid URL". It is invisible in `git status`. If baseURL ever reads as undefined, look for a stray `constants.js` first.
+
 ### How It Works
 - **Environment Validation**: Tests verify the server is running with `.env.test` environment variables
-- **Smart Server Detection**: Checks if a compatible test server is already running on `http://localhost:3000`
+- **Smart Server Detection**: Checks if a compatible test server is already running on `http://localhost:3019`
 - **Automatic Startup**: If no test-configured server is detected, starts one with `pnpx dotenv-cli -e .env.test -- pnpm dev`
 - **Environment Enforcement**: Prevents tests from running against servers without proper test environment
 - **Clean Shutdown**: Only stops servers it started, preserving your manual dev servers
@@ -92,7 +96,7 @@ PLAYWRIGHT_RUNNING=true
 ```
 
 ### Configuration
-The server management is handled by `server-check.ts` utilities:
+The server management is handled by `e2e/utils/e2e-services.ts` utilities:
 - **`ensureServerRunning()`** - Starts server with `.env.test` if needed
 - **`checkServerTestEnvironment()`** - Validates running servers use test environment
 - **`isPlaywrightRunning()`** - Simple detection based on `PLAYWRIGHT_RUNNING` environment variable
@@ -159,7 +163,7 @@ Development server management utilities with environment validation:
 ### `e2e/config/playwright.config.ts`
 Playwright configuration for multi-browser E2E testing:
 - **Browsers**: Chromium, Firefox, WebKit (configurable per test run)
-- **Base URL**: http://localhost:3000
+- **Base URL**: http://localhost:3019 (from `testConstants.testBaseURL`; see Server Management note above)
 - **Output**: Reports and artifacts in `src/test/e2e/.output/` directory
 - **Retries**: 2 retries on CI, 0 locally for faster development
 - **Global Setup**: Automated server checking and initialization via `global-setup.ts`

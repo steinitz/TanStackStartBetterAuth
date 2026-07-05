@@ -7,6 +7,59 @@ import { testConstants } from 'stzUser/test/constants';
 // must use the same database and secret as the dev server.
 loadDotenv({ path: '.env.test' });
 
+const requiredE2eEnvVars = [
+  'PLAYWRIGHT_RUNNING',
+  'BETTER_AUTH_SECRET',
+  'BETTER_AUTH_URL',
+  'BETTER_AUTH_BASE_URL',
+  'BETTER_AUTH_TRUSTED_ORIGINS',
+  'DATABASE_URL',
+  'PORT',
+  'TEST_BASE_PROTOCOL',
+  'SMTP_HOST',
+  'SMTP_PORT',
+  'SMTP_USERNAME',
+  'SMTP_PASSWORD',
+  'SMTP_FROM_ADDRESS',
+  'SMTP_FROM_NAME',
+  'SMTP_REPLY_TO_ADDRESS',
+  'SMTP_REPLY_TO_NAME',
+  'COMPANY_NAME',
+  'APP_NAME',
+  'SUPPORT_EMAIL_ADDRESS',
+  'TURNSTILE_SITE_KEY',
+  'TURNSTILE_SECRET_KEY',
+  'CREDIT_PRICE_AUD',
+  'MIN_CREDITS_PURCHASE',
+  'DAILY_GRANT_CREDITS',
+  'WELCOME_GRANT_CREDITS',
+  'DEFAULT_CREDITS_PURCHASE',
+  'BANK_TRANSFER_BSB',
+  'BANK_TRANSFER_ACC',
+  'IS_STRIPE_ENABLED',
+] as const;
+
+function validateE2eEnv() {
+  const missing = requiredE2eEnvVars.filter((name) => !process.env[name]);
+  const wrongValues = process.env.PLAYWRIGHT_RUNNING === 'true'
+    ? []
+    : ['PLAYWRIGHT_RUNNING=true'];
+
+  if (missing.length || wrongValues.length) {
+    const details = [
+      missing.length ? `Missing: ${missing.join(', ')}` : null,
+      wrongValues.length ? `Expected: ${wrongValues.join(', ')}` : null,
+    ].filter(Boolean).join('\n');
+
+    throw new Error(
+      `Invalid E2E environment. .env.test is the source of truth for Playwright runs.\n${details}\n` +
+      'Copy .env.test.example to .env.test and fill in the required local values.'
+    );
+  }
+}
+
+validateE2eEnv();
+
 // Email handling uses isPlaywrightRunning() detection instead of NODE_ENV=test
 
 /**

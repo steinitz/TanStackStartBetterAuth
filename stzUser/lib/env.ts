@@ -61,7 +61,8 @@ if (isServer()) {
     // Only attempt to load .env files if we're not in a managed production environment like Netlify
     if (!process.env.NETLIFY) {
       const mode = process.env.NODE_ENV || 'development';
-      dotenv.config({ path: `.env.${mode}` })
+      const envPath = process.env.PLAYWRIGHT_RUNNING === 'true' ? '.env.test' : `.env.${mode}`
+      dotenv.config({ path: envPath })
     }
   } catch (e) {
     console.warn('Failed to load .env file, continuing with existing process.env');

@@ -5,6 +5,15 @@ import { clientEnv } from '~stzUser/lib/env'
 import { useEffect, useState } from 'react'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
+import { PaymentForm, StripeReturnHandler } from '~stzUser/components/stripe/PaymentForm'
+
+// Stripe appends these to the return_url after an SCA/redirect payment. Parsed here so the return
+// path is router-idiomatic (no window.location reads → no SSR/hydration mismatch).
+type CreditsSearch = {
+  stripe_return?: '1'
+  payment_intent_client_secret?: string
+  redirect_status?: string
+}
 
 export const creditsStrings = {
   claimWelcomeGrant: 'Claim Welcome Grant',
@@ -27,26 +36,34 @@ function TransactionsPage() {
   const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null)
 
   const navigate = useNavigate()
+  const search = Route.useSearch()
+  // Capture the SCA-return intent once, at first render, so clearing the URL params later (below)
+  // does not unmount the return handler mid-poll.
+  const [stripeReturn] = useState(() => ({
+    isReturn: search.stripe_return === '1',
+    clientSecret: search.payment_intent_client_secret,
+  }))
 
   const bankDetailsRef = makeDialogRef()
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!session?.user) return
-      try {
-        const [transactionsData, statusData] = await Promise.all([
-          getTransactions(),
-          getWalletStatus()
-        ])
-        setTransactions(transactionsData || [])
-        setWalletStatus(statusData)
-      } catch (err) {
-        console.error('Failed to fetch data:', err)
-      } finally {
-        setIsLoading(false)
-      }
+  const refreshWalletData = async () => {
+    if (!session?.user) return
+    try {
+      const [transactionsData, statusData] = await Promise.all([
+        getTransactions(),
+        getWalletStatus()
+      ])
+      setTransactions(transactionsData || [])
+      setWalletStatus(statusData)
+    } catch (err) {
+      console.error('Failed to fetch data:', err)
+    } finally {
+      setIsLoading(false)
     }
-    fetchHistory()
+  }
+
+  useEffect(() => {
+    refreshWalletData()
   }, [session?.user?.id])
 
   const handleClaimGrant = async () => {
@@ -80,10 +97,10 @@ function TransactionsPage() {
   if (!session?.user) {
     return (
       <div style={{ padding: '4rem 2rem', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
-        <p style={{ fontSize: '1.2rem', marginBottom: '1.5rem', opacity: 0.9 }}>
+        <p style={{ marginBottom: '1.5rem' }}>
           Please sign in to add credits and view your transaction history.
         </p>
-        <Link to="/" style={{ textDecoration: 'underline' }}>Back to Home</Link>
+        <Link to="/">Back to Home</Link>
       </div>
     )
   }
@@ -99,7 +116,6 @@ function TransactionsPage() {
         border: '1px solid var(--color-bg-secondary)',
         padding: '2rem',
         borderRadius: '12px',
-        backgroundColor: 'var(--color-bg-alt)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0rem',
@@ -110,11 +126,19 @@ function TransactionsPage() {
         {/* Payment Section */}
         <div style={{ textAlign: 'left' }}>
           {clientEnv.IS_STRIPE_ENABLED ? (
-            <p>Stripe integration is coming soon</p>
+            stripeReturn.isReturn ? (
+              <StripeReturnHandler
+                clientSecret={stripeReturn.clientSecret}
+                onCreditsGranted={refreshWalletData}
+                onHandled={() => navigate({ to: '/auth/credits', search: {}, replace: true })}
+              />
+            ) : (
+              <PaymentForm onCreditsGranted={refreshWalletData} />
+            )
           ) : showBankSection ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <p style={{ margin: 0, opacity: 0.9 }}>
-                Purchase credits via manual bank transfer (<strong>AUD${clientEnv.CREDIT_PRICE_AUD.toFixed(3)}</strong> per credit).
+              <p style={{ margin: 0 }}>
+                Purchase credits via manual bank transfer (AUD${clientEnv.CREDIT_PRICE_AUD.toFixed(3)} per credit).
               </p>
 
               <div style={{
@@ -144,18 +168,14 @@ function TransactionsPage() {
                     />
                   </label>
 
-                  <span style={{ fontSize: '1.1rem', whiteSpace: 'nowrap' }}>
-                    Total Cost: <strong style={{ color: 'var(--color-primary)' }}>AUD${totalCost}</strong>
+                  <span>
+                    Total Cost: AUD${totalCost}
                   </span>
                 </div>
 
                 <button
                   onClick={handleRequestPurchase}
                   disabled={isRequesting || !purchaseAmount || purchaseAmount < clientEnv.MIN_CREDITS_PURCHASE}
-                  style={{
-                    whiteSpace: 'nowrap',
-                    padding: '0.6rem 1.2rem',
-                  }}
                 >
                   {isRequesting ? creditsStrings.requesting : creditsStrings.payViaBankTransfer}
                 </button>
@@ -190,8 +210,6 @@ function TransactionsPage() {
             onClick={handleClaimGrant}
             disabled={walletStatus?.welcomeClaimed || isRequesting}
             style={{
-              whiteSpace: 'nowrap',
-              padding: '0.6rem 1.2rem',
               minWidth: '180px',
               opacity: walletStatus?.welcomeClaimed ? 0.5 : 1,
               cursor: walletStatus?.welcomeClaimed ? 'not-allowed' : 'pointer'
@@ -201,7 +219,7 @@ function TransactionsPage() {
           </button>
         </div>
 
-        <p style={{ marginTop: '1rem', opacity: 0.7, fontSize: '0.85rem' }}>
+        <p style={{ marginTop: '1rem' }}>
           You{walletStatus?.welcomeClaimed ? '' : "'ll also"} receive an automatic <strong>{clientEnv.DAILY_GRANT_CREDITS} credit top-up</strong> on your first visit or action each day.
         </p>
       </section>
@@ -228,21 +246,19 @@ function TransactionsPage() {
             <tbody>
               {transactions.map((t) => (
                 <tr key={t.id} style={{ borderBottom: '1px solid var(--color-bg-secondary)' }}>
-                  <td style={{ padding: '0.5rem', fontSize: '0.85rem' }}>
+                  <td style={{ padding: '0.5rem' }}>
                     {new Date(t.created_at).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                  <td style={{ padding: '0.5rem', textTransform: 'capitalize' }}>
                     {t.type.replace('_', ' ')}
                   </td>
                   <td style={{
                     padding: '0.5rem',
-                    textAlign: 'right',
-                    fontWeight: 'bold',
-                    color: t.amount > 0 ? 'green' : 'inherit'
+                    textAlign: 'right'
                   }}>
                     {t.amount > 0 ? `+${t.amount}` : t.amount}
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.85rem' }}>{t.description}</td>
+                  <td style={{ padding: '0.5rem' }}>{t.description}</td>
                 </tr>
               ))}
             </tbody>
@@ -279,4 +295,10 @@ function TransactionsPage() {
 
 export const Route = createFileRoute('/auth/credits')({
   component: TransactionsPage,
+  validateSearch: (search: Record<string, unknown>): CreditsSearch => ({
+    stripe_return: search.stripe_return === '1' ? '1' : undefined,
+    payment_intent_client_secret:
+      typeof search.payment_intent_client_secret === 'string' ? search.payment_intent_client_secret : undefined,
+    redirect_status: typeof search.redirect_status === 'string' ? search.redirect_status : undefined,
+  }),
 })

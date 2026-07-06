@@ -4,7 +4,7 @@ import { clientEnv } from '~stzUser/lib/env';
 import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits';
 
 test.describe('Credits Flow', () => {
-  test('should allow claiming welcome grant and requesting bank transfer', async ({ page }) => {
+  test('should allow claiming welcome grant and show the active purchase path', async ({ page }) => {
     // 1. Create a verified user and inject session — no signup UI, no Mailpit
     const { email: uniqueEmail } = await createAuthenticatedUser(page, { name: 'Credits Tester' });
     await page.goto('/');
@@ -37,17 +37,21 @@ test.describe('Credits Flow', () => {
     // Verify balance updated
     await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + clientEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
 
-    // 5. Request Bank Transfer
-    const requestButton = page.getByRole('button', { name: creditsSelectors.payViaBankTransferButton });
-    await expect(requestButton).toBeVisible();
-    await requestButton.click();
+    // 5. Verify the configured purchase path is available
+    if (clientEnv.IS_STRIPE_ENABLED) {
+      await expect(page.getByRole('button', { name: creditsSelectors.payWithCardButton })).toBeVisible();
+    } else {
+      const requestButton = page.getByRole('button', { name: creditsSelectors.payViaBankTransferButton });
+      await expect(requestButton).toBeVisible();
+      await requestButton.click();
 
-    // Verify instructions dialog appears
-    await expect(page.locator('h2', { hasText: 'Bank Transfer Instructions' })).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('strong', { hasText: 'BSB:' })).toBeVisible();
-    // Close dialog
-    await page.getByRole('button', { name: 'Got it' }).click();
-    await expect(page.locator('h2', { hasText: 'Bank Transfer Instructions' })).not.toBeVisible();
+      // Verify instructions dialog appears
+      await expect(page.locator('h2', { hasText: 'Bank Transfer Instructions' })).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('strong', { hasText: 'BSB:' })).toBeVisible();
+      // Close dialog
+      await page.getByRole('button', { name: 'Got it' }).click();
+      await expect(page.locator('h2', { hasText: 'Bank Transfer Instructions' })).not.toBeVisible();
+    }
   });
 
   test('should navigate from Credits Required dialog to credits page', async ({ page }) => {

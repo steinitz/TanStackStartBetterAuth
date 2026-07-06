@@ -8,9 +8,15 @@ export const creditsStrings = {
   welcomeGrantClaimedAlert: 'Welcome grant claimed! 🎁',
   payViaBankTransfer: 'Pay via Bank Transfer',
   requesting: 'Requesting...',
+  // Stripe card-purchase UI (Step 4). Consumed by PaymentForm.tsx and the e2e spec.
+  payWithCard: 'Pay with Card',
+  startingPayment: 'Starting…',
+  changeAmount: 'Change amount',
+  provisioning: 'Payment confirmed! Provisioning your credits…',
 }
 
 export const creditsSelectors = {
   claimWelcomeGrantButton: creditsStrings.claimWelcomeGrant,
   payViaBankTransferButton: creditsStrings.payViaBankTransfer,
+  payWithCardButton: creditsStrings.payWithCard,
 }

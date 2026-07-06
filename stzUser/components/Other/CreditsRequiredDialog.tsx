@@ -26,19 +26,13 @@ export function CreditsRequiredDialog() {
       <p>You don't have enough credits for this action.</p>
       <div style={{
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         marginTop: '20px',
         gap: '10px'
       }}>
         <button
+          type="reset"
           onClick={() => dialogRef.current?.setIsOpen(false)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: 'transparent',
-            border: '1px solid var(--color-text)',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
         >
           Close
         </button>
@@ -46,14 +40,6 @@ export function CreditsRequiredDialog() {
           onClick={() => {
             navigate({ to: '/auth/credits' })
             dialogRef.current?.setIsOpen(false)
-          }}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: 'var(--color-primary, #007bff)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
           }}
         >
           Get More Credits

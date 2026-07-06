@@ -43,6 +43,16 @@ export const Header = () => {
         Other
       </Link>
       <Spacer orientation={'horizontal'} space={1} />
+      <Link
+        to="/legal/pricing"
+        style={navLinkStyle}
+        activeProps={{
+          style: { ...navLinkStyle, ...activeLinkStyle }
+        }}
+      >
+        Pricing
+      </Link>
+      <Spacer orientation={'horizontal'} space={1} />
       <UserBlock />
     </section>
   )

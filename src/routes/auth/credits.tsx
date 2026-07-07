@@ -254,7 +254,8 @@ function TransactionsPage() {
                   </td>
                   <td style={{
                     padding: '0.5rem',
-                    textAlign: 'right'
+                    textAlign: 'right',
+                    color: t.amount > 0 ? 'var(--color-success)' : 'inherit'
                   }}>
                     {t.amount > 0 ? `+${t.amount}` : t.amount}
                   </td>

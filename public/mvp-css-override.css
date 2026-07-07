@@ -1,12 +1,16 @@
 :root {
   --color-error: darkred;
+  --color-success: #008000;
+  /* Dark green */
 }
 
 @media (prefers-color-scheme: dark) {
   :root[color-mode="user"] {
     --color-bg: #222;
     /* darker background for better readability */
-    --color-error: red
+    --color-error: red;
+    --color-success: #32cd32;
+    /* Lime green */
   }
 
   input,

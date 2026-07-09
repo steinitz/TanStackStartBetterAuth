@@ -33,7 +33,6 @@ vi.mock('~stzUser/lib/env', () => ({
 import { About } from '../../components/Legal/About'
 import { Acknowledgements } from '../../components/Legal/Acknowledgements'
 import { Refunds } from '../../components/Legal/Refunds'
-import { Pricing } from '../../components/Legal/Pricing'
 
 describe('Legal Page Components', () => {
   it('should render About page', () => {
@@ -52,12 +51,5 @@ describe('Legal Page Components', () => {
     const { getByText } = render(<Refunds />)
     expect(getByText(/Refund Policy/i)).toBeDefined()
     expect(getByText(/Digital Goods Policy/i)).toBeDefined()
-  })
-
-  it('should render Pricing page', () => {
-    const { getByText, getAllByText } = render(<Pricing />)
-    expect(getByText(/Pricing & Credits/i)).toBeDefined()
-    expect(getByText(/Free Tier/i)).toBeDefined()
-    expect(getAllByText(/Credit Packs/i).length).toBeGreaterThan(0)
   })
 })

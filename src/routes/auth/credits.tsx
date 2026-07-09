@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
 import { PaymentForm, StripeReturnHandler } from '~stzUser/components/stripe/PaymentForm'
+import { useGoBack } from '~stzUser/lib/useGoBack'
 
 // Stripe appends these to the return_url after an SCA/redirect payment. Parsed here so the return
 // path is router-idiomatic (no window.location reads → no SSR/hydration mismatch).
@@ -36,6 +37,7 @@ function TransactionsPage() {
   const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null)
 
   const navigate = useNavigate()
+  const goBack = useGoBack()
   const search = Route.useSearch()
   // Capture the SCA-return intent once, at first render, so clearing the URL params later (below)
   // does not unmount the return handler mid-poll.
@@ -289,7 +291,9 @@ function TransactionsPage() {
       </Dialog>
 
       <Spacer orientation="vertical" />
-      <Link to="/">Back to Home</Link>
+      {/* Exit the credits flow: back to where they came from if in-app, else Home (useGoBack). Handy
+          after scrolling a long ledger. Imperative onClick, so it's an <a> not a declarative <Link>. */}
+      <a onClick={goBack} style={{ cursor: 'pointer' }}>Exit</a>
     </div>
   )
 }

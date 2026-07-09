@@ -11,7 +11,6 @@ export const creditsStrings = {
   // Stripe card-purchase UI (Step 4). Consumed by PaymentForm.tsx and the e2e spec.
   payWithCard: 'Pay with Card',
   startingPayment: 'Starting…',
-  changeAmount: 'Change amount',
   provisioning: 'Payment confirmed! Provisioning your credits…',
 }
 

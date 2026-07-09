@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
+import { AppleButtonGroup } from '~stzUtils/components/AppleButtonGroup'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
 
 export function CreditsRequiredDialog() {
@@ -22,28 +23,22 @@ export function CreditsRequiredDialog() {
 
   return (
     <Dialog ref={dialogRef}>
-      <h3 style={{ marginTop: 0 }}>Credits Required</h3>
-      <p>You don't have enough credits for this action.</p>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginTop: '20px',
-        gap: '10px'
-      }}>
-        <button
-          type="reset"
-          onClick={() => dialogRef.current?.setIsOpen(false)}
-        >
-          Close
-        </button>
-        <button
-          onClick={() => {
-            navigate({ to: '/auth/credits' })
-            dialogRef.current?.setIsOpen(false)
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <h3 style={{ margin: 0 }}>Credits Required</h3>
+        <p style={{ margin: 0 }}>You don't have enough credits for this action.</p>
+        <AppleButtonGroup
+          alternativeButton={{
+            label: 'Close',
+            onClick: () => dialogRef.current?.setIsOpen(false),
           }}
-        >
-          Get More Credits
-        </button>
+          defaultButton={{
+            label: 'Get More Credits',
+            onClick: () => {
+              navigate({ to: '/auth/credits' })
+              dialogRef.current?.setIsOpen(false)
+            },
+          }}
+        />
       </div>
     </Dialog>
   )

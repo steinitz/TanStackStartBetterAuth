@@ -20,7 +20,10 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 import { useState } from 'react'
 import { clientEnv } from '~stzUser/lib/env'
 import { createStripePaymentIntent, checkPurchase } from '~stzUser/lib/wallet'
+import { useGoBack } from '~stzUser/lib/useGoBack'
 import { creditsStrings } from '~stzUser/components/RouteComponents/Credits'
+import { isDarkMode } from '~stzUtils/components/styles'
+import { AppleButtonGroup } from '~stzUtils/components/AppleButtonGroup'
 
 // Provisioning poll cadence (plan Step 4): the webhook normally lands in 1–3s; poll gently, cap at
 // 20s, and treat a timeout as reassuring (the charge succeeded — only the grant is lagging), never
@@ -53,7 +56,8 @@ function readStripeAppearance(): Appearance {
     const value = cs.getPropertyValue(cssVar).trim()
     if (value) variables[stripeVar] = value
   }
-  return { theme: 'stripe', variables: variables as Appearance['variables'] }
+  const dark = isDarkMode()
+  return { theme: dark ? 'night' : 'stripe', variables: variables as Appearance['variables'] }
 }
 
 // Poll the server until the webhook has granted this purchase, or the cap elapses. checkPurchase is
@@ -108,9 +112,11 @@ function ProvisionalView({ state }: { state: Provisional }) {
 function CheckoutForm({
   amountLabel,
   onPaid,
+  onCancel,
 }: {
   amountLabel: string
   onPaid: (paymentIntentId: string) => void
+  onCancel: () => void
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -143,9 +149,18 @@ function CheckoutForm({
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <PaymentElement />
       {error && <p style={{ margin: 0, color: 'var(--color-error)' }}>{error}</p>}
-      <button type="submit" disabled={!stripe || submitting}>
-        {submitting ? 'Processing…' : `Pay ${amountLabel}`}
-      </button>
+      <AppleButtonGroup
+        alternativeButton={{
+          label: 'Cancel',
+          onClick: onCancel,
+          disabled: submitting,
+        }}
+        defaultButton={{
+          label: submitting ? 'Processing…' : `Pay ${amountLabel}`,
+          type: 'submit',
+          disabled: !stripe || submitting,
+        }}
+      />
     </form>
   )
 }
@@ -160,6 +175,7 @@ type Phase =
 export function PaymentForm({ onCreditsGranted }: { onCreditsGranted?: () => void }) {
   const [creditsRequested, setCreditsRequested] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [phase, setPhase] = useState<Phase>({ name: 'idle' })
+  const goBack = useGoBack()
 
   if (!clientEnv.STRIPE_PUBLISHABLE_KEY) {
     return <p>Card payments are momentarily unavailable.</p>
@@ -201,17 +217,13 @@ export function PaymentForm({ onCreditsGranted }: { onCreditsGranted?: () => voi
 
   if (phase.name === 'collecting') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <Elements stripe={getStripePromise()} options={{ clientSecret: phase.clientSecret, appearance: phase.appearance }}>
-          <CheckoutForm amountLabel={`AUD$${totalCost}`} onPaid={handlePaid} />
-        </Elements>
-        <button
-          onClick={() => setPhase({ name: 'idle' })}
-          style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, textDecoration: 'underline', cursor: 'pointer' }}
-        >
-          {creditsStrings.changeAmount}
-        </button>
-      </div>
+      <Elements stripe={getStripePromise()} options={{ clientSecret: phase.clientSecret, appearance: phase.appearance }}>
+        <CheckoutForm
+          amountLabel={`AUD$${totalCost}`}
+          onPaid={handlePaid}
+          onCancel={() => setPhase({ name: 'idle' })}
+        />
+      </Elements>
     )
   }
 
@@ -226,31 +238,36 @@ export function PaymentForm({ onCreditsGranted }: { onCreditsGranted?: () => voi
         Purchase credits by card (AUD${clientEnv.CREDIT_PRICE_AUD.toFixed(3)} per credit).
       </p>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', margin: 0, lineHeight: 'normal' }}>
-            Credits:
-            <input
-              type="number"
-              min={clientEnv.MIN_CREDITS_PURCHASE}
-              value={creditsRequested}
-              onChange={(e) => setCreditsRequested(e.target.value === '' ? '' : Number(e.target.value))}
-              style={{ width: '3.5rem', minWidth: 0, margin: 0, textAlign: 'right' }}
-            />
-          </label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', margin: 0, lineHeight: 'normal' }}>
+          Credits:
+          <input
+            type="number"
+            min={clientEnv.MIN_CREDITS_PURCHASE}
+            value={creditsRequested}
+            onChange={(e) => setCreditsRequested(e.target.value === '' ? '' : Number(e.target.value))}
+            style={{ width: '3.5rem', minWidth: 0, margin: 0, textAlign: 'right' }}
+          />
+        </label>
 
-          <span>
-            Total Cost: AUD${totalCost}
-          </span>
-        </div>
-
-        <button
-          onClick={handleCreateIntent}
-          disabled={phase.name === 'creating' || belowMin}
-        >
-          {phase.name === 'creating' ? creditsStrings.startingPayment : creditsStrings.payWithCard}
-        </button>
+        <span>
+          Total Cost: AUD${totalCost}
+        </span>
       </div>
+
+      <AppleButtonGroup
+        alternativeButton={{
+          // Always enabled: no charge exists yet at the quantity step, so the escape is never trapped
+          // (unlike the card step, where a payment may be in flight).
+          label: 'Cancel',
+          onClick: goBack,
+        }}
+        defaultButton={{
+          label: phase.name === 'creating' ? creditsStrings.startingPayment : creditsStrings.payWithCard,
+          onClick: handleCreateIntent,
+          disabled: phase.name === 'creating' || belowMin,
+        }}
+      />
     </div>
   )
 }

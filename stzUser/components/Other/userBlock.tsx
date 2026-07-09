@@ -22,6 +22,7 @@ export const navLinkStyle = {
   overflow: 'hidden',
   display: 'flex',
   alignItems: 'center',
+  color: 'var(--color-link)',
 }
 
 export function UserBlock() {

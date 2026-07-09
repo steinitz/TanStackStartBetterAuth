@@ -5,7 +5,7 @@ interface SpacerProps {
 
 export const Spacer = (props: SpacerProps) => {
   const { space = 1.5, orientation = 'vertical' } = props
-  
+
   return orientation === 'vertical' ? (
     <hr
       style={{

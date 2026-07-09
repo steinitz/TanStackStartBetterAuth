@@ -21,9 +21,27 @@
   }
 }
 
+/* Keep links (incl. visited) on the normal link colour. Base mvp.css paints
+   `article aside a` with --color-secondary (hot pink #e20de9 in dark mode); this
+   overrides that back to --color-link. Mirrors the ChessHurdles override. */
+a,
+a:visited {
+  color: var(--color-link);
+  text-decoration-color: var(--color-link);
+}
+
 button[type="reset"] {
   background-color: var(--color-text-secondary);
   /* rgb(110, 152, 178);*/
+  border-color: var(--color-text-secondary);
+}
+
+/* Muted-grey secondary, form-safe. Same look as button[type="reset"] but without
+   the reset semantics, so it can live inside a <form>. Used by AppleButtonGroup's
+   alternative button. Kept as its own rule (not comma-joined with reset) so the two
+   can diverge freely. */
+button.buttonSecondary {
+  background-color: var(--color-text-secondary);
   border-color: var(--color-text-secondary);
 }
 

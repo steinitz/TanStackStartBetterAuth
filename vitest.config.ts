@@ -6,11 +6,19 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
     environment: 'jsdom',
-    // Integration tests share one on-disk libSQL file (sqlite.db). SQLite is single-writer, so
+    // Integration tests share one on-disk libSQL file. SQLite is single-writer, so
     // running test *files* in parallel causes SQLITE_BUSY. Serialize files. Note: the per-file
     // `describe.sequential` only orders tests *within* a file — it does NOT prevent cross-file
     // contention, so this flag is the actual guard.
     fileParallelism: false,
+    /* Inject the DB path before any module initializes. database.ts reads process.env.DATABASE_URL
+       and creates its client at module load time, so setting it here is the only thing that lands
+       in time — the dotenv call in setupFiles runs too late, after the client is already built,
+       which silently left unit tests writing to the dev database via database.ts's
+       `url || "file:sqlite.db"` fallback. */
+    env: {
+      DATABASE_URL: 'file:stzUser/test/test-unit.db',
+    },
     setupFiles: ['./stzUser/test/unit/setup.ts'],
     globals: true, // Re-enable globals for jest-dom compatibility
     watch: false,

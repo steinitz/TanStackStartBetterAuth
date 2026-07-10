@@ -68,6 +68,11 @@ local.db
 local.db-shm
 local.db-wal
 
+# Test databases. The e2e one is created at the repo root by global-setup and
+# normally removed by global-teardown; an interrupted run strands it here.
+test-e2e.db*
+stzUser/test/test-unit.db*
+
 # Development notes
 ToDo.md
 BuilderSuggestions.md

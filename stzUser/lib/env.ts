@@ -32,7 +32,7 @@ export type ClientEnv = {
   SMTP_FROM_ADDRESS: string | undefined
   SUPPORT_EMAIL_ADDRESS: string | undefined
   COMPANY_NAME: string
-  BETTER_AUTH_BASE_URL: string
+  BETTER_AUTH_URL: string
   TURNSTILE_SITE_KEY: string
   // Support & Compliance
   CONTACT_EMAIL: string | undefined
@@ -76,9 +76,7 @@ export const clientEnv: ClientEnv = isServer()
     SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS,
     SUPPORT_EMAIL_ADDRESS: process.env.SUPPORT_EMAIL_ADDRESS,
     COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',
-    BETTER_AUTH_BASE_URL:
-      process.env.BETTER_AUTH_URL ||
-      'http://localhost:3000',
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
     CONTACT_EMAIL: process.env.CONTACT_EMAIL || process.env.SUPPORT_EMAIL_ADDRESS,
     CONTACT_ADDRESS: process.env.CONTACT_ADDRESS,
@@ -96,33 +94,32 @@ export const clientEnv: ClientEnv = isServer()
     IS_STRIPE_ENABLED: process.env.IS_STRIPE_ENABLED === 'true', // master kill-switch, env-driven (Step 0)
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
   }
-  : (typeof window !== 'undefined' && window.__ENV)
-    ? window.__ENV
-    : {
-      APP_NAME: 'TanStack Start with Better Auth',
-      SMTP_FROM_ADDRESS: undefined,
-      SUPPORT_EMAIL_ADDRESS: undefined,
-      COMPANY_NAME: 'Your Company',
-      BETTER_AUTH_BASE_URL: (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
-      TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
-      CONTACT_EMAIL: undefined,
-      CONTACT_ADDRESS: undefined,
-      REFUND_POLICY_URL: '/legal/refunds',
-      COPYRIGHT_START_YEAR: new Date().getFullYear().toString(),
-      SUPPORT_LINK_TEXT: 'Contact our Support Team',
-      SUPPORT_LINK_URL: '/contact',
-      BANK_TRANSFER_BSB: undefined,
-      BANK_TRANSFER_ACC: undefined,
-      CREDIT_PRICE_AUD: 0.001,
-      MIN_CREDITS_PURCHASE: 10,
-      DAILY_GRANT_CREDITS: 100,
-      WELCOME_GRANT_CREDITS: 500,
-      DEFAULT_CREDITS_PURCHASE: 5000,
-      IS_STRIPE_ENABLED: false,
-      STRIPE_PUBLISHABLE_KEY: undefined, // real value arrives via window.__ENV injection (Correction 2)
-      // Merge with window.__ENV if available to override defaults
-      ...(typeof window !== 'undefined' ? (window.__ENV || {}) : {})
-    }
+  : {
+    // Default Fallbacks
+    APP_NAME: 'TanStack Start with Better Auth',
+    SMTP_FROM_ADDRESS: undefined,
+    SUPPORT_EMAIL_ADDRESS: undefined,
+    COMPANY_NAME: 'Your Company',
+    BETTER_AUTH_URL: 'http://localhost:3000',
+    TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
+    CONTACT_EMAIL: undefined,
+    CONTACT_ADDRESS: undefined,
+    REFUND_POLICY_URL: '/legal/refunds',
+    COPYRIGHT_START_YEAR: new Date().getFullYear().toString(),
+    SUPPORT_LINK_TEXT: 'Contact our Support Team',
+    SUPPORT_LINK_URL: '/contact',
+    BANK_TRANSFER_BSB: undefined,
+    BANK_TRANSFER_ACC: undefined,
+    CREDIT_PRICE_AUD: 0.001,
+    MIN_CREDITS_PURCHASE: 10,
+    DAILY_GRANT_CREDITS: 100,
+    WELCOME_GRANT_CREDITS: 500,
+    DEFAULT_CREDITS_PURCHASE: 5000,
+    IS_STRIPE_ENABLED: false,
+    STRIPE_PUBLISHABLE_KEY: undefined, // real value arrives via window.__ENV injection (Correction 2)
+    // Merge with window.__ENV if available to override defaults
+    ...(typeof window !== 'undefined' ? (window.__ENV || {}) : {})
+  }
 
 // console.log({clientEnv});
 

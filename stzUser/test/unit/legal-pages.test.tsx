@@ -19,16 +19,20 @@ vi.mock('~stzUser/lib/auth-client', () => ({
   useSession: () => ({ data: { user: { id: 'test-user', email: 'test@example.com' } } }),
 }))
 
-vi.mock('~stzUser/lib/env', () => ({
-  clientEnv: {
+vi.mock('~stzUser/lib/env', () => {
+  const clientEnv = {
     APP_NAME: 'Test App',
     COMPANY_NAME: 'Test Company',
     COPYRIGHT_START_YEAR: '2020',
     SUPPORT_LINK_TEXT: 'Contact our Support Team',
     SUPPORT_LINK_URL: '/contact',
     REFUND_POLICY_URL: '/legal/refunds',
-  },
-}))
+  }
+  return {
+    clientEnv,
+    computeClientEnv: () => clientEnv,
+  }
+})
 
 import { About } from '../../components/Legal/About'
 import { Acknowledgements } from '../../components/Legal/Acknowledgements'

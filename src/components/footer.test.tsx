@@ -18,18 +18,22 @@ vi.mock('~stzUser/lib/auth-client', () => ({
 }))
 
 // Mock env.ts with all required exports
-vi.mock('~stzUser/lib/env', () => ({
-  isServer: () => true,
-  getEnvVar: (name: string) => name,
-  clientEnv: {
+vi.mock('~stzUser/lib/env', () => {
+  const clientEnv = {
     APP_NAME: 'Test App',
     COMPANY_NAME: 'Test Company',
     COPYRIGHT_START_YEAR: '2024',
     SUPPORT_LINK_TEXT: 'Contact our Support Team',
     SUPPORT_LINK_URL: '/contact',
     REFUND_POLICY_URL: '/legal/refunds',
-  },
-}))
+  }
+  return {
+    isServer: () => true,
+    getEnvVar: (name: string) => name,
+    clientEnv,
+    computeClientEnv: () => clientEnv,
+  }
+})
 
 import { clientEnv } from '~stzUser/lib/env'
 import { useSession } from '~stzUser/lib/auth-client'

@@ -25,14 +25,17 @@ import { randomUUID } from 'node:crypto'
 
 vi.mock('../../lib/env', async (importActual) => {
   const actual = await importActual<typeof import('../../lib/env')>()
+  const clientEnv = {
+    ...actual.clientEnv,
+    IS_STRIPE_ENABLED: true, // force the master kill-switch on for this manual run
+    MIN_CREDITS_PURCHASE: 10, // pin the guards deterministically, independent of .env.test
+    CREDIT_PRICE_AUD: 0.001, // 5000 credits → $5.00 AUD → 500 cents, safely above the min floor
+  }
   return {
     ...actual, // keep the real getEnvVar/getOptionalEnvVar — they read process.env at call time
-    clientEnv: {
-      ...actual.clientEnv,
-      IS_STRIPE_ENABLED: true, // force the master kill-switch on for this manual run
-      MIN_CREDITS_PURCHASE: 10, // pin the guards deterministically, independent of .env.test
-      CREDIT_PRICE_AUD: 0.001, // 5000 credits → $5.00 AUD → 500 cents, safely above the min floor
-    },
+    clientEnv,
+    // computeClientEnv would otherwise recompute from process.env and bypass the overrides above
+    computeClientEnv: () => clientEnv,
   }
 })
 

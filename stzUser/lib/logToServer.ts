@@ -14,6 +14,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import * as v from 'valibot';
 import { sendEmail, getEmailEnvironmentVars } from '~stzUser/lib/mail-utilities';
 import { clientEnv } from '~stzUser/lib/env';
+import { getDeviceType } from '~stzUtils/lib/getDeviceType';
 
 // Throttle constants — tune by editing.
 const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes per-key cooldown
@@ -33,6 +34,11 @@ export const LogSchema = v.object({
   message: v.string(),
   context: v.optional(v.record(v.string(), v.unknown())),
   notify: v.optional(v.boolean()),
+  // The real device type. The logToServer wrapper stamps this on every call (getDeviceType), so it
+  // rides in like a field but is never set by callers — unlike userAgent, which the transport reads
+  // server-side. The iPad-unmasking signals (touch, iOS APIs) live only in the browser, so this one
+  // can't be read from headers; the client-side wrapper has to hand it over.
+  device: v.optional(v.string()),
 });
 
 // What the core logs. The client door builds one from LogSchema plus the captured User-Agent;
@@ -48,6 +54,8 @@ export type LogEvent = {
   source?: 'Client' | 'Server';
   // The calling browser's User-Agent, captured by the door. Server callers omit it.
   userAgent?: string;
+  // The real device type the client sent (getDeviceType) — names the machine the UA masquerade hides.
+  device?: string;
 };
 
 /** Check whether a message passes both throttle layers. Returns true if the email should be sent. */
@@ -113,11 +121,14 @@ async function sendNotifyEmail(event: LogEvent): Promise<void> {
       // Deployment label rides in the subject so the source is clear at a glance in the inbox.
       subject: `[${clientEnv.APP_NAME} · ${source.label}] ${event.message}`,
       text: [
-        `Source: ${source.label} (${source.url})`,
-        `Level: ${event.level}`,
+        // Device leads (the question we actually ask); the raw UA is demoted to a forensic line at
+        // the bottom — it's the only carrier of browser+version, but no longer the device answer.
         `Message: ${event.message}`,
-        event.userAgent ? `User-Agent: ${event.userAgent}` : null,
+        event.device ? `Device: ${event.device}` : null,
+        `Level: ${event.level}`,
+        `Source: ${source.label} (${source.url})`,
         event.context ? `Context: ${JSON.stringify(event.context)}` : null,
+        event.userAgent ? `User-Agent: ${event.userAgent}` : null,
         `Timestamp: ${new Date().toISOString()}`,
       ].filter(Boolean).join('\n'),
     },
@@ -135,6 +146,7 @@ async function sendNotifyEmail(event: LogEvent): Promise<void> {
 export async function logWithThrottledNotification(event: LogEvent): Promise<void> {
   const tag = `[${event.source ?? 'Client'} ${event.level.toUpperCase()}]`;
   const ctx = event.context ? ' ' + JSON.stringify(event.context) : '';
+  // device is deliberately email-only — it would just repeat on every high-frequency console log.
   const ua = event.userAgent ? ` [UA: ${event.userAgent}]` : '';
   console[event.level](`${tag} ${event.message}${ctx}${ua}`);
 
@@ -152,14 +164,25 @@ export async function logWithThrottledNotification(event: LogEvent): Promise<voi
 }
 
 /**
- * The client's door to the core: browser telemetry over an HTTP POST. Captures the calling browser's
- * User-Agent from the request headers — so alerts can name the device — and delegates to
- * logWithThrottledNotification, stamping 'Client'. The client's opt-IN `notify` is inverted here into
- * the core's opt-OUT `suppressNotification`, so browser telemetry stays quiet unless a caller asks.
+ * The HTTP transport for client telemetry — private on purpose: everything goes through the
+ * logToServer wrapper below, which stamps the device. Captures the calling browser's User-Agent from
+ * the request headers — the browser and version — and delegates to logWithThrottledNotification,
+ * stamping 'Client'. The client's opt-IN `notify` is inverted here into the core's opt-OUT
+ * `suppressNotification`, so browser telemetry stays quiet unless a caller asks.
  */
-export const logToServer = createServerFn({ method: 'POST' })
+const logToServerRpc = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(LogSchema, data))
   .handler(async ({ data }) => {
     const userAgent = getRequest()?.headers?.get('user-agent') ?? undefined;
     await logWithThrottledNotification({ ...data, suppressNotification: !data.notify, source: 'Client', userAgent });
   });
+
+/**
+ * The client's door to server telemetry — what every caller uses. Stamps the real device type
+ * client-side (getDeviceType, where navigator lives) and forwards to the transport, so device rides
+ * every alert automatically: no caller has to remember it, mirroring how the transport captures the
+ * User-Agent server-side. `device` is owned here, so callers pass everything else and never set it.
+ */
+export function logToServer(opts: { data: Omit<v.InferInput<typeof LogSchema>, 'device'> }) {
+  return logToServerRpc({ data: { ...opts.data, device: getDeviceType() } });
+}

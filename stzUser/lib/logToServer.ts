@@ -1,8 +1,16 @@
-// Server-side telemetry: logs client events to the server console.
-// Fire-and-forget from the client — no await needed, no UI impact.
-// In production, output appears in whatever captures stdout/stderr.
+// Server-side telemetry, in two pieces:
+//   logWithThrottledNotification() — the notification core: logs an event to the server console and,
+//                 unless `suppressNotification` is set, sends a throttled alert email. Callable
+//                 directly from server code. Notifying is the default because that email is the only
+//                 thing the core offers over a plain console.log, so calling it is itself the request
+//                 to be notified.
+//   logToServer — the client's door to it: a createServerFn that captures the calling browser's
+//                 User-Agent from the request and delegates to the core. Fire-and-forget from the
+//                 client (no await, no UI impact). In production, console output goes to whatever
+//                 captures stdout/stderr.
 
 import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import * as v from 'valibot';
 import { sendEmail, getEmailEnvironmentVars } from '~stzUser/lib/mail-utilities';
 import { clientEnv } from '~stzUser/lib/env';
@@ -16,17 +24,31 @@ const HOUR_MS = 60 * 60 * 1000;
 const notifyCooldowns = new Map<string, number>();
 const hourlyEmailTimestamps: number[] = [];
 
+// The client door's input. `notify` stays opt-IN here — the ~20 browser callers are quiet by default
+// and only a few ask to be emailed — and the door inverts it into the core's opt-OUT
+// `suppressNotification`. No `source`: the door always stamps 'Client'; server callers reach the core
+// directly and stamp 'Server' themselves, so the tag never lies about origin.
 export const LogSchema = v.object({
   level: v.picklist(['error', 'warn', 'info']),
   message: v.string(),
   context: v.optional(v.record(v.string(), v.unknown())),
   notify: v.optional(v.boolean()),
-  // Origin label for the console tag: 'Client' (browser telemetry, the default) vs 'Server'
-  // (server-originated alerts, e.g. the Stripe webhook). This fn began as client-only telemetry, so
-  // an unset source keeps the historical '[Client …]' tag; server callers pass 'Server' so the tag
-  // doesn't lie about where the log came from.
-  source: v.optional(v.string()),
 });
+
+// What the core logs. The client door builds one from LogSchema plus the captured User-Agent;
+// server callers construct one directly.
+export type LogEvent = {
+  level: 'error' | 'warn' | 'info';
+  message: string;
+  context?: Record<string, unknown>;
+  // Opt OUT of the notification email. The default is to send it: the email is the whole reason to
+  // call the core rather than console.log, so notifying is the sensible default and silence is the ask.
+  suppressNotification?: boolean;
+  // Console origin tag: 'Client' (browser telemetry via the door, the default) vs 'Server'.
+  source?: 'Client' | 'Server';
+  // The calling browser's User-Agent, captured by the door. Server callers omit it.
+  userAgent?: string;
+};
 
 /** Check whether a message passes both throttle layers. Returns true if the email should be sent. */
 export function checkThrottle(message: string, now?: number): boolean {
@@ -81,7 +103,7 @@ export function deploymentSource(): { label: string; url: string } {
 }
 
 /** Send a plain-text notify email via the project's blessed sendEmail server fn. */
-async function sendNotifyEmail(data: { level: string; message: string; context?: Record<string, unknown> }): Promise<void> {
+async function sendNotifyEmail(event: LogEvent): Promise<void> {
   const env = await getEmailEnvironmentVars({ data: undefined });
   const source = deploymentSource();
   await sendEmail({
@@ -89,34 +111,55 @@ async function sendNotifyEmail(data: { level: string; message: string; context?:
       from: env.from,
       to: env.supportEmailAddress || env.from,
       // Deployment label rides in the subject so the source is clear at a glance in the inbox.
-      subject: `[${clientEnv.APP_NAME} · ${source.label}] ${data.message}`,
+      subject: `[${clientEnv.APP_NAME} · ${source.label}] ${event.message}`,
       text: [
         `Source: ${source.label} (${source.url})`,
-        `Level: ${data.level}`,
-        `Message: ${data.message}`,
-        data.context ? `Context: ${JSON.stringify(data.context)}` : null,
+        `Level: ${event.level}`,
+        `Message: ${event.message}`,
+        event.userAgent ? `User-Agent: ${event.userAgent}` : null,
+        event.context ? `Context: ${JSON.stringify(event.context)}` : null,
         `Timestamp: ${new Date().toISOString()}`,
       ].filter(Boolean).join('\n'),
     },
   });
 }
 
+/**
+ * The notification core: log an event to the server console and, unless `suppressNotification` is
+ * set, send a throttled alert email. Callable directly from server code with no HTTP boundary — the
+ * Stripe webhook fulfillment alert uses it this way. The client reaches it through logToServer below.
+ *
+ * Only the *notification* is throttled, not yet the log — the name says so on purpose. Throttling the
+ * log too would be a separate feature, not a quiet change to this one.
+ */
+export async function logWithThrottledNotification(event: LogEvent): Promise<void> {
+  const tag = `[${event.source ?? 'Client'} ${event.level.toUpperCase()}]`;
+  const ctx = event.context ? ' ' + JSON.stringify(event.context) : '';
+  const ua = event.userAgent ? ` [UA: ${event.userAgent}]` : '';
+  console[event.level](`${tag} ${event.message}${ctx}${ua}`);
+
+  if (event.suppressNotification) return;
+
+  const now = Date.now();
+  if (!checkThrottle(event.message, now)) return;
+
+  try {
+    await sendNotifyEmail(event);
+    recordNotifySent(event.message, now);
+  } catch (error) {
+    console.warn(`[logWithThrottledNotification] Failed to send notify email for "${event.message}":`, error);
+  }
+}
+
+/**
+ * The client's door to the core: browser telemetry over an HTTP POST. Captures the calling browser's
+ * User-Agent from the request headers — so alerts can name the device — and delegates to
+ * logWithThrottledNotification, stamping 'Client'. The client's opt-IN `notify` is inverted here into
+ * the core's opt-OUT `suppressNotification`, so browser telemetry stays quiet unless a caller asks.
+ */
 export const logToServer = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(LogSchema, data))
   .handler(async ({ data }) => {
-    const tag = `[${data.source ?? 'Client'} ${data.level.toUpperCase()}]`;
-    const ctx = data.context ? ' ' + JSON.stringify(data.context) : '';
-    console[data.level](`${tag} ${data.message}${ctx}`);
-
-    if (!data.notify) return;
-
-    const now = Date.now();
-    if (!checkThrottle(data.message, now)) return;
-
-    try {
-      await sendNotifyEmail(data);
-      recordNotifySent(data.message, now);
-    } catch (error) {
-      console.warn(`[logToServer] Failed to send notify email for "${data.message}":`, error);
-    }
+    const userAgent = getRequest()?.headers?.get('user-agent') ?? undefined;
+    await logWithThrottledNotification({ ...data, suppressNotification: !data.notify, source: 'Client', userAgent });
   });

@@ -2,31 +2,32 @@
  * @vitest-environment node
  *
  * Step 2 Chunk A gate — `notifyStripeFulfillmentFailure`. Two properties:
- *   - success path: it forwards a level:'error', notify:true structured alert through logToServer
- *   - own-throws path: if logToServer itself throws, the helper still resolves (never propagates),
+ *   - success path: it forwards a level:'error', source:'Server' structured alert through the shared
+ *     logWithThrottledNotification core, un-suppressed so the notification email will fire
+ *   - own-throws path: if the core itself throws, the helper still resolves (never propagates),
  *     so a broken mail rail can't flip the webhook's deliberate 200/500 posture (Codex P2).
  *
- * logToServer is mocked so no real email is attempted. (JetBrains "Move" won't rewrite this string
- * path — repoint by hand if the module moves. See memory: reference_jetbrains_vimock.)
+ * logWithThrottledNotification is mocked so no real email is attempted. (JetBrains "Move" won't
+ * rewrite this string path — repoint by hand if the module moves. See memory: reference_jetbrains_vimock.)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('~stzUser/lib/logToServer', () => ({
-  logToServer: vi.fn(),
+  logWithThrottledNotification: vi.fn(),
 }))
 
 import { notifyStripeFulfillmentFailure } from '~stzUser/lib/wallet.logic'
-import { logToServer } from '~stzUser/lib/logToServer'
+import { logWithThrottledNotification } from '~stzUser/lib/logToServer'
 
-const mockLogToServer = logToServer as unknown as ReturnType<typeof vi.fn>
+const mockNotify = logWithThrottledNotification as unknown as ReturnType<typeof vi.fn>
 
 describe('notifyStripeFulfillmentFailure', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('forwards a notify:true error alert carrying the failure context', async () => {
-    mockLogToServer.mockResolvedValueOnce(undefined)
+  it('forwards an un-suppressed error alert carrying the failure context', async () => {
+    mockNotify.mockResolvedValueOnce(undefined)
 
     await expect(
       notifyStripeFulfillmentFailure({
@@ -40,12 +41,15 @@ describe('notifyStripeFulfillmentFailure', () => {
       }),
     ).resolves.toBeUndefined()
 
-    expect(mockLogToServer).toHaveBeenCalledTimes(1)
-    const arg = mockLogToServer.mock.calls[0][0]
-    expect(arg.data.level).toBe('error')
-    expect(arg.data.notify).toBe(true)
-    expect(arg.data.message).toContain('amount mismatch')
-    expect(arg.data.context).toMatchObject({
+    expect(mockNotify).toHaveBeenCalledTimes(1)
+    // The core takes a plain event object — no createServerFn `{ data: … }` wrapper.
+    const arg = mockNotify.mock.calls[0][0]
+    expect(arg.level).toBe('error')
+    // Un-suppressed: server alerts want the email, so the flag is never set → the core sends it.
+    expect(arg.suppressNotification).toBeUndefined()
+    expect(arg.source).toBe('Server')
+    expect(arg.message).toContain('amount mismatch')
+    expect(arg.context).toMatchObject({
       eventId: 'evt_123',
       paymentIntentId: 'pi_123',
       userId: 'user_abc',
@@ -54,9 +58,9 @@ describe('notifyStripeFulfillmentFailure', () => {
     })
   })
 
-  it('never propagates when logToServer itself throws (posture stays intentional)', async () => {
+  it('never propagates when the core itself throws (posture stays intentional)', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    mockLogToServer.mockRejectedValueOnce(new Error('mail rail down'))
+    mockNotify.mockRejectedValueOnce(new Error('mail rail down'))
 
     await expect(
       notifyStripeFulfillmentFailure({ reason: 'vanished user', paymentIntentId: 'pi_456' }),

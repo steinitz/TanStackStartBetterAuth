@@ -1,6 +1,6 @@
 import { db } from '~stzUser/lib/database'
 import { clientEnv } from '~stzUser/lib/env'
-import { logToServer } from '~stzUser/lib/logToServer'
+import { logWithThrottledNotification } from '~stzUser/lib/logToServer'
 
 export type WalletStatus = {
   credits: number
@@ -344,9 +344,10 @@ export async function grantPurchaseCredits(paymentIntent: PurchasePaymentIntent)
 
 /**
  * Alert-once helper for every permanent Stripe fulfillment failure (bad metadata, amount/currency
- * mismatch, vanished user). Structured log + best-effort email via the shared `logToServer` rail
- * (which already stamps deployment + subject, so the log is the durable record — no failure table
- * in v1). It **catches its own failure** so the webhook's deliberate 200/500 posture can never be
+ * mismatch, vanished user). Structured log + best-effort email via the shared `logWithThrottledNotification` core (the
+ * server-side notification rail; already stamps deployment + subject, so the log is the durable
+ * record — no failure table in v1). It **catches its own failure** so the webhook's 200/500 posture
+ * can never be
  * flipped by an alerting hiccup: if `SUPPORT_EMAIL_ADDRESS` is unset or the mail rail throws, we
  * still return, we don't propagate (Codex P2).
  */
@@ -360,25 +361,23 @@ export async function notifyStripeFulfillmentFailure(details: {
   metadata?: Record<string, unknown>
 }): Promise<void> {
   try {
-    await logToServer({
-      data: {
-        level: 'error',
-        source: 'Server',
-        message: `Stripe fulfillment failed: ${details.reason}`,
-        notify: true,
-        context: {
-          eventId: details.eventId,
-          paymentIntentId: details.paymentIntentId,
-          userId: details.userId,
-          amount: details.amount,
-          currency: details.currency,
-          metadata: details.metadata,
-        },
+    // No suppressNotification: this alert wants the email, which is the core's default.
+    await logWithThrottledNotification({
+      level: 'error',
+      source: 'Server',
+      message: `Stripe fulfillment failed: ${details.reason}`,
+      context: {
+        eventId: details.eventId,
+        paymentIntentId: details.paymentIntentId,
+        userId: details.userId,
+        amount: details.amount,
+        currency: details.currency,
+        metadata: details.metadata,
       },
     })
   } catch (error) {
-    // logToServer already swallows email-send errors; this guards everything else (the serverFn
-    // wrapper, validation) so alerting can never change the webhook's response posture.
+    // logWithThrottledNotification already swallows email-send errors; this guards everything else so alerting can
+    // never change the webhook's response posture.
     console.error(`[notifyStripeFulfillmentFailure] alerting failed for "${details.reason}":`, error)
   }
 }

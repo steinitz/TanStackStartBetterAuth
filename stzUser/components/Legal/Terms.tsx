@@ -5,7 +5,6 @@ export const Terms = () => {
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
       <h1>Terms of Service</h1>
-      <p><em>Last Updated: {new Date().toLocaleDateString()}</em></p>
 
       <section style={{ marginTop: '2rem' }}>
         <h3>Digital Goods Policy</h3>

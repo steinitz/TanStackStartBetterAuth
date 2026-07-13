@@ -54,6 +54,6 @@ describe('Legal Page Components', () => {
   it('should render Refunds page', () => {
     const { getByText } = render(<Refunds />)
     expect(getByText(/Refund Policy/i)).toBeDefined()
-    expect(getByText(/Digital Goods Policy/i)).toBeDefined()
+    expect(getByText(/Credit Refunds/i)).toBeDefined()
   })
 })

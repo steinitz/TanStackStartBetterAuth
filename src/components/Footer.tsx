@@ -11,6 +11,10 @@ import {
   TermsLink
 } from '~stzUser/components/Legal/Links'
 
+// Footer links blend with the footer's text colour rather than showing the
+// default link colour — the same look in light and dark themes.
+const footerLinkStyle = { color: 'var(--color-text)' }
+
 export const Footer = () => {
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === userRoles.admin
@@ -46,10 +50,10 @@ export const Footer = () => {
           fontSize: '0.85rem',
         }}>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <ContactLink />
-            <AboutLink />
+            <ContactLink style={footerLinkStyle} />
+            <AboutLink style={footerLinkStyle} />
           </div>
-          <AcknowledgementsLink />
+          <AcknowledgementsLink style={footerLinkStyle} />
         </div>
 
         {/* Row 2: Legal, Copyright, Admin */}
@@ -61,9 +65,9 @@ export const Footer = () => {
           opacity: 0.8,
         }}>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <TermsLink />
-            <RefundsLink />
-            <PrivacyLink />
+            <TermsLink style={footerLinkStyle} />
+            <RefundsLink style={footerLinkStyle} />
+            <PrivacyLink style={footerLinkStyle} />
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

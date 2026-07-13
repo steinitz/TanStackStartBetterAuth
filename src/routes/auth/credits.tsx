@@ -7,6 +7,7 @@ import { Spacer } from '~stzUtils/components/Spacer'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
 import { PaymentForm, StripeReturnHandler } from '~stzUser/components/stripe/PaymentForm'
 import { useGoBack } from '~stzUser/lib/useGoBack'
+import { creditsStrings } from '~stzUser/components/RouteComponents/Credits'
 
 // Stripe appends these to the return_url after an SCA/redirect payment. Parsed here so the return
 // path is router-idiomatic (no window.location reads → no SSR/hydration mismatch).
@@ -14,18 +15,6 @@ type CreditsSearch = {
   stripe_return?: '1'
   payment_intent_client_secret?: string
   redirect_status?: string
-}
-
-export const creditsStrings = {
-  claimWelcomeGrant: 'Claim Welcome Grant',
-  welcomeGrantClaimed: 'Welcome Grant Claimed',
-  payViaBankTransfer: 'Pay via Bank Transfer',
-  requesting: 'Requesting...',
-}
-
-export const creditsSelectors = {
-  claimWelcomeGrantButton: creditsStrings.claimWelcomeGrant,
-  payViaBankTransferButton: creditsStrings.payViaBankTransfer,
 }
 
 function TransactionsPage() {

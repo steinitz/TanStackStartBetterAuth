@@ -97,9 +97,6 @@ export async function ensureAdditionalTables(): Promise<void> {
       // Ignore if exists
     }
 
-    // 4. Drop legacy resource_usage table
-    await db.schema.dropTable('resource_usage').ifExists().execute();
-
     console.log('✅ Additional foundation tables are ready');
   } catch (error) {
     console.error('❌ Error ensuring additional tables:', error);

@@ -5,13 +5,13 @@
 export const creditsStrings = {
   claimWelcomeGrant: 'Claim Welcome Grant',
   welcomeGrantClaimed: 'Welcome Grant Claimed',
-  welcomeGrantClaimedAlert: 'Welcome grant claimed! 🎁',
+  welcomeGrantClaimedAlert: 'Welcome grant claimed. 🎁',
   payViaBankTransfer: 'Pay via Bank Transfer',
   requesting: 'Requesting...',
   // Stripe card-purchase UI (Step 4). Consumed by PaymentForm.tsx and the e2e spec.
   payWithCard: 'Pay with Card',
   startingPayment: 'Starting…',
-  provisioning: 'Payment confirmed! Provisioning your credits…',
+  provisioning: 'Payment confirmed. Provisioning your credits…',
 }
 
 export const creditsSelectors = {

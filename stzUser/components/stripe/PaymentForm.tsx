@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { clientEnv } from '~stzUser/lib/env'
 import { createStripePaymentIntent, checkPurchase } from '~stzUser/lib/wallet'
 import { useGoBack } from '~stzUser/lib/useGoBack'
+import { ContactLink } from '~stzUser/components/Legal/Links'
 import { creditsStrings } from '~stzUser/components/RouteComponents/Credits'
 import { isDarkMode } from '~stzUtils/components/styles'
 import { AppleButtonGroup } from '~stzUtils/components/AppleButtonGroup'
@@ -88,23 +89,48 @@ type Provisional =
   | { name: 'failed'; message: string }
 
 function ProvisionalView({ state }: { state: Provisional }) {
+  const goBack = useGoBack()
+
+  // Provisioning is in progress — no escape button, just the reassuring message.
+  if (state.name === 'provisioning') {
+    return <p style={{ margin: 0 }}>{creditsStrings.provisioning}</p>
+  }
+
+  // Every terminal state ends with a right-justified Exit so the user is never stranded
+  // (the page's own Exit link sits below a long ledger and is effectively never seen).
+  const exitRow = (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+      <button onClick={goBack}>Exit</button>
+    </div>
+  )
+
   switch (state.name) {
-    case 'provisioning':
-      return <p style={{ margin: 0 }}>{creditsStrings.provisioning}</p>
     case 'granted':
       return (
-        <p style={{ margin: 0, color: 'var(--color-text)' }}>
-          Success — {state.amount ? <strong>{state.amount} credits</strong> : 'your credits'} have been added.
-        </p>
+        <>
+          <p style={{ margin: 0, color: 'var(--color-text)' }}>
+            Success — {state.amount ? <strong>{state.amount} credits</strong> : 'your credits'} have been added.
+          </p>
+          {exitRow}
+        </>
       )
     case 'timeout':
       return (
-        <p style={{ margin: 0 }}>
-          Payment received — your credits are being added and will appear shortly. Contact support if they don’t.
-        </p>
+        <>
+          <p style={{ margin: 0 }}>
+            Payment received — your credits are being added and will appear shortly. <ContactLink /> if they don’t.
+          </p>
+          {exitRow}
+        </>
       )
     case 'failed':
-      return <p style={{ margin: 0, color: 'var(--color-error)' }}>{state.message}</p>
+      return (
+        <>
+          <p style={{ margin: 0, color: 'var(--color-error)' }}>{state.message}</p>
+          <p style={{ margin: '0.5rem 0 0' }}><ContactLink /> if this keeps happening.</p>
+          {exitRow}
+        </>
+      )
   }
 }
 

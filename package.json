@@ -5,12 +5,14 @@
   "main": "index.js",
   "type": "module",
   "config": {
-    "playwright": "dotenv -e .env.test -- playwright test --config=stzUser/test/e2e/config/playwright.config.ts"
+    "playwright": "playwright test --config=stzUser/test/e2e/config/playwright.config.ts"
   },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && echo '\nTo start the production server, use: pnpm start:prod'",
-    "start:prod": "node bootstrap.env.mjs",
+    "build:e2e": "vite build --mode e2e",
+    "serve:built": "cd dist/server && NODE_ENV=production srvx --prod -s ../client server.js",
+    "start:prod": "pnpm serve:built",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -63,6 +65,7 @@
     "dotenv": "^17.4.1",
     "dotenv-cli": "^10.0.0",
     "jsdom": "^26.1.0",
+    "srvx": "0.11.15",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"

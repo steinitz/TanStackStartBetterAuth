@@ -3,7 +3,7 @@ import { createVerifiedTestUser, getUserByEmail, isEmailVerified } from '~stzUse
 import { EmailTester } from '~stzUser/test/e2e/utils/EmailTester';
 import { testConstants } from '~stzUser/test/constants';
 
-// Configure this test to use the E2E setup (which starts the dev server)
+// Playwright supplies the shared built-app E2E topology.
 // (Inherits baseURL from playwright.config.ts)
 
 test.describe('createVerifiedTestUser Unit Tests', () => {

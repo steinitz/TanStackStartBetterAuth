@@ -1,6 +1,8 @@
 import { test, expect } from './utils/console-buffer';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
-import { clientEnv } from '~stzUser/lib/env';
+import { readE2eEnvFromProcess } from './config/e2e-env';
+
+const e2eEnv = readE2eEnvFromProcess();
 
 test.describe('Wallet Visibility and Reactivity', () => {
   test('should show correct wallet status after signup and updates', async ({ page }) => {
@@ -16,7 +18,7 @@ test.describe('Wallet Visibility and Reactivity', () => {
     // The WalletWidget should be visible in the header showing the daily grant
     const walletBadge = page.locator('span', { hasText: /Credits/ });
     await expect(walletBadge).toBeVisible({ timeout: 15000 });
-    await expect(walletBadge).toContainText(`${clientEnv.DAILY_GRANT_CREDITS} Credits`);
+    await expect(walletBadge).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS} Credits`);
 
     // 3. Grant 10 Credits via Admin Tools
     await page.goto('/admin');
@@ -27,12 +29,12 @@ test.describe('Wallet Visibility and Reactivity', () => {
     await page.getByRole('button', { name: 'Process Grant' }).click();
 
     // The header widget should now show daily + 10
-    await expect(walletBadge).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + 10} Credits`, { timeout: 10000 });
+    await expect(walletBadge).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + 10} Credits`, { timeout: 10000 });
 
     // 4. Consume 1 Credit
     await page.getByRole('button', { name: 'Consume 1 Credit' }).click();
 
     // Page reloads
-    await expect(walletBadge).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + 9} Credits`);
+    await expect(walletBadge).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + 9} Credits`);
   })
 })

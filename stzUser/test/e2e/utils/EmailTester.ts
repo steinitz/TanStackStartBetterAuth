@@ -29,58 +29,9 @@ interface TestEmailMessage {
 }
 
 /**
- * EmailTester - Ethereal Email testing utility class
- * 
- * PURPOSE:
- * Provides email testing for E2E tests without sending real emails.
- * Uses Ethereal Email (fake SMTP service) to capture and inspect emails.
- * 
- * PRACTICAL USAGE EXAMPLE:
- * ```typescript
- * // In your E2E test:
- * test('contact form sends email', async ({ page }) => {
- *   // 1. Create test account (once per test session)
- *   await EmailTester.createTestAccount();
- *   
- *   // 2. Fill and submit contact form
- *   await page.fill('[name="email"]', 'user@example.com');
- *   await page.fill('[name="message"]', 'Test message');
- *   await page.click('button[type="submit"]');
- *   
- *   // 3. Verify email was "sent" (captured by Ethereal)
- *   const emails = EmailTester.getSentEmails();
- *   expect(emails).toHaveLength(1);
- *   expect(emails[0].envelope.to).toContain('support@yourapp.com');
- *   
- *   // 4. Optional: View email in browser
- *   console.log('View email:', emails[0].previewUrl);
- * });
- * ```
- * 
- * SERVER-TEST INTEGRATION (Cross-Process Storage):
- * EmailTester uses static methods with file-based storage, enabling both
- * your server code and test assertions to access the same email data across
- * separate JavaScript processes. During testing:
- * 
- * 1. Server-side: Replace your production email transport with EmailTester.sendTestEmail()
- * 2. Test-side: Use EmailTester.getSentEmails() to verify emails were sent
- * 3. Both share email data through temporary file storage for cross-process access
- * 
- * Example server integration:
- * ```typescript
- * // In your email service:
- * if (process.env.NODE_ENV === 'test') {
- *   await EmailTester.sendTestEmail(emailData);
- * } else {
- *   await productionTransporter.sendMail(emailData);
- * }
- * ```
- * 
- * EMAIL DATABASE FEATURE:
- * The class maintains a "database" of sent emails (getSentEmails, getEmailsTo, etc.)
- * This is designed for future theoretical needs where tests might need to verify
- * multiple emails or complex email workflows. For most current testing scenarios,
- * simply checking that an email was sent is sufficient.
+ * Reads, filters, and clears messages captured by the local Mailpit API.
+ * The application keeps using its normal SMTP path; this helper performs only
+ * test-side inspection and never replaces the production transport.
  */
 export class EmailTester {
   private static readonly MAILPIT_API_BASE = 'http://localhost:8025/api/v1';
@@ -319,4 +270,3 @@ export function createTestUser(name: string = testConstants.defaultUserName) {
 }
 
 export type { TestEmailMessage };
-

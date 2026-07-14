@@ -12,10 +12,8 @@ export default defineConfig({
     // contention, so this flag is the actual guard.
     fileParallelism: false,
     /* Inject the DB path before any module initializes. database.ts reads process.env.DATABASE_URL
-       and creates its client at module load time, so setting it here is the only thing that lands
-       in time — the dotenv call in setupFiles runs too late, after the client is already built,
-       which silently left unit tests writing to the dev database via database.ts's
-       `url || "file:sqlite.db"` fallback. */
+       and creates its client at module load time. Keep the unit setup file limited to jest-dom;
+       loading env files there is both too late and capable of redirecting tests to a developer DB. */
     env: {
       DATABASE_URL: 'file:stzUser/test/test-unit.db',
     },

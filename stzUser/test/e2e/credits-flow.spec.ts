@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
-import { clientEnv } from '~stzUser/lib/env';
+import { readE2eEnvFromProcess } from './config/e2e-env';
 import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits';
+
+const e2eEnv = readE2eEnvFromProcess();
 
 test.describe('Credits Flow', () => {
   test('should allow claiming welcome grant and show the active purchase path', async ({ page }) => {
@@ -15,7 +17,7 @@ test.describe('Credits Flow', () => {
 
     const walletWidget = page.locator('span', { hasText: /Credits/ });
     await expect(walletWidget).toBeVisible({ timeout: 15000 });
-    await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS} Credits`);
+    await expect(walletWidget).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS} Credits`);
     await walletWidget.click();
 
     // 3. Verify we are on the Credits page
@@ -35,10 +37,10 @@ test.describe('Credits Flow', () => {
     await claimButton.click();
 
     // Verify balance updated
-    await expect(walletWidget).toContainText(`${clientEnv.DAILY_GRANT_CREDITS + clientEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
+    await expect(walletWidget).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + e2eEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
 
     // 5. Verify the configured purchase path is available
-    if (clientEnv.IS_STRIPE_ENABLED) {
+    if (e2eEnv.IS_STRIPE_ENABLED) {
       await expect(page.getByRole('button', { name: creditsSelectors.payWithCardButton })).toBeVisible();
     } else {
       const requestButton = page.getByRole('button', { name: creditsSelectors.payViaBankTransferButton });

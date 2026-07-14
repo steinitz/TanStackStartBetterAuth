@@ -2,7 +2,7 @@
 
 A modern web application built with TanStack Start and Better Auth, featuring comprehensive user management, authentication, and type-safe development practices.
 
-> **🔧 Environment System Note**: This project uses a sophisticated "secure by default" environment variable system that handles server/client separation automatically. Environment variables are loaded via `bootstrap.env.mjs` in production and hydrated safely to the client. See [Environment Documentation](stzUser/README.md#environment-variable-system) for details.
+> **🔧 Environment System Note**: The launching runtime owns environment loading; the foundation keeps server/client separation secure by projecting only an explicit client-safe allow-list through SSR. See [Environment Documentation](stzUser/README.md#environment-variable-system) for details.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/steinitz/TanStackStartBetterAuth)
 
@@ -123,7 +123,7 @@ The foundation includes a built-in ledger system designed for robust, unified re
 # Development
 pnpm dev              # Start development server
 pnpm build            # Build for production (includes start instructions)
-pnpm start:prod       # Start production server with proper env loading
+pnpm start:prod       # Serve the production build with the inherited process environment
 
 # Type Checking
 pnpm typecheck        # Run TypeScript type checking

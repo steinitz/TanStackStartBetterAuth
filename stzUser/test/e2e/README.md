@@ -5,9 +5,10 @@ This directory contains comprehensive end-to-end testing utilities and documenta
 ## Test Files Overview
 
 - **signup-flow.spec.ts** - Tests the complete user signup flow with form validation and success confirmation
-- **contact-form-shows-email-success.spec.ts** - Tests contact form submission and email functionality
+- **contact-flow.spec.ts** - Tests contact form submission and email functionality
 - **wallet-visibility.spec.ts** - Tests credit balance visibility, daily grants, and reactive UI updates
-- **smoke.spec.ts** - Basic smoke tests for core application functionality
+- **smoke-navigation.spec.ts** - Basic navigation and core application smoke coverage
+- **environment-contract.spec.ts** - Confirms sanitized values reach the worker, server, and browser
 
 ## Email Testing with Mailpit
 
@@ -26,18 +27,18 @@ Mailpit is a local SMTP testing server that:
 
 ### Automatic Mailpit Management
 
-The global test setup now automatically manages Mailpit for you:
-- **Detects** if Mailpit is already running
-- **Starts** Mailpit automatically if not running
-- **Waits** for Mailpit to be ready before running tests
-- **Prevents** "Mailpit connection failed" errors
+Playwright's shared `webServer` topology manages Mailpit for you:
+- **Reuses** a compatible Mailpit already listening on the configured ports
+- **Starts** Mailpit when none is running
+- **Waits** for the Mailpit API before running tests
+- **Tears down** the process when Playwright started it
 
-No manual setup required! Just run your E2E tests and Mailpit will be ready.
+No manual server startup is required. The `assertE2eToolsInstalled()` preflight fails immediately with an installation command if Mailpit is unavailable.
 
 ### 1. Mailpit Server (Automatic)
 ```bash
-# Mailpit starts automatically during E2E tests
-# But you can also start it manually if needed:
+# Playwright starts Mailpit automatically during E2E tests.
+# Start it manually only for independent email inspection:
 mailpit
 ```
 
@@ -114,7 +115,7 @@ const verificationStatus = await getUserVerificationStatus('user@example.com');
 expect(verificationStatus.verified).toBe(true);
 ```
 
-### `contact-form-email.spec.ts`
+### `contact-flow.spec.ts`
 Comprehensive E2E tests for contact form email functionality:
 - **Email sending verification** - Confirms emails are sent when form is submitted
 - **Error handling** - Tests graceful failure when email service is unavailable
@@ -132,20 +133,25 @@ Tests the unified credit system and wallet UI:
 
 ### Prerequisites
 ```bash
-# Ensure your development server is running
-pnpm dev
+# One-time local setup
+cp .env.e2e.example .env.e2e
+brew install tursodatabase/tap/turso
+brew install mailpit
+pnpm install
 ```
+
+Fill the required local values in `.env.e2e`. Do not start `pnpm dev` for E2E: Playwright builds and owns the test application, ephemeral Turso server, and Mailpit lifecycle. The locally verified tool baseline is Turso CLI `1.0.26` and Mailpit `1.27.5`; these are known-good versions, not maximums.
 
 ### Run Email Tests
 ```bash
 # Run all E2E tests (including email tests)
 pnpm test:e2e
 
-# Run only email tests
-pnpm test:e2e -- contact-form-email.spec.ts
+# Run the Mailpit boundary test
+pnpm test:e2e -- mailpit.spec.ts
 
 # Run with UI to see browser interactions
-pnpm test:e2e:ui -- contact-form-email.spec.ts
+pnpm test:e2e:ui -- mailpit.spec.ts
 ```
 
 ### Test Output
@@ -164,10 +170,10 @@ The application uses Cloudflare Turnstile to protect the sign-up flow from bots.
 
 ### How It Works in Tests
 
-1.  **Always Pass Keys**: In `.env.test`, we use Cloudflare's "Always Pass" dummy keys:
+1.  **Always Pass Keys**: In `.env.e2e`, we use Cloudflare's "Always Pass" dummy keys:
     *   `TURNSTILE_SITE_KEY`: `1x00000000000000000000AA`
     *   `TURNSTILE_SECRET_KEY`: `1x0000000000000000000000000000000AA`
-2.  **Health Checks**: The `ensureServerRunning()` utility in `utils/server-check.ts` includes the `x-turnstile-token` header when verifying the sign-up endpoint's readiness.
+2.  **Readiness**: Global setup checks `/api/test-env` plus an anonymous Better Auth session request without creating a user or bypassing Turnstile.
 3.  **Client-Side**: The Turnstile widget automatically "solves" the challenge in the test environment because of the dummy site key, rendering a valid token that is sent to the server.
 
 ### Manual Verification of Protection
@@ -293,26 +299,24 @@ expect(emails).toHaveLength(0);
 ### Common Issues
 
 **"Error: connect ECONNREFUSED"**
-- The development server isn't running with proper test environment
-- Ensure `.env.test` file exists with `PLAYWRIGHT_RUNNING=true`
-- Start server manually with `pnpx dotenv-cli -e .env.test -- pnpm dev`
-- Check server environment with `checkServerTestEnvironment()`
+- Confirm `.env.e2e` exists and matches the topology in `.env.e2e.example`
+- Check that ports 3019, 8081, 8025, and 1025 are free
+- Read the forwarded web-server stderr for the failing Turso, Mailpit, build, or built-app command
+- Do not substitute a manually started development server; the built application is the authoritative E2E target
 
-**"Server running without test environment"**
-- Tests detected a server without `PLAYWRIGHT_RUNNING=true`
-- Stop existing server and restart with `.env.test`: `pnpx dotenv-cli -e .env.test -- pnpm dev`
-- Verify `.env.test` file contains required environment variables
+**"Missing E2E tool"**
+- Install the exact tool named by the preflight message
+- On macOS, use `brew install tursodatabase/tap/turso` or `brew install mailpit`
+- `srvx` is a pinned project dependency and is installed by `pnpm install`
 
-**"Mailpit connection failed"** (rare with automatic startup)
-- The global test setup should automatically start Mailpit
-- If issues persist, manually start Mailpit: `mailpit`
+**"Mailpit connection failed"**
 - Check Mailpit is listening on localhost:1025 (SMTP) and localhost:8025 (web)
 - Verify no other services are using these ports
-- Check the test logs for Mailpit startup messages
+- Check the Playwright web-server stderr for its startup error
 
 **"Email not captured"**
 - Verify your app is configured to use localhost:1025 for SMTP
-- Check `.env.test` has correct SMTP settings
+- Check `.env.e2e` has the example's SMTP settings
 - Ensure Mailpit server is running before starting tests
 
 **"Web interface not accessible"**
@@ -321,9 +325,10 @@ expect(emails).toHaveLength(0);
 - Verify port 8025 is not blocked by firewall
 
 **"Environment variable issues"**
-- Verify `.env.test` file exists in project root
+- Verify `.env.e2e` and `.env.e2e.example` exist in the project root
+- Remove `.env.e2e.local`; hidden E2E override tiers are forbidden
 - Check `isPlaywrightRunning()` returns `true` during tests
-- Ensure `dotenv-cli` is installed: `pnpm add -D dotenv-cli`
+- Read the contract error by key name; diagnostics deliberately omit values and secrets
 
 ### Debug Tips
 
@@ -344,78 +349,30 @@ test('debug email flow', async ({ page }) => {
 
 ## Server Management
 
-The E2E tests use robust server management with environment variable validation to ensure proper test execution:
-
-> **Test server URL (updated 2026-07-05):** E2E tests run against `http://localhost:3019` over plain HTTP, not `:3000`. See the "Test server URL" note in `stzUser/test/README.md` for the full explanation and the stale-`constants.js` footgun.
+The authoritative E2E target is a production build served over plain HTTP at `http://localhost:3019`, not a Vite development server. Ordinary `pnpm dev` remains independent on port 3000.
 
 ### How It Works
-- **Environment Validation**: Verifies servers are running with `.env.test` environment variables
-- **Smart Detection**: Checks if a test-configured server is already running on `http://localhost:3019`
-- **Automatic Startup**: Starts server with `pnpx dotenv-cli -e .env.test -- pnpm dev` if needed
-- **Environment Enforcement**: Prevents tests from running against misconfigured servers
-- **Clean Shutdown**: Only stops servers it started, preserving manual dev servers
+- `e2e-env.ts` reads the tracked `.env.e2e.example` schema, overlays `.env.e2e`, rejects undocumented keys, and clears inherited optional values.
+- `e2e-web-servers.ts` gives Playwright three services: ephemeral Turso on 8081, Mailpit on 8025/1025, and `pnpm build:e2e && pnpm serve:built` on 3019.
+- Turso and the built app never reuse existing processes. Mailpit may be reused when a developer already owns a compatible instance.
+- `global-setup.ts` performs read-only readiness checks against `/api/test-env` and Better Auth. It creates no users and deletes no data.
+- Playwright tears down the process groups it starts, including after test failures.
 
 ### Environment Variable System
-Tests require a dedicated `.env.test` file with `PLAYWRIGHT_RUNNING=true`:
+Tests require the local ignored `.env.e2e` file with `PLAYWRIGHT_RUNNING=true`:
 
 ```bash
-# .env.test
-PLAYWRIGHT_RUNNING=true
-# ... other test-specific environment variables
-```
-
-### Server Utilities
-Server management is handled by `utils/e2e-services.ts`:
-- **`ensureServerRunning()`** - Starts server with `.env.test` if needed
-- **`checkServerTestEnvironment()`** - Validates running servers use test environment
-- **`isPlaywrightRunning()`** - Simple detection: `process.env.PLAYWRIGHT_RUNNING === 'true'`
-
-### Graduated Server Termination
-
-When E2E tests detect a server running without the test environment, they use a graduated termination approach:
-
-**Default Behavior (Graduated Termination):**
-1. **10-second countdown** with console warnings
-2. **Graceful termination** using SIGTERM signal
-3. **Forceful termination** using SIGKILL if SIGTERM fails
-4. **Port cleanup** with 1-second delay before starting new server
-
-**Skip Countdown Mode:**
-Set `SKIP_SERVER_TERMINATION_COUNTDOWN=true` in `.env.test` to skip the warning countdown:
-
-```bash
-# .env.test
-PLAYWRIGHT_RUNNING=true
-SKIP_SERVER_TERMINATION_COUNTDOWN=true  # Skip 10-second countdown
-```
-
-**Console Output Examples:**
-```bash
-# Default behavior (with countdown)
-⚠️  Server is running but not with test environment.
-🔄 Starting countdown to auto-terminate server...
-💡 Set SKIP_SERVER_TERMINATION_COUNTDOWN=true to skip countdown, or Ctrl+C to cancel
-⏰ Terminating server in 10 seconds... (Ctrl+C to cancel)
-⏰ Terminating server in 9 seconds... (Ctrl+C to cancel)
-# ... countdown continues
-🛑 Terminating existing server...
-📤 Sent SIGTERM to process 12345
-✅ Process 12345 terminated gracefully
-
-# Skip countdown mode
-⚠️  Server running without test environment. Auto-terminating due to SKIP_SERVER_TERMINATION_COUNTDOWN=true
-📤 Sent SIGTERM to process 12345
-✅ Process 12345 terminated gracefully
+# Create once, then fill the required local values
+cp .env.e2e.example .env.e2e
 ```
 
 ### Benefits
 - **Test Environment Isolation**: Guarantees proper test configuration
-- **Environment Variable Propagation**: Reliable loading of `.env.test` variables
-- **Development Friendly**: Reuses compatible servers, starts new ones when needed
-- **CI Optimized**: Always starts fresh servers with test environment
-- **Error Prevention**: Blocks tests from running against wrong environment
-- **Graceful Termination**: Uses SIGTERM before SIGKILL for clean shutdown
-- **Developer Control**: Optional countdown skip for faster test execution
+- **Environment Variable Propagation**: One sealed `.env.e2e` contract reaches config, services, workers, server, and browser
+- **Development Safety**: E2E never commandeers or kills an ordinary Vite dev server
+- **Production Fidelity**: Tests exercise the built server rather than transform-on-request development behavior
+- **Deterministic Database**: Every run owns a fresh ephemeral Turso process
+- **Clean Shutdown**: Playwright owns lifecycle instead of broad process-name termination
 
 ## Integration with CI/CD
 
@@ -425,15 +382,11 @@ Mailpit works perfectly in CI environments:
 - **Deterministic results** - same behavior every time
 - **Fast execution** - local SMTP processing
 
+CI must install the external `turso` and `mailpit` executables before the test step. Once installed, use the same command as local development; Playwright owns all three service processes:
+
 ```yaml
-# GitHub Actions example
-- name: Run E2E Email Tests
-  run: |
-    mailpit &
-    sleep 2
-    pnpm dev &
-    sleep 5
-    pnpm test:e2e -- contact-form-email.spec.ts
+- name: Run E2E tests
+  run: pnpm test:e2e
 ```
 
 ## Next Steps
@@ -531,26 +484,19 @@ The password change (`password-change.spec.ts`) and password reset (`password-re
 
 ### Test Cleanup & Server Management
 
-#### Global Teardown Behavior
-The E2E test suite uses `global-teardown.ts` for cleanup:
-
-- **Dev Server**: Forcefully terminated after all tests (`pkill -f 'vite.*dev'`)
-- **Mailpit**: Intentionally left running for development continuity
-- **Clean State**: Ensures fresh server environment between test runs
+#### Playwright-Owned Teardown
+Playwright owns the Turso and built-app process groups and stops them after the run, including failure paths. It also stops Mailpit when it started that instance; an already-running reusable Mailpit remains the developer's process. There is no custom global teardown and no broad `pkill` fallback.
 
 #### Manual Cleanup (if needed)
 ```bash
-# Stop Mailpit manually (optional)
-pkill mailpit
-
-# Verify no dev servers running
-ps aux | grep vite
+# Identify listeners without killing unrelated development processes
+lsof -nP -iTCP:3019 -iTCP:8081 -iTCP:8025 -iTCP:1025 -sTCP:LISTEN
 ```
 
 #### Development vs Test Mode
-- **Test Mode**: Servers terminated for isolation
-- **Development Mode**: Servers preserved for workflow continuity
-- **Environment Detection**: Uses `PLAYWRIGHT_RUNNING=true` flag
+- **E2E Mode**: Built app plus isolated services, configured by `.env.e2e`
+- **Development Mode**: Independent Vite server configured by `.env.development`
+- **Environment Detection**: E2E retains the sanitized `PLAYWRIGHT_RUNNING=true` flag
 
 ## Resources
 

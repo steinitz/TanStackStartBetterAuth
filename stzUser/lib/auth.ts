@@ -55,7 +55,7 @@ export const authOptions: BetterAuthOptions = {
     // reusable module free of one person's network address and one site's hostname.
     "http://localhost:3000",
     "https://localhost:3000",
-    // Optional dev/test/preview extras: the test port (.env.test), a LAN IP
+    // Optional dev/test/preview extras: the test port (.env.e2e), a LAN IP
     // (.env.development). Additive to the floor above, so unset is fine.
     ...(process.env.BETTER_AUTH_ADDITIONAL_TRUSTED_ORIGINS?.split(',').map(s => s.trim()) ?? []),
   ],

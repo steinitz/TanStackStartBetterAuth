@@ -1,5 +1,6 @@
 import { test, expect, type Locator } from '@playwright/test'
 import { createAuthenticatedUser } from './utils/testAuthUtils'
+import { readE2eEnvFromProcess } from './config/e2e-env'
 import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits'
 
 const typeIntoStripeField = async (locator: Locator, value: string) => {
@@ -14,20 +15,22 @@ const typeIfVisible = async (locator: Locator, value: string) => {
 
 // Step 4 happy path: the embedded Payment Element from an authenticated user through to the shared
 // provisioning state. It exercises the REAL Stripe test API (a live PaymentIntent) and Stripe.js in a
-// cross-origin iframe, so it needs Stripe test-mode config in `.env.test`. With that config present it
+// cross-origin iframe, so it needs Stripe test-mode config in `.env.e2e`. With that config present it
 // runs under the ordinary `pnpm test:e2e` command, like the rest of the E2E suite.
 //
 // The balance-reflects-the-credit assertion is intentionally NOT made here: granting is webhook-only,
 // and the normal run has no `stripe listen` forwarder (Codex P2). This test proves the UI path and
 // that a real intent is created; the end-to-end balance proof lives in the manual Stripe-sandbox gate.
+const e2eEnv = readE2eEnvFromProcess()
+
 const missingStripeConfig = [
-  process.env.IS_STRIPE_ENABLED === 'true' ? null : 'IS_STRIPE_ENABLED=true',
-  process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ? null : 'STRIPE_SECRET_KEY=sk_test_...',
-  process.env.STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_') ? null : 'STRIPE_PUBLISHABLE_KEY=pk_test_...',
+  e2eEnv.IS_STRIPE_ENABLED ? null : 'IS_STRIPE_ENABLED=true',
+  e2eEnv.STRIPE_SECRET_KEY.startsWith('sk_test_') ? null : 'STRIPE_SECRET_KEY=sk_test_...',
+  e2eEnv.STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_') ? null : 'STRIPE_PUBLISHABLE_KEY=pk_test_...',
 ].filter((requirement): requirement is string => Boolean(requirement))
 
 const stripeSkipReason = missingStripeConfig.length
-  ? `Stripe E2E skipped: add ${missingStripeConfig.join(', ')} to .env.test.`
+  ? `Stripe E2E skipped: add ${missingStripeConfig.join(', ')} to .env.e2e.`
   : null
 
 if (stripeSkipReason) console.warn(stripeSkipReason)

@@ -6,7 +6,7 @@ This directory contains the comprehensive testing infrastructure for our TanStac
 
 We use a multi-layered testing approach:
 - **Unit Tests**: **Vitest** with **React Testing Library** for component and route testing
-- **E2E Tests**: **Playwright** for end-to-end browser testing across multiple browsers
+- **E2E Tests**: **Playwright** for end-to-end browser testing in Chromium by default, with additional browser project templates available
 
 ## File Structure
 
@@ -14,19 +14,20 @@ stzUser/test/
 ├── README.md              # This file - comprehensive testing documentation
 ├── e2e/
 │   ├── config/
+│   │   ├── e2e-env.ts           # Sealed E2E environment contract
+│   │   ├── e2e-web-servers.ts   # Turso, Mailpit, and built-app topology
 │   │   ├── playwright.config.ts # Playwright E2E test configuration
-│   │   └── global-setup.ts      # Global test setup and utilities
+│   │   └── global-setup.ts      # Read-only readiness assertions
 │   ├── utils/
-│   │   ├── EmailTester.ts       # Ethereal Email testing class
+│   │   ├── EmailTester.ts       # Mailpit email testing class
 │   │   ├── isPlaywrightRunning.ts # Playwright detection utility
-│   │   └── server-check.ts      # Development server utilities
-│   ├── contact-form-shows-email-success.spec.ts # Contact form email functionality tests
+│   │   └── testAuthUtils.ts     # Authenticated E2E user helpers
+│   ├── environment-contract.spec.ts # Worker/server/browser env canary
+│   ├── contact-flow.spec.ts     # Contact form email functionality tests
 │   ├── smoke-navigation.spec.ts # E2E navigation and functionality tests
 │   ├── wallet-visibility.spec.ts # Ledger balance and badge reactivity tests
-│   └── README.md                # Email testing documentation
-├── output/
-│   ├── playwright-report/ # E2E test reports (auto-generated)
-│   └── test-results/      # E2E test artifacts (auto-generated)
+│   ├── README.md                # E2E and email testing documentation
+│   └── .output/                 # Generated reports and test artifacts
 ├── unit/
 │   ├── setup.ts           # Test environment setup (jest-dom matchers)
 │   ├── test-utils.tsx     # TanStack Router testing utilities
@@ -73,41 +74,42 @@ pnpm test:all
 
 ## Server Management
 
-Playwright automatically handles development server lifecycle for E2E tests with robust environment variable management:
+Playwright owns a built-application E2E topology. Tests run against `http://localhost:3019`; ordinary `pnpm dev` remains independent on `http://localhost:3000`.
 
-> **Test server URL (updated 2026-07-05):** E2E tests run against `http://localhost:3019`, not `:3000`. `.env.test` sets `PORT=3019` (read by `vite.config.ts`) and `TEST_BASE_PROTOCOL=http`; `stzUser/test/constants.ts` builds `testBaseURL` from those. Default `pnpm dev` still serves plain HTTP on `:3000` — the test port is separate so it does not disturb normal dev. Upstream stays HTTP throughout (no basicSsl); the `TEST_BASE_PROTOCOL` default is `https` only so ChessHurdles, which needs TLS for its Maia worker, is unaffected by the same shared file.
->
-> **Footgun learned the hard way:** a stale, gitignored `stzUser/test/constants.js` (an old compiled copy) will silently shadow `constants.ts` in module resolution, leaving `testBaseURL`/`testPort` undefined and every navigation failing with "Cannot navigate to invalid URL". It is invisible in `git status`. If baseURL ever reads as undefined, look for a stray `constants.js` first.
+The server is created with `vite build --mode e2e` and served from `dist/server` by the pinned `srvx` dependency. This exercises production-style output instead of Vite's transform-on-request development path.
 
 ### How It Works
-- **Environment Validation**: Tests verify the server is running with `.env.test` environment variables
-- **Smart Server Detection**: Checks if a compatible test server is already running on `http://localhost:3019`
-- **Automatic Startup**: If no test-configured server is detected, starts one with `pnpx dotenv-cli -e .env.test -- pnpm dev`
-- **Environment Enforcement**: Prevents tests from running against servers without proper test environment
-- **Clean Shutdown**: Only stops servers it started, preserving your manual dev servers
+- **Sealed Environment**: `e2e-env.ts` validates `.env.e2e` against the tracked `.env.e2e.example` schema before Playwright starts anything
+- **External Tool Preflight**: Missing Turso or Mailpit fails immediately with a named installation command
+- **Owned Services**: Playwright starts ephemeral Turso, Mailpit when needed, and the built application through its `webServer` configuration
+- **Read-Only Readiness**: Global setup checks the application, Better Auth, and database without creating a user or deleting data
+- **Clean Shutdown**: Playwright tears down every process group it started, including after failed tests
 
 ### Environment Variable System
-Tests now use a dedicated `.env.test` file with `PLAYWRIGHT_RUNNING=true` to ensure proper test environment:
+Create the ignored local E2E file from the tracked schema:
 
 ```bash
-# .env.test
-PLAYWRIGHT_RUNNING=true
-# ... other test-specific environment variables
+cp .env.e2e.example .env.e2e
 ```
 
-### Configuration
-The server management is handled by `e2e/utils/e2e-services.ts` utilities:
-- **`ensureServerRunning()`** - Starts server with `.env.test` if needed
-- **`checkServerTestEnvironment()`** - Validates running servers use test environment
-- **`isPlaywrightRunning()`** - Simple detection based on `PLAYWRIGHT_RUNNING` environment variable
+`.env.e2e` is the sole local source of E2E values. File values beat inherited shell values, omitted optional managed keys become empty, undocumented keys fail, and `.env.e2e.local` is forbidden. Stripe keys remain optional so the ordinary suite can skip the card spec loudly.
+
+### External Tools
+
+```bash
+brew install tursodatabase/tap/turso
+brew install mailpit
+```
+
+The locally verified baseline is Turso CLI `1.0.26` and Mailpit `1.27.5`. These are known-good versions, not maximum supported versions. `srvx` is installed by `pnpm install` at the exact version recorded in `package.json`.
 
 ### Benefits
-✅ **Test Environment Isolation**: Ensures tests always run with proper test configuration  
-✅ **Environment Variable Propagation**: Reliable loading of `.env.test` variables  
-✅ **Development Friendly**: Reuses compatible servers, starts new ones when needed  
-✅ **CI Optimized**: Always starts fresh servers with test environment in CI  
-✅ **Error Prevention**: Blocks tests from running against misconfigured servers  
-✅ **Zero Configuration**: Automatic environment detection and server management
+✅ **Test Environment Isolation**: Ensures tests always run with proper test configuration
+✅ **Environment Variable Propagation**: One sanitized contract reaches services, workers, server, and browser
+✅ **Development Safety**: E2E does not reuse, commandeer, or kill the ordinary dev server
+✅ **Production Fidelity**: Browser tests exercise a production build
+✅ **Deterministic Database**: Each run owns a fresh ephemeral Turso process
+✅ **Actionable Failure**: Missing files, keys, relationships, and tools fail by name before startup
 
 # Unit Testing
 
@@ -140,42 +142,32 @@ Provides utilities for testing TanStack Router components with proper context se
 
 ## Test Utilities
 
-### `e2e/utils/server-check.ts`
-Development server management utilities with environment validation:
+### `e2e/config/e2e-env.ts`
+Owns the E2E schema, file loading, validation, process sealing, and typed worker projection. No other E2E helper reads an env file.
 
-**Functions:**
-- **`ensureServerRunning()`**: Starts development server with `.env.test` environment if needed
-- **`checkServerTestEnvironment()`**: Validates running servers have proper test environment variables
-- **Server Detection**: Automated checking for running development servers
-- **Environment Validation**: Ensures servers are running with `PLAYWRIGHT_RUNNING=true`
-
-**Benefits:**
-- **Environment Isolation**: Guarantees tests run with proper test configuration
-- **Test Reliability**: Prevents tests from running against misconfigured servers
-- **Development Workflow**: Seamless integration with existing dev servers
-- **CI/CD Support**: Automated server management with environment validation
-- **Error Prevention**: Proactive detection of environment and server issues
+### `e2e/config/e2e-web-servers.ts`
+Defines the shared Turso, Mailpit, and built-app topology and performs the external-tool preflight.
 
 # E2E Testing
 
 ## Test Files
 
 ### `e2e/config/playwright.config.ts`
-Playwright configuration for multi-browser E2E testing:
-- **Browsers**: Chromium, Firefox, WebKit (configurable per test run)
-- **Base URL**: http://localhost:3019 (from `testConstants.testBaseURL`; see Server Management note above)
-- **Output**: Reports and artifacts in `src/test/e2e/.output/` directory
+Playwright configuration for the shared E2E suite:
+- **Browser**: Chromium by default; commented project templates make additional browsers opt-in
+- **Base URL**: `http://localhost:3019`, returned by the sealed E2E environment loader
+- **Output**: Reports and artifacts in `stzUser/test/e2e/.output/`
 - **Retries**: 2 retries on CI, 0 locally for faster development
-- **Global Setup**: Automated server checking and initialization via `global-setup.ts`
-- **Web Server**: Automatic development server management with smart reuse
+- **Global Setup**: Read-only application, Better Auth, and database readiness checks
+- **Web Servers**: Playwright-owned Turso, Mailpit, and built application
 - **Timeouts**: 30s test timeout, 120s server startup timeout
-- **Parallel Execution**: Optimized for CI/CD environments
+- **Parallel Execution**: Disabled; the shared database suite runs with one worker
 
 ### `e2e/config/global-setup.ts`
 Global test setup and utilities:
-- **Server Management**: Automated development server detection and startup
-- **Environment Preparation**: Pre-test environment validation
-- **Cross-Test Utilities**: Shared setup logic for all E2E tests
+- **Application Readiness**: Requires `/api/test-env` to report Playwright and production mode
+- **Auth/Database Readiness**: Requires an anonymous Better Auth session request to succeed
+- **No Mutation**: Does not sign up users, reset databases, or manage processes
 
 ### `e2e/smoke-navigation.spec.ts`
 Comprehensive navigation and functionality tests:
@@ -186,8 +178,7 @@ Comprehensive navigation and functionality tests:
 - **Cross-Navigation**: Bidirectional page navigation flows
 
 **Coverage:**
-- 9 tests across 3 browsers (27 total test executions)
-- Core user journeys and page functionality
+- Core user journeys and page functionality in the configured Chromium project
 - Visual element verification and interaction testing
 
 ### `e2e/wallet-visibility.spec.ts`
@@ -198,7 +189,7 @@ Tests the ledger balance and UI badge reactivity:
 - **Reactivity**: Verifies the balance updates immediately after transactions (grants/consumption)
 - **Insufficient Credits**: Verifies the `CreditsRequiredDialog` appears when balance is too low
 
-### `e2e/contact-form-shows-email-success.spec.ts`
+### `e2e/contact-flow.spec.ts`
 Comprehensive contact form functionality testing:
 
 **Tests:**
@@ -208,33 +199,16 @@ Comprehensive contact form functionality testing:
 - **Validation Flow**: Form validation and error handling
 
 **Features:**
-- **Real Email Testing**: Uses Ethereal Email for actual email verification
-- **End-to-End Workflow**: Tests complete user journey from form to email
-- **Production-Safe**: No impact on production email systems
-- **Debugging Support**: Comprehensive logging for troubleshooting
-
-### `e2e/contact-form-email.spec.ts` (Temporarily in reference/)
-Comprehensive email functionality testing using Ethereal Email:
-
-**Tests:**
-- **Email Sending**: Verifies contact form sends emails with user data
-- **Content Validation**: Confirms emails contain name, email, and message
-- **Error Handling**: Tests graceful failure when email service unavailable
-- **Form Validation**: Ensures invalid forms don't trigger emails
-
-**Features:**
-- **Ethereal Email Integration**: Uses temporary test accounts for safe email testing
-- **Web Interface**: Provides URLs to view captured emails in browser
-- **Production Isolation**: Zero impact on production email configuration
-- **Automated Verification**: Programmatic email content and delivery verification
-
-**Status**: Currently moved to reference/ directory while resolving Ethereal email interception issues.
+- **Mailpit Integration**: Uses the Playwright-owned local SMTP service
+- **End-to-End Workflow**: Tests the complete user journey from form to captured email
+- **Production-Safe**: No messages leave the local test topology
+- **Automated Verification**: Programmatic email content and delivery assertions
 
 ### `e2e/README.md`
 Comprehensive documentation for E2E testing including email testing setup and strategies:
 
 **Coverage:**
-- **Ethereal Email Setup**: Complete guide for test email configuration
+- **Mailpit Setup**: Local SMTP capture and API inspection
 - **Testing Strategies**: Best practices for email functionality testing
 - **Troubleshooting**: Common issues and solutions for email tests
 - **Integration Examples**: Code examples and implementation patterns
@@ -246,16 +220,16 @@ Comprehensive documentation for E2E testing including email testing setup and st
 - **Developer Friendly**: Easy setup and maintenance
 
 ### `e2e/utils/EmailTester.ts`
-Class for Ethereal Email testing:
+Class for Mailpit email testing:
 
 **Core Functions:**
-- `EmailTester.createTestAccount()` - Creates temporary Ethereal accounts
-- `EmailTester.sendTestEmail()` - Sends emails to test environment
 - `EmailTester.getSentEmails()` - Retrieves captured emails for verification
 - `EmailTester.verifyEmailSent()` - Validates email sending with criteria
+- `EmailTester.clearSentEmails()` - Clears captured messages between tests
+- `EmailTester.getWebInterfaceUrl()` - Returns the local inspection UI
 
 **Benefits:**
-- **Zero Configuration**: Automatic test account creation
+- **Real SMTP Path**: The application sends through its normal SMTP code to local Mailpit
 - **Visual Inspection**: Web interface for manual email review
 - **Safe Testing**: No real emails sent, production code unchanged
 - **Comprehensive Coverage**: Full email workflow testing
@@ -421,7 +395,7 @@ pnpm test:all         # Complete test suite (unit + E2E)
 4. **Documentation**: Keep this README updated with new patterns and practices
 5. **Type Safety**: Ensure TypeScript types are properly validated across all test files
 6. **CI/CD Integration**: Ensure all test commands work reliably in automated environments
-7. **Development Workflow**: Design tests to work seamlessly with live development servers
+7. **Development Workflow**: Keep E2E isolated from live development servers
 
 ## Future Enhancements
 
@@ -431,7 +405,7 @@ pnpm test:all         # Complete test suite (unit + E2E)
 - **Performance Testing**: Monitor component render times and memory usage
 
 ### E2E Testing
-- **Email Testing**: Comprehensive email functionality testing with Ethereal Email
+- **Email Testing**: Extend the existing Mailpit scenarios and content assertions
 - **Wallet Testing**: Integrated tests for Ledger balances, UI badge reactivity, and **Atomic Concurrency**.
 - **Race Condition Verification**: Automated tests for daily grant double-allocations and negative balance prevention.
 - **Visual Regression**: Add screenshot comparison testing
@@ -467,8 +441,13 @@ pnpm test:all         # Complete test suite (unit + E2E)
 ### E2E Testing Issues
 
 **"Error: connect ECONNREFUSED"**
-- Ensure the development server is running on http://localhost:3000
-- Start server with `pnpm dev` before running E2E tests
+- Confirm `.env.e2e` matches `.env.e2e.example`
+- Check that ports 3019, 8081, 8025, and 1025 are free
+- Read the forwarded web-server stderr; do not start `pnpm dev` as an E2E substitute
+
+**"Missing E2E tool"**
+- Run the installation command printed for Turso or Mailpit
+- Run `pnpm install` if the pinned `srvx` executable is missing
 
 **Browser launch failures**
 - Install Playwright browsers: `npx playwright install`
@@ -485,21 +464,21 @@ pnpm test:all         # Complete test suite (unit + E2E)
 - Increase retries in configuration for unstable environments
 
 **Output directory issues**
-- Reports and artifacts are auto-generated in `src/test/e2e/.output/`
-- Clean output: `rm -rf src/test/e2e/.output/test-results src/test/e2e/.output/playwright-report`
+- Reports and artifacts are auto-generated in `stzUser/test/e2e/.output/`
+- Clean output: `rm -rf stzUser/test/e2e/.output/test-results stzUser/test/e2e/.output/playwright-report`
 - Ensure proper write permissions for output directories
 
 **Configuration path issues**
-- Verify Playwright config path: `src/test/e2e/config/playwright.config.ts`
-- Check that global setup file exists: `src/test/e2e/config/global-setup.ts`
+- Verify Playwright config path: `stzUser/test/e2e/config/playwright.config.ts`
+- Check that global setup and both shared config helpers exist under `stzUser/test/e2e/config/`
 - Ensure all config files are properly typed and exported
 
 ### Development Workflow Issues
 
 **Tests interfering with development server**
-- Use `pnpm test:e2e:ui` for interactive debugging
-- Playwright automatically reuses existing dev servers
-- Check server status with `utils/server-check.ts` utilities
+- The E2E built app uses port 3019 and never reuses the ordinary port-3000 dev server
+- Check listeners with `lsof -nP -iTCP:3019 -iTCP:8081 -iTCP:8025 -iTCP:1025 -sTCP:LISTEN`
+- Let Playwright own shutdown; avoid broad process-name cleanup commands
 
 **CI/CD pipeline failures**
 - Run complete test suite: `pnpm test:all`

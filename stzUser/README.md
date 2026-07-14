@@ -113,16 +113,16 @@ This "OR" relationship means:
 
 ## Environment Variable System
 
-This foundation includes a sophisticated environment variable system designed for TanStack Start's client/server architecture using a "secure by default" approach. The system is designed to be developer-friendly while maintaining security.
+This foundation separates environment **loading** from environment **projection/access**. The runtime that launches the application owns loading values; `stzUser/lib/env.ts` reads the resulting `process.env`, projects the client-safe subset, and never opens an env file itself.
 
 ### How It Works
 
-1. **Bootstrap Loading**: Environment variables are loaded by `bootstrap.env.mjs` before any application code runs
-2. **Immediate Availability**: The bootstrap process ensures critical variables (like authentication secrets) are available immediately
-3. **Type-Safe Access**: `stzUser/lib/env.ts` provides type-safe access and validation:
+1. **Runtime Loading**: Vite supplies `.env.development` during ordinary `pnpm dev`; deployment platforms and process managers inject production values; Playwright explicitly seals `.env.e2e` before its build and server start.
+2. **Server Access**: Server-only code reads secrets from `process.env` or the `getEnvVar` helpers.
+3. **Client Projection**: `stzUser/lib/env.ts` provides a typed, allow-listed projection:
    - Sensitive variables are kept server-only
-   - Client-safe variables are automatically exposed through `clientEnv`
-   - Full TypeScript support ensures safe access patterns
+   - Client-safe variables are converted and exposed through `clientEnv`
+   - The browser fails loudly if the root route did not inject the complete projection
 
 ### Server-Side Environment Variables
 These variables are only accessible on the server and should contain sensitive information:
@@ -150,13 +150,13 @@ TURNSTILE_SITE_KEY=1x00000000000000000000AA # Dummy key for dev
 
 ### Environment Variable Hydration
 
-The system elegantly handles client-side environment variables through SSR:
+The system handles client-side environment variables through SSR:
 
-1. **Server-Side Loading**: Environment variables are loaded server-side in `stzUser/lib/env.ts`
-2. **SSR Population**: During server-side rendering, `clientEnv` is populated with safe-to-expose variables
-3. **Client Hydration**: Safe variables are injected into `window.__ENV` via a script tag in the root route
-4. **Client Access**: Components access these variables through `clientEnv` with full type safety
-5. **TypeScript Safety**: TypeScript ensures only designated client-safe variables are accessible
+1. **Runtime Population**: The launcher establishes `process.env` before application modules load.
+2. **SSR Projection**: During server-side rendering, `computeClientEnv()` creates the safe allow-listed object.
+3. **Client Hydration**: The root route injects that object into `window.__ENV`.
+4. **Client Access**: Browser modules obtain the complete injected object through `clientEnv`.
+5. **TypeScript Safety**: Only names declared by `ClientEnv` can appear in the client projection.
 
 ### Example Usage in Components
 
@@ -181,16 +181,12 @@ function ContactForm() {
 
 When adding a new environment variable:
 
-1. **Add to .env file**: Add it to your `.env.development` or `.env.production` file
+1. **Add it at the owning runtime**: For example `.env.development` for local Vite development, hosting configuration for deployment, or both `.env.e2e.example` and local `.env.e2e` for E2E.
 2. **Server-only variables**: If it contains sensitive data (API keys, passwords, etc.), keep it server-only
-3. **Client-safe variables**: If it should be available to the client, add its type to `ClientEnv` interface in `stzUser/lib/env.ts`
+3. **Client-safe variables**: If it should be available to the client, add its type to `ClientEnv` and its conversion/default to `computeClientEnv()` in `stzUser/lib/env.ts`
 4. **Access patterns**: Use `clientEnv` for client-side access or direct `process.env` for server-side access
 
-The variable will be automatically:
-- Loaded from the appropriate `.env.{environment}` file during bootstrap
-- Filtered out of client-side code if not in `ClientEnv`
-- Made available to client code if defined in `ClientEnv`
-- Type-safe on both server and client
+The foundation will not load the variable from disk. Once the launcher supplies it, the variable remains server-only unless it is deliberately added to the `ClientEnv` projection.
 
 ### Complete Example
 
@@ -223,16 +219,17 @@ console.log(clientEnv.SMTP_PASSWORD)   // TypeScript error! Not in ClientEnv typ
 For production deployment:
 
 1. Build the application: `pnpm build`
-2. Start the production server: `pnpm start:prod`
+2. Supply the production environment through the hosting platform, shell, or process manager
+3. Start the built server: `pnpm start:prod`
 
-> **Important**: Always use `pnpm start:prod` to start the production server. This ensures proper loading of environment variables through `bootstrap.env.mjs` required for authentication and other server features.
+> **Important**: `pnpm start:prod` serves the existing `dist` output with `NODE_ENV=production`; it deliberately does not load an env file. Required values must already be present in the process environment before the server starts.
 
 **Security Benefits**: This approach provides security without complexity:
-- Environment variables are loaded before any application code runs
+- Environment loading has one explicit owner per runtime
 - Sensitive data never reaches the client
-- Client-safe variables are automatically available through SSR
+- Client-safe values are allow-listed and injected through SSR
 - TypeScript ensures type safety on both server and client
-- No build-time configuration or plugins required
+- Missing or partial browser injection fails loudly
 
 ## Design Principles
 

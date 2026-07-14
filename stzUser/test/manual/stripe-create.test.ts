@@ -28,7 +28,7 @@ vi.mock('../../lib/env', async (importActual) => {
   const clientEnv = {
     ...actual.clientEnv,
     IS_STRIPE_ENABLED: true, // force the master kill-switch on for this manual run
-    MIN_CREDITS_PURCHASE: 10, // pin the guards deterministically, independent of .env.test
+    MIN_CREDITS_PURCHASE: 10, // pin the guards deterministically, independent of E2E config
     CREDIT_PRICE_AUD: 0.001, // 5000 credits → $5.00 AUD → 500 cents, safely above the min floor
   }
   return {

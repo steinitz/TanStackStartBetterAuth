@@ -1,5 +1,4 @@
-// Environment variable loading and validation
-import * as dotenv from 'dotenv'
+// Environment variable projection and access
 
 // Helper function to check if we're on the server
 export const isServer = () => typeof window === 'undefined'
@@ -55,20 +54,6 @@ export type ClientEnv = {
   // Publishable key is client-safe by design (Stripe means it to ship to the browser).
   // The secret + webhook keys are server-only and never appear in ClientEnv — see stripe.server.ts.
   STRIPE_PUBLISHABLE_KEY: string | null
-}
-
-// Load environment variables based on NODE_ENV
-if (isServer()) {
-  try {
-    // Only attempt to load .env files if we're not in a managed production environment like Netlify
-    if (!process.env.NETLIFY) {
-      const mode = process.env.NODE_ENV || 'development';
-      const envPath = process.env.PLAYWRIGHT_RUNNING === 'true' ? '.env.test' : `.env.${mode}`
-      dotenv.config({ path: envPath })
-    }
-  } catch (e) {
-    console.warn('Failed to load .env file, continuing with existing process.env');
-  }
 }
 
 // True in Node and Node-like test runtimes (Vitest/jsdom), false in a real browser.

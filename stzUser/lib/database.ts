@@ -17,9 +17,11 @@ export const libsqlClient = createClient({
   authToken: authToken,
 });
 
-// Announce which DB this process bound, so the file: fallback (no DATABASE_URL)
-// vs a server URL is visible at a glance instead of silent.
-console.log(`DB: ${url || 'file:sqlite.db (no DATABASE_URL set)'}`)
+// Keep an accidental file fallback visible without announcing every configured
+// database connection in each process that imports this module.
+if (!url) {
+  console.warn("DATABASE_URL is not set; using file:sqlite.db");
+}
 
 /**
  * User-related database types

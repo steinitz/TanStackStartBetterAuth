@@ -16,7 +16,9 @@ const externalTools = [
   },
   {
     command: 'mailpit',
-    versionArgs: ['version'],
+    // `mailpit version` also checks GitHub for updates and can exit nonzero when
+    // that unrelated network response fails. Availability must be local-only.
+    versionArgs: ['--help'],
     installCommand: 'brew install mailpit',
   },
 ] as const;

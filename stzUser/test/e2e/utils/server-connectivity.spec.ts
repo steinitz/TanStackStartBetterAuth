@@ -18,34 +18,20 @@ test.describe('Server Connectivity Tests', () => {
     expect(response.status()).not.toBe(0);
   });
 
-  test('should be able to make a signup API call directly', async ({ request }) => {
-    // Test the signup endpoint directly with HTTP request
+  test('should successfully call the signup API directly', async ({ request }) => {
     const testEmail = `direct-test-${Date.now()}@example.com`;
-    
-    try {
-      const response = await request.post('/api/auth/sign-up/email', {
-        data: {
-          email: testEmail,
-          password: 'TestPassword123!',
-          name: 'Direct Test User'
-        },
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      
-      if (response.status() !== 200) {
-        const responseText = await response.text();
+    const response = await request.post('/api/auth/sign-up/email', {
+      data: {
+        email: testEmail,
+        password: testConstants.defaultPassword,
+        name: 'Direct Test User'
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-turnstile-token': 'test-token',
       }
-      
-      // The signup might fail for various reasons (user exists, validation, etc.)
-      // but we should get a proper HTTP response, not a connection error
-      expect(response.status()).not.toBe(0);
-      expect(response.status()).toBeGreaterThan(0);
-      
-    } catch (error) {
-      throw error;
-    }
+    });
+
+    expect(response.status()).toBe(200);
   });
 });

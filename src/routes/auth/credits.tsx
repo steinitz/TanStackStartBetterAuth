@@ -61,7 +61,7 @@ function TransactionsPage() {
     try {
       const result = await claimWelcomeGrant()
       if (result.success) {
-        alert('Welcome grant claimed! 🎁')
+        alert(creditsStrings.welcomeGrantClaimedAlert)
         window.location.reload()
       } else if ('message' in result) {
         alert(result.message)

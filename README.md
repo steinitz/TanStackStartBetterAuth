@@ -83,7 +83,19 @@ pnpm build        # Build for production
 pnpm typecheck    # Check TypeScript types
 pnpm test         # Run unit tests
 pnpm test:e2e     # Run E2E tests
+pnpm dev:vite     # Start Vite directly, bypassing the dev launcher
 ```
+
+## Testing Stripe purchases locally
+
+Only relevant if you are working on the credit-purchase flow (`IS_STRIPE_ENABLED=true`). Otherwise ignore this — `pnpm dev` behaves like a normal dev server.
+
+Stripe delivers purchase confirmations by webhook. Your laptop is not reachable from Stripe's servers, so a local webhook needs the Stripe CLI to relay events, and the app needs the matching signing secret. `pnpm dev` does both for you:
+
+1. Install the [Stripe CLI](https://stripe.com/docs/stripe-cli) and run `stripe login` once — it persists, so this is a one-time step.
+2. Run `pnpm dev`. When `IS_STRIPE_ENABLED=true` and the CLI is ready, it launches `stripe listen`, fetches a fresh signing secret with `stripe listen --print-secret`, and injects it into the dev server automatically — overriding any stale `STRIPE_WEBHOOK_SECRET` in `.env.development`, which is the usual cause of silently-failing local webhooks.
+
+If the CLI is not installed or logged in, `pnpm dev` still starts normally and prints a note. Pay with a [Stripe test card](https://stripe.com/docs/testing) and credits land through the real webhook path — the same mechanism production uses.
 
 ## Project Structure
 

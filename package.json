@@ -8,7 +8,8 @@
     "playwright": "playwright test --config=stzUser/test/e2e/config/playwright.config.ts"
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:vite": "vite dev",
     "build": "vite build && echo '\nTo start the production server, use: pnpm start:prod'",
     "build:e2e": "vite build --mode e2e",
     "serve:built": "cd dist/server && NODE_ENV=production srvx --prod -s ../client server.js",

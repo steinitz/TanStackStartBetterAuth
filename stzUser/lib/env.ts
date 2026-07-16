@@ -3,6 +3,17 @@
 // Helper function to check if we're on the server
 export const isServer = () => typeof window === 'undefined'
 
+// True only in local development, never on a deployed build. Guards developer-only console guidance
+// (see below and the Stripe webhook handler) so nothing chatters in production.
+export const isDevRuntime = () => process.env.NODE_ENV !== 'production' && !process.env.NETLIFY
+
+// Calm boot-time nudge: Stripe is on but no webhook secret is present, so local purchases will not
+// grant credits. Fires once at server startup in dev only. `pnpm dev` normally wires the secret for
+// you; this catches the case where Vite was started directly or the secret was removed.
+if (isServer() && isDevRuntime() && process.env.IS_STRIPE_ENABLED === 'true' && !process.env.STRIPE_WEBHOOK_SECRET) {
+  console.warn('⚠️ Stripe is enabled but STRIPE_WEBHOOK_SECRET is not set — local purchases will not grant credits until the `stripe listen` relay is running. Use `pnpm dev` (it wires this automatically) or see README → "Testing Stripe purchases locally".')
+}
+
 // Helper to safely get environment variables (server-side only)
 export function getEnvVar(name: string): string {
   if (!isServer()) {

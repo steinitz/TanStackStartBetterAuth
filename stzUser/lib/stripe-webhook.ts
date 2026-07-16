@@ -7,6 +7,7 @@
 // request lands, so a flag-off / no-Stripe-env boot can't crash on it.
 import Stripe from 'stripe'
 import { getStripe, getStripeWebhookSecret } from '~stzUser/lib/stripe.server'
+import { isDevRuntime } from '~stzUser/lib/env'
 import {
   grantPurchaseCredits,
   notifyStripeFulfillmentFailure,
@@ -41,6 +42,11 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
   } catch (err) {
     if (err instanceof Stripe.errors.StripeSignatureVerificationError) {
       // Genuine signature mismatch — forged or malformed. 400: Stripe should not retry this.
+      // Dev-only guidance: locally this almost always means a stale/mismatched secret, which is
+      // otherwise silent (this returns 400 without logging). Response is unchanged.
+      if (isDevRuntime()) {
+        console.warn('⚠️ Stripe webhook signature verification failed — STRIPE_WEBHOOK_SECRET likely does not match your current `stripe listen` session. Restart with `pnpm dev` to wire a fresh secret automatically, or run `stripe listen --print-secret` and update .env.development. See README → "Testing Stripe purchases locally".')
+      }
       return json({ error: 'invalid signature' }, 400)
     }
     if (err instanceof SyntaxError) {
@@ -50,6 +56,9 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     }
     // Secret unset or SDK init failure — our misconfiguration, not the caller's. 500 so the event
     // stays in Stripe's retry queue and succeeds once config is fixed. Must NOT be a terminal 400.
+    if (isDevRuntime()) {
+      console.warn('⚠️ Stripe webhook could not be verified — STRIPE_WEBHOOK_SECRET may be unset, or the Stripe SDK failed to initialise. Use `pnpm dev` to wire the secret, or see README → "Testing Stripe purchases locally".')
+    }
     return json({ error: 'verification unavailable' }, 500)
   }
 

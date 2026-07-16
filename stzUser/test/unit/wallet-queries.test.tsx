@@ -16,6 +16,7 @@ import { useSession } from '~stzUser/lib/auth-client'
 import { getWalletStatus } from '~stzUser/lib/wallet'
 import {
   refreshWalletQueries,
+  useRefreshWallet,
   useWallet,
   walletKeys,
   walletStatusQueryOptions,
@@ -69,6 +70,29 @@ describe('wallet queries', () => {
     expect(getWalletStatus).not.toHaveBeenCalled()
     expect(result.current.wallet).toBeNull()
     expect(result.current.credits).toBeNull()
+  })
+
+  it('gives signed-in producers a user-scoped refresh without observing wallet status', async () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { id: 'user-1' } },
+    } as any)
+    const queryClient = createQueryClient()
+    const cancelQueries = vi.spyOn(queryClient, 'cancelQueries')
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result } = renderHook(() => useRefreshWallet(), {
+      wrapper: wrapperFor(queryClient),
+    })
+
+    expect(getWalletStatus).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await result.current()
+    })
+
+    const queryKey = walletKeys.user('user-1')
+    expect(cancelQueries).toHaveBeenCalledWith({ queryKey })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey })
+    expect(getWalletStatus).not.toHaveBeenCalled()
   })
 
   it('performs one timezone-aware read shared by multiple observers', async () => {

@@ -42,7 +42,7 @@ The foundation includes a robust, "bulletproof" wallet system designed for usage
   - **Negative Balance Safeguard**: Uses atomic `WHERE credits >= amount` updates to guarantee that a user's balance never drops below zero.
 
 ### Reactive Wallet UI
-TanStack Query owns the authenticated user's wallet status and transaction history as one user-scoped server-state family. `useWallet()` gives the header and credits route one authoritative balance, while `useTransactions()` gives the ledger its own cache entry. Confirmed credit-producing handlers cancel and invalidate the user's wallet family so both views refetch together without a document reload.
+TanStack Query owns the authenticated user's wallet status and transaction history as one user-scoped server-state family. `useWallet()` gives the header and credits route one authoritative balance, while `useTransactions()` gives the ledger its own cache entry. Mutation producers that do not display wallet data use `useRefreshWallet()` so they can refresh the same family without observing wallet status. Confirmed credit-producing handlers cancel and invalidate the user's wallet family so both views refetch together without a document reload.
 
 The cache keys include user identity (and the browser timezone for wallet status), old-user data is discarded as soon as it becomes inactive, and no wallet request runs while signed out. The insufficient-credits dialog remains event-driven because it is a separate imperative notification:
 - `stz-event-insufficient-credits`: Dispatched when an action fails due to lack of funds. Listened to by the global `CreditsRequiredDialog`.

@@ -85,17 +85,31 @@ export async function refreshWalletQueries(queryClient: QueryClient, userId: str
   await queryClient.invalidateQueries({ queryKey })
 }
 
+function createRefreshWallet(queryClient: QueryClient, userId: string | undefined) {
+  return async () => {
+    if (!userId) return
+
+    await refreshWalletQueries(queryClient, userId)
+  }
+}
+
+/**
+ * Gives mutation producers the wallet-family refresh action without making
+ * them observers of wallet status.
+ */
+export function useRefreshWallet() {
+  const { data: session } = useSession()
+  const queryClient = useQueryClient()
+
+  return createRefreshWallet(queryClient, session?.user?.id)
+}
+
 export function useWallet() {
   const { data: session } = useSession()
   const userId = session?.user?.id
   const queryClient = useQueryClient()
   const query = useQuery(walletStatusQueryOptions(userId, getBrowserTimezoneOffset()))
-
-  const refreshWallet = async () => {
-    if (!userId) return
-
-    await refreshWalletQueries(queryClient, userId)
-  }
+  const refreshWallet = createRefreshWallet(queryClient, userId)
 
   return {
     ...query,

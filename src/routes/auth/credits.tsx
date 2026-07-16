@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useSession } from '~stzUser/lib/auth-client'
-import { getTransactions, claimWelcomeGrant, requestBankTransfer, getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet'
+import { claimWelcomeGrant, requestBankTransfer } from '~stzUser/lib/wallet'
+import { useTransactions, useWallet } from '~stzUser/lib/wallet-queries'
 import { clientEnv } from '~stzUser/lib/env'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Spacer } from '~stzUtils/components/Spacer'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
 import { PaymentForm, StripeReturnHandler } from '~stzUser/components/stripe/PaymentForm'
 import { useGoBack } from '~stzUser/lib/useGoBack'
 import { creditsStrings } from '~stzUser/components/RouteComponents/Credits'
+import { TransactionLedger } from '~stzUser/components/RouteComponents/TransactionLedger'
 
 // Stripe appends these to the return_url after an SCA/redirect payment. Parsed here so the return
 // path is router-idiomatic (no window.location reads → no SSR/hydration mismatch).
@@ -19,11 +21,14 @@ type CreditsSearch = {
 
 function TransactionsPage() {
   const { data: session } = useSession()
-  const [transactions, setTransactions] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { wallet: walletStatus, refreshWallet } = useWallet()
+  const {
+    transactions,
+    isPending: areTransactionsPending,
+    isError: areTransactionsError,
+  } = useTransactions()
   const [purchaseAmount, setPurchaseAmount] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [isRequesting, setIsRequesting] = useState(false)
-  const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null)
 
   const navigate = useNavigate()
   const goBack = useGoBack()
@@ -37,32 +42,12 @@ function TransactionsPage() {
 
   const bankDetailsRef = makeDialogRef()
 
-  const refreshWalletData = async () => {
-    if (!session?.user) return
-    try {
-      const [transactionsData, statusData] = await Promise.all([
-        getTransactions(),
-        getWalletStatus()
-      ])
-      setTransactions(transactionsData || [])
-      setWalletStatus(statusData)
-    } catch (err) {
-      console.error('Failed to fetch data:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    refreshWalletData()
-  }, [session?.user?.id])
-
   const handleClaimGrant = async () => {
     try {
       const result = await claimWelcomeGrant()
       if (result.success) {
+        await refreshWallet()
         alert(creditsStrings.welcomeGrantClaimedAlert)
-        window.location.reload()
       } else if ('message' in result) {
         alert(result.message)
       }
@@ -120,11 +105,11 @@ function TransactionsPage() {
             stripeReturn.isReturn ? (
               <StripeReturnHandler
                 clientSecret={stripeReturn.clientSecret}
-                onCreditsGranted={refreshWalletData}
+                onCreditsGranted={refreshWallet}
                 onHandled={() => navigate({ to: '/auth/credits', search: {}, replace: true })}
               />
             ) : (
-              <PaymentForm onCreditsGranted={refreshWalletData} />
+              <PaymentForm onCreditsGranted={refreshWallet} />
             )
           ) : showBankSection ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -220,42 +205,11 @@ function TransactionsPage() {
       <div style={{ marginTop: '2rem' }}>
         <h3>History Ledger</h3>
         <p>A complete ledger of your credit grants and consumption.</p>
-        {isLoading ? (
-          <p>Loading transactions...</p>
-        ) : transactions.length === 0 ? (
-          <p>No transactions found.</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--color-bg-secondary)' }}>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Date</th>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Type</th>
-                <th style={{ textAlign: 'right', padding: '0.5rem' }}>Amount</th>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t) => (
-                <tr key={t.id} style={{ borderBottom: '1px solid var(--color-bg-secondary)' }}>
-                  <td style={{ padding: '0.5rem' }}>
-                    {new Date(t.created_at).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '0.5rem', textTransform: 'capitalize' }}>
-                    {t.type.replace('_', ' ')}
-                  </td>
-                  <td style={{
-                    padding: '0.5rem',
-                    textAlign: 'right',
-                    color: t.amount > 0 ? 'var(--color-success)' : 'inherit'
-                  }}>
-                    {t.amount > 0 ? `+${t.amount}` : t.amount}
-                  </td>
-                  <td style={{ padding: '0.5rem' }}>{t.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <TransactionLedger
+          transactions={transactions}
+          isPending={areTransactionsPending}
+          isError={areTransactionsError}
+        />
       </div>
 
       <Dialog ref={bankDetailsRef}>

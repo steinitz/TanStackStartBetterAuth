@@ -1,0 +1,116 @@
+import {
+  queryOptions,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query'
+import { useSession } from './auth-client'
+import { getTransactions, getWalletStatus } from './wallet'
+
+const walletQueryDefaults = {
+  retry: false,
+  staleTime: Infinity,
+  gcTime: 0,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const
+
+export const walletKeys = {
+  all: ['wallet'] as const,
+  user: (userId: string) => [...walletKeys.all, userId] as const,
+  status: (userId: string, timezoneOffset: number) =>
+    [...walletKeys.user(userId), 'status', timezoneOffset] as const,
+  transactions: (userId: string) =>
+    [...walletKeys.user(userId), 'transactions'] as const,
+}
+
+export function getBrowserTimezoneOffset() {
+  if (typeof window === 'undefined') return null
+
+  // Send offset in milliseconds (inverted from minutes).
+  // e.g. UTC+11 is -660 mins. -(-660) * 60 * 1000 = +39600000 ms.
+  return -new Date().getTimezoneOffset() * 60 * 1000
+}
+
+export function walletStatusQueryOptions(
+  userId: string | undefined,
+  timezoneOffset: number | null,
+) {
+  const isEnabled = Boolean(userId && timezoneOffset !== null)
+
+  return queryOptions({
+    queryKey: userId && timezoneOffset !== null
+      ? walletKeys.status(userId, timezoneOffset)
+      : ([...walletKeys.all, null, 'status'] as const),
+    queryFn: async () => {
+      if (!userId || timezoneOffset === null) {
+        throw new Error('Wallet status requires a signed-in browser session')
+      }
+
+      return getWalletStatus({ data: timezoneOffset })
+    },
+    enabled: isEnabled,
+    ...walletQueryDefaults,
+  })
+}
+
+export function transactionsQueryOptions(userId: string | undefined) {
+  const isEnabled = Boolean(userId && typeof window !== 'undefined')
+
+  return queryOptions({
+    queryKey: userId && typeof window !== 'undefined'
+      ? walletKeys.transactions(userId)
+      : ([...walletKeys.all, null, 'transactions'] as const),
+    queryFn: async () => {
+      if (!userId) {
+        throw new Error('Transactions require a signed-in session')
+      }
+
+      return getTransactions()
+    },
+    enabled: isEnabled,
+    ...walletQueryDefaults,
+  })
+}
+
+/**
+ * Refreshes every active wallet resource for one user after an authoritative
+ * mutation. Cancellation must finish first: invalidating an initially pending
+ * query can otherwise deduplicate onto its pre-mutation request.
+ */
+export async function refreshWalletQueries(queryClient: QueryClient, userId: string) {
+  const queryKey = walletKeys.user(userId)
+
+  await queryClient.cancelQueries({ queryKey })
+  await queryClient.invalidateQueries({ queryKey })
+}
+
+export function useWallet() {
+  const { data: session } = useSession()
+  const userId = session?.user?.id
+  const queryClient = useQueryClient()
+  const query = useQuery(walletStatusQueryOptions(userId, getBrowserTimezoneOffset()))
+
+  const refreshWallet = async () => {
+    if (!userId) return
+
+    await refreshWalletQueries(queryClient, userId)
+  }
+
+  return {
+    ...query,
+    wallet: query.data ?? null,
+    credits: query.data?.credits ?? null,
+    refreshWallet,
+  }
+}
+
+export function useTransactions() {
+  const { data: session } = useSession()
+  const query = useQuery(transactionsQueryOptions(session?.user?.id))
+
+  return {
+    ...query,
+    transactions: query.data,
+  }
+}

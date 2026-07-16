@@ -28,6 +28,12 @@ test.describe('Credits Flow', () => {
     const claimButton = page.getByRole('button', { name: creditsSelectors.claimWelcomeGrantButton });
     await expect(claimButton).toBeVisible();
 
+    // A balance assertion alone is not enough: the old implementation reloaded the page and also
+    // ended up with the right number. This marker survives React updates but not a document reload.
+    await page.evaluate(() => {
+      document.body.dataset.creditsFlowDocument = 'before-claim';
+    });
+
     // Handle the alert
     page.once('dialog', dialog => {
       expect(dialog.message()).toContain(creditsStrings.welcomeGrantClaimedAlert);
@@ -38,6 +44,8 @@ test.describe('Credits Flow', () => {
 
     // Verify balance updated
     await expect(walletWidget).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + e2eEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
+    await expect(page.getByText('One-time Welcome Grant')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.body.dataset.creditsFlowDocument)).toBe('before-claim');
 
     // 5. Verify the configured purchase path is available
     if (e2eEnv.IS_STRIPE_ENABLED) {

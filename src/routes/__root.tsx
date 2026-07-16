@@ -3,15 +3,20 @@
 import type { ReactNode } from 'react'
 import {
   Outlet,
-  createRootRoute,
+  createRootRouteWithContext,
   HeadContent,
   Scripts,
 } from '@tanstack/react-router'
+import type { QueryClient } from '@tanstack/react-query'
 import { clientEnv } from '~/lib/env.app'
 
 import { MainLayout } from '~/components/MainLayout'
 
-export const Route = createRootRoute({
+type RouterContext = {
+  queryClient: QueryClient
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
       {

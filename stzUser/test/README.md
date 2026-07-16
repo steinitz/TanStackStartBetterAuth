@@ -239,10 +239,10 @@ Class for Mailpit email testing:
 **Our testing setup is designed specifically for TanStack Start applications:**
 
 ### 1. **Application Dependencies**
-Our application components use **TanStack Start server functions**, not TanStack Query hooks:
+Application components use **TanStack Start server functions** for server boundaries. The wallet UI additionally uses TanStack Query to coordinate authenticated server state:
 - `useGetAllUsers()` - TanStack Start server function created with `createServerFn()`
 - `useDeleteUserById()` - TanStack Start server function created with `createServerFn()`
-- These provide server-side functionality with client-side interfaces
+- `useWallet()` / `useTransactions()` - domain hooks backed by server functions and one user-scoped Query cache family
 
 ### 2. **Testing Strategy**
 Our tests work by mocking the server functions directly:
@@ -255,17 +255,17 @@ vi.mock('~stzUser/lib/users-client', () => ({
 }))
 ```
 
-### 3. **No Query Client Needed**
-Since we use TanStack Start server functions instead of TanStack Query:
-- No `QueryClientProvider` is required
-- No query cache management needed
-- Tests focus on component behavior with mocked server responses
+### 3. **Fresh Query Client Per Test**
+`renderWithProviders` creates a new `QueryClient` for every render, disables retries, and supplies it through `QueryClientProvider`. This prevents one test's cache or in-flight request from leaking into another.
+
+Query-domain tests mock the underlying server functions, then exercise deduplication, identity changes, cache refresh and race handling through the real Query client.
 
 ### 4. **Clean Testing Environment**
 The `renderWithProviders` utility provides:
 - TanStack Router context with memory history
+- A fresh TanStack Query client and provider
 - Minimal route setup for component testing
-- No unnecessary dependencies or providers
+- Deterministic retry and cache isolation defaults
 
 ## Configuration
 

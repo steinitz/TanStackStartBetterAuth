@@ -36,6 +36,7 @@ const CheckPurchaseSchema = v.object({
 })
 
 export type { WalletStatus }
+export type WalletTransaction = Awaited<ReturnType<typeof getTransactionsInternal>>[number]
 
 /**
  * Server function to get the current user's wallet status.

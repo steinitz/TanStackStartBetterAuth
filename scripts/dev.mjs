@@ -30,11 +30,26 @@ function stripeEnabled() {
   }
 }
 
+// The relay must listen on the SAME Stripe account the app pays into. Bare `stripe listen` uses
+// whichever account the CLI is logged into — with sibling apps on separate Stripe accounts that
+// silently listens to the wrong one: the payment succeeds, but its webhook fires where nobody is
+// listening, so credits never grant and nothing errors. Scoping the CLI to this app's own secret
+// key closes that gap (and stops each app hearing the other's events).
+function stripeApiKeyArgs() {
+  try {
+    const match = readFileSync(join(repoRoot, '.env.development'), 'utf8')
+      .match(/^\s*STRIPE_SECRET_KEY\s*=\s*(\S+)\s*$/m)
+    return match ? ['--api-key', match[1]] : []
+  } catch {
+    return []
+  }
+}
+
 // `--print-secret` does double duty: it fetches the signing secret and detects readiness. If the
 // CLI is missing, not logged in, or unreachable, it errors or times out and we return null.
-function fetchWebhookSecret() {
+function fetchWebhookSecret(keyArgs) {
   try {
-    const res = spawnSync('stripe', ['listen', '--print-secret'], {
+    const res = spawnSync('stripe', ['listen', '--print-secret', ...keyArgs], {
       encoding: 'utf8',
       timeout: 8000,
       shell: true,
@@ -49,12 +64,13 @@ function fetchWebhookSecret() {
 let viteEnv = {}
 try {
   if (stripeEnabled()) {
-    const secret = fetchWebhookSecret()
+    const keyArgs = stripeApiKeyArgs()
+    const secret = fetchWebhookSecret(keyArgs)
     if (secret) {
       console.log('\n  ✓ Stripe: launching `stripe listen` relay and wiring a fresh STRIPE_WEBHOOK_SECRET into Vite.\n')
       const relay = spawn(
         'stripe',
-        ['listen', '--forward-to', `localhost:${port}/api/stripe-webhook`],
+        ['listen', '--forward-to', `localhost:${port}/api/stripe-webhook`, ...keyArgs],
         { stdio: 'inherit', shell: true },
       )
       children.push(relay)

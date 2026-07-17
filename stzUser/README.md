@@ -41,15 +41,17 @@ The foundation includes a robust, "bulletproof" wallet system designed for usage
   - **Double-Grant Protection**: Uses database transactions to ensure a daily grant is only applied once, even if multiple requests arrive simultaneously.
   - **Negative Balance Safeguard**: Uses atomic `WHERE credits >= amount` updates to guarantee that a user's balance never drops below zero.
 
-### Event-Driven UI
-The wallet system uses browser-native `CustomEvents` to decouple the UI from the underlying logic:
+### Reactive Wallet UI
+TanStack Query owns the authenticated user's wallet status and transaction history as one user-scoped server-state family. `useWallet()` gives the header and credits route one authoritative balance, while `useTransactions()` gives the ledger its own cache entry. Mutation producers that do not display wallet data use `useRefreshWallet()` so they can refresh the same family without observing wallet status. Confirmed credit-producing handlers cancel and invalidate the user's wallet family so both views refetch together without a document reload.
+
+The cache keys include user identity (and the browser timezone for wallet status), old-user data is discarded as soon as it becomes inactive, and no wallet request runs while signed out. The insufficient-credits dialog remains event-driven because it is a separate imperative notification:
 - `stz-event-insufficient-credits`: Dispatched when an action fails due to lack of funds. Listened to by the global `CreditsRequiredDialog`.
-- `stz-event-wallet-updated`: Dispatched after any credit change. Listened to by the `WalletWidget` to trigger an immediate re-fetch of the balance.
 
 ### Components
-- `WalletWidget.tsx` - A clean, responsive display of the current credit balance, linking to the user's credits page.
+- `wallet-queries.ts` - Query keys, domain hooks and the cancel-then-invalidate refresh contract for wallet server state.
+- `WalletWidget.tsx` - A clean, responsive `useWallet()` consumer for the current credit balance, linking to the user's credits page.
 - `CreditsRequiredDialog.tsx` - A self-triggering singleton dialog that elegantly handles insufficient credit states across the entire application, providing a direct link to top up.
-- `/auth/credits` - A user-facing route for viewing the ledger, claiming grants, and requesting bank transfer purchases with smart adaptive UI that dims completed tasks.
+- `/auth/credits` - A user-facing route using `useWallet()` and `useTransactions()` for viewing the ledger, claiming grants, and requesting purchases with smart adaptive UI that dims completed tasks.
 - **Robust Claim Detection**: Uses a dedicated `welcome_claimed` database column for bulletproof one-time onboarding grant management.
 - **UI Logic Polish**: Includes fixes for the React "sticky zero" numeric input issue, theme-aware input styling (inherited from global CSS), and perfect vertical alignment for numeric labels.
 

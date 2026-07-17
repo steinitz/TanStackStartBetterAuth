@@ -7,6 +7,7 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 
 type RenderOptions = {
@@ -21,12 +22,24 @@ type RenderOptions = {
  *
  * @param Component  The React component to mount.
  * @param opts       Render options.
- * @returns { router, renderResult }
+ * @returns { router, queryClient, renderResult }
  */
 export async function renderWithProviders(
   Component: React.ComponentType,
   { pathPattern, initialEntry = pathPattern }: RenderOptions,
 ) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: Infinity,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  })
+
   // Root route with minimal Outlet for rendering child routes
   const rootRoute = createRootRoute({
     component: () => (
@@ -59,8 +72,12 @@ export async function renderWithProviders(
   })
 
   // Render and wait for the route to resolve and the component to mount
-  const renderResult = render(<RouterProvider router={router} />)
+  const renderResult = render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  )
   await screen.findByTestId('root-layout')
 
-  return { router, renderResult }
+  return { router, queryClient, renderResult }
 }

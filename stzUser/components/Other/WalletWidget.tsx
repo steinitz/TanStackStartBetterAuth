@@ -1,36 +1,9 @@
-import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useSession } from '~stzUser/lib/auth-client'
-import { getWalletStatus, type WalletStatus } from '~stzUser/lib/wallet'
-import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
+import { useWallet } from '~stzUser/lib/wallet-queries'
 
 export function WalletWidget({ style = {} }) {
-  const { data: session } = useSession()
-  const [wallet, setWallet] = useState<WalletStatus | null>(null)
-
+  const { wallet } = useWallet()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    const fetchWallet = () => {
-      if (session?.user?.id) {
-        // Send offset in milliseconds (inverted from minutes)
-        // e.g. UTC+11 is -660 mins. -(-660) * 60 * 1000 = +39600000 ms.
-        const offset = -new Date().getTimezoneOffset() * 60 * 1000
-        getWalletStatus({ data: offset })
-          .then(setWallet)
-          .catch(err => console.error('Failed to fetch wallet status:', err))
-      }
-    }
-
-    fetchWallet()
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener(WALLET_EVENTS.UPDATED, fetchWallet)
-      return () => {
-        window.removeEventListener(WALLET_EVENTS.UPDATED, fetchWallet)
-      }
-    }
-  }, [session?.user?.id])
 
   if (!wallet) return null
 

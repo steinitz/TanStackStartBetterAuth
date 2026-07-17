@@ -1,6 +1,9 @@
 [build]
-  command = "pnpm run build"
+  # Latest pnpm on every deploy, matching how we work locally. Deliberate: exact-version
+  # pins (packageManager, PNPM_VERSION) have only ever caused fights here — see the
+  # January 2026 netlify.toml/.nvmrc flail ending at 0be953e, whose working fix was this.
+  command = "npm install -g pnpm && pnpm run build"
   publish = "dist/client"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"

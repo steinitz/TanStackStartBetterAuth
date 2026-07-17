@@ -32,7 +32,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.33.0",
   "dependencies": {
     "@libsql/client": "^0.17.2",
     "@stripe/react-stripe-js": "6.6.0",

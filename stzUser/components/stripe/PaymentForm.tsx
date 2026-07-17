@@ -17,7 +17,7 @@
 // return search params are present.
 import { loadStripe, type Appearance, type Stripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { clientEnv } from '~stzUser/lib/env'
 import { createStripePaymentIntent, checkPurchase } from '~stzUser/lib/wallet'
 import { useGoBack } from '~stzUser/lib/useGoBack'
@@ -97,9 +97,13 @@ function ProvisionalView({ state }: { state: Provisional }) {
   }
 
   // Every terminal state ends with a right-justified Exit so the user is never stranded
-  // (the page's own Exit link sits below a long ledger and is effectively never seen).
-  const exitRow = (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+  // (the page's own Exit link sits below a long ledger and is effectively never seen). States
+  // that may warrant support pass a leading node — it sits at the left, a calm standing offer
+  // rather than an alarm bolted to the error text (which invited a ticket for every mistyped amount).
+  const exitRow = (leading?: ReactNode) => (
+    <div style={{ display: 'flex', justifyContent: leading ? 'space-between' : 'flex-end',
+                 alignItems: 'center', marginTop: '1rem' }}>
+      {leading}
       <button onClick={goBack}>Exit</button>
     </div>
   )
@@ -111,24 +115,23 @@ function ProvisionalView({ state }: { state: Provisional }) {
           <p style={{ margin: 0, color: 'var(--color-text)' }}>
             Success — {state.amount ? <strong>{state.amount} credits</strong> : 'your credits'} have been added.
           </p>
-          {exitRow}
+          {exitRow()}
         </>
       )
     case 'timeout':
       return (
         <>
           <p style={{ margin: 0 }}>
-            Payment received — your credits are being added and will appear shortly. <ContactLink /> if they don’t.
+            Payment received — your credits are being added and will appear shortly.
           </p>
-          {exitRow}
+          {exitRow(<ContactLink />)}
         </>
       )
     case 'failed':
       return (
         <>
           <p style={{ margin: 0, color: 'var(--color-error)' }}>{state.message}</p>
-          <p style={{ margin: '0.5rem 0 0' }}><ContactLink /> if this keeps happening.</p>
-          {exitRow}
+          {exitRow(<ContactLink />)}
         </>
       )
   }

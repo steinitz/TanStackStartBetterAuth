@@ -33,8 +33,11 @@ export async function createPaymentIntentForUser(
 
   const amountCents = computeStripeAmountCents(creditsRequested)
 
-  if (amountCents < getStripeMinCents()) {
-    throw new Error('Purchase amount is below the minimum Stripe will charge')
+  const minCents = getStripeMinCents()
+  if (amountCents < minCents) {
+    // Name the figure — the user sees an AUD total on the form, so an AUD floor is the
+    // actionable thing to compare it against, not a number they have to divine.
+    throw new Error(`Purchase amount is below Stripe's minimum of AUD$${(minCents / 100).toFixed(2)}`)
   }
   if (amountCents > STRIPE_MAX_CENTS) {
     throw new Error('Purchase amount exceeds the maximum Stripe will charge')

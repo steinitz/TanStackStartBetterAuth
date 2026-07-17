@@ -26,8 +26,8 @@ const STRIPE_MIN_CENTS_DEFAULT = 50
 
 /**
  * The minimum charge, in AUD cents, that Stripe will accept — used as the create-time floor so we
- * never mint an intent Stripe would reject. Server-only (never client-exposed). Conservative default
- * of 50 cents; confirm the exact AUD minimum at stage (F1, `[open]`).
+ * never mint an intent Stripe would reject. Server-only (never client-exposed). The 50-cent default
+ * is confirmed correct — a live AUD$0.50 purchase succeeded and AUD$0.20 was rejected at stage (2026-07-17).
  *
  * A malformed env value must NOT silently disable the floor (Codex Step-3 P3): `Number('abc')` is
  * NaN, and `amountCents < NaN` is always false — the guard would vanish. So reject any non-positive-

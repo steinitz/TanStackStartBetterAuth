@@ -114,7 +114,7 @@ describe('createPaymentIntentForUser (server-priced create core)', () => {
     // 100 credits @ 0.001 = 10 cents, above the business min (10 credits) but below the 50-cent Stripe floor.
     await expect(
       createPaymentIntentForUser('user_1', { creditsRequested: 100, idempotencyKey: VALID_UUID }),
-    ).rejects.toThrow(/below the minimum Stripe/)
+    ).rejects.toThrow(/below Stripe's minimum/)
     expect(mockCreate).not.toHaveBeenCalled()
   })
 

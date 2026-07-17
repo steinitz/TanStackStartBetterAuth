@@ -1,8 +1,10 @@
 [build]
-  # Latest pnpm on every deploy, matching how we work locally. Deliberate: exact-version
-  # pins (packageManager, PNPM_VERSION) have only ever caused fights here — see the
-  # January 2026 netlify.toml/.nvmrc flail ending at 0be953e, whose working fix was this.
-  command = "npm install -g pnpm && pnpm run build"
+  # Just build. Netlify's image already ships pnpm and installs deps before this runs.
+  # Don't re-add `npm install -g pnpm` — it collides with the bundled one (EEXIST) and
+  # fails the build; that January-2026 workaround (0be953e) is obsolete, the image now
+  # bundles pnpm. No packageManager pin either — the image's default pnpm reads our
+  # lockfile fine (proven by this recipe deploying green).
+  command = "pnpm run build"
   publish = "dist/client"
 
 [build.environment]

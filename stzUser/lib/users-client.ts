@@ -2,8 +2,19 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
+import * as v from 'valibot'
 import { getAllUsers, deleteUserById, setUserRole, demoteUserToUserRole, updateEmailVerificationStatus, type User } from './users'
 import {userRolesType} from '~stzUser/constants'
+
+export const UpdateEmailVerificationStatusSchema = v.strictObject({
+  userId: v.pipe(
+    v.string(),
+    v.trim(),
+    v.nonEmpty('User ID is required'),
+    v.maxLength(255, 'User ID is too long'),
+  ),
+  emailVerified: v.boolean(),
+})
 
 // Client-side server functions that call the server functions
 export const useGetAllUsers = createServerFn({
@@ -59,7 +70,7 @@ export const useDemoteUserToUserRole = createServerFn({ method: 'POST' })
   })
 
 export const useUpdateEmailVerificationStatus = createServerFn({ method: 'POST' })
-  .inputValidator((data: { userId: string; emailVerified: boolean }) => data)
+  .inputValidator((data: unknown) => v.parse(UpdateEmailVerificationStatusSchema, data))
   .handler(async ({ data }) => {
     // Get request context for authentication
     const request = getRequest()

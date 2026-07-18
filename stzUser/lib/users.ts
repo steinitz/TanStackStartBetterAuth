@@ -6,6 +6,9 @@ import { UserWithRole, ListUsersResponse, db } from './database'
 /**
  * Query users directly from the database using Kysely
  * This function bypasses the Better Auth API and queries the user table directly
+ *
+ * Diagnostic helper only. It must never be used as an authorization fallback:
+ * a rejected Better Auth admin request must fail closed.
  */
 export async function queryUsersWithKysely(): Promise<UserWithRole[]> {
   try {
@@ -74,8 +77,7 @@ export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
     return result.users || []
   } catch (error) {
     console.error('Error fetching users from Better Auth API:', error)
-    // Fallback to basic user data from database using Kysely
-    return queryUsersWithKysely()
+    throw error
   }
 }
 
@@ -148,23 +150,17 @@ export async function demoteUserToUserRole(data: { userId: string }, headers: He
 
 export async function updateEmailVerificationStatus(data: { userId: string; emailVerified: boolean }, headers: Headers) {
   try {
-    // Get current session to verify admin access
-    const session = await auth.api.getSession({ headers })
-
-    if (!session) {
-      throw new Error('Not authenticated')
-    }
-
-    // Update email verification status using Kysely
-    const result = await db
-      .updateTable('user')
-      .set({ emailVerified: data.emailVerified })
-      .where('id', '=', data.userId)
-      .executeTakeFirst()
-
-    if (!result || result.numUpdatedRows === 0n) {
-      throw new Error('User not found or no changes made')
-    }
+    // Keep authorization inside Better Auth's admin endpoint. In particular, do
+    // not reduce this mutation to a mere "has a session" database write.
+    const result = await (auth.api as any).adminUpdateUser({
+      body: {
+        userId: data.userId,
+        data: {
+          emailVerified: data.emailVerified,
+        },
+      },
+      headers,
+    })
 
     return { success: true, result }
   } catch (error) {

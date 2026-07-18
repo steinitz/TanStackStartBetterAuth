@@ -6,6 +6,7 @@ import { loadE2eEnv } from '../e2e/config/e2e-env';
 
 const validEnv: Record<string, string> = {
   PLAYWRIGHT_RUNNING: 'true',
+  FIRST_USER_IS_ADMIN: 'false',
   BETTER_AUTH_SECRET: 'local-test-secret',
   BETTER_AUTH_URL: 'http://localhost:3019',
   BETTER_AUTH_ADDITIONAL_TRUSTED_ORIGINS: 'http://localhost:3019',
@@ -149,6 +150,7 @@ describe.sequential('E2E environment contract loader', () => {
   it.each([
     ['URL', { BETTER_AUTH_URL: 'not-a-url' }, 'BETTER_AUTH_URL'],
     ['port', { PORT: '3018' }, 'PORT'],
+    ['first-user flag', { FIRST_USER_IS_ADMIN: 'true' }, 'FIRST_USER_IS_ADMIN'],
     ['boolean', { IS_STRIPE_ENABLED: 'sometimes' }, 'IS_STRIPE_ENABLED'],
   ])('rejects an invalid %s relationship before startup', (_label, override, key) => {
     writeFixture({ ...validEnv, ...override });

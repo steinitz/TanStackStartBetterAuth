@@ -1,5 +1,7 @@
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from './auth'
+import { adminUserIds } from './admin-config.server'
+import { isAdmin, resolveAdminStatus } from './admin-identity'
 
 /**
  * The one auth preamble every authenticated server function shares: pull the request headers, resolve
@@ -18,4 +20,15 @@ export async function requireSessionUser() {
   if (!session?.user) throw new Error('Not authenticated')
 
   return session.user
+}
+
+export async function requireAdminUser() {
+  const user = await requireSessionUser()
+  if (!isAdmin(user, adminUserIds)) throw new Error('Admin access required')
+  return user
+}
+
+export async function getCurrentAdminStatus() {
+  const user = await requireSessionUser()
+  return resolveAdminStatus(user, adminUserIds)
 }

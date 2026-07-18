@@ -12,6 +12,8 @@ import { libsqlClient, db } from "./database"
 import { minPasswordLength } from "./password-validation"
 import { verifyTurnstileToken } from "~stzUser/lib/turnstile.server"
 import { APIError } from "better-auth/api"
+import { adminUserIds, firstUserIsAdmin } from './admin-config.server'
+import { createFirstUserAdminHook } from './admin-bootstrap.server'
 
 // import { getEnvVar } from "./env"
 
@@ -182,6 +184,16 @@ ${url}`,
       }
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        // Better Auth awaits this after-create hook before the sign-up request returns.
+        // With required email verification, the persisted role therefore exists before
+        // the user's first session can be issued.
+        after: createFirstUserAdminHook(firstUserIsAdmin),
+      },
+    },
+  },
   // session: {
   //   expiresIn: 60 * 60 * 24 * 7, // 7 days
   //   updateAge: 60 * 60 * 24, // 1 day (how often the session expiration is updated)
@@ -209,6 +221,7 @@ ${url}`,
   },
   plugins: [
     admin({
+      adminUserIds: [...adminUserIds],
       // Better Auth v1.x Bridge: New signups default to "user". 
       // This Access Control (AC) mapping tells the plugin that any user with the 
       // database role 'admin' should inherit all standard administrative permissions.

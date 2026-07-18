@@ -8,6 +8,7 @@ const forbiddenLocalFileName = '.env.e2e.local';
 
 export const sharedRequiredE2eKeys = [
   'PLAYWRIGHT_RUNNING',
+  'FIRST_USER_IS_ADMIN',
   'BETTER_AUTH_SECRET',
   'BETTER_AUTH_URL',
   'BETTER_AUTH_ADDITIONAL_TRUSTED_ORIGINS',
@@ -64,6 +65,7 @@ export type E2eProcessEnv = {
   DAILY_GRANT_CREDITS: number;
   WELCOME_GRANT_CREDITS: number;
   DEFAULT_CREDITS_PURCHASE: number;
+  FIRST_USER_IS_ADMIN: false;
   IS_STRIPE_ENABLED: boolean;
   STRIPE_PUBLISHABLE_KEY: string;
   STRIPE_SECRET_KEY: string;
@@ -100,6 +102,10 @@ function validateContract(env: Record<string, string>): string[] {
 
   if (env.PLAYWRIGHT_RUNNING !== 'true') {
     issues.push('PLAYWRIGHT_RUNNING must be true');
+  }
+
+  if (env.FIRST_USER_IS_ADMIN !== 'false') {
+    issues.push('FIRST_USER_IS_ADMIN must be false');
   }
 
   if (env.PORT !== '3019') {
@@ -236,6 +242,11 @@ function readPositiveProcessNumber(key: string): number {
  * mutating process.env.
  */
 export function readE2eEnvFromProcess(): E2eProcessEnv {
+  const firstUserAdminFlag = readRequiredProcessValue('FIRST_USER_IS_ADMIN');
+  if (firstUserAdminFlag !== 'false') {
+    throw invalidE2eEnvironment(['FIRST_USER_IS_ADMIN must be false']);
+  }
+
   const stripeFlag = readRequiredProcessValue('IS_STRIPE_ENABLED');
   if (stripeFlag !== 'true' && stripeFlag !== 'false') {
     throw invalidE2eEnvironment(['IS_STRIPE_ENABLED must be true or false']);
@@ -250,6 +261,7 @@ export function readE2eEnvFromProcess(): E2eProcessEnv {
     DAILY_GRANT_CREDITS: readPositiveProcessNumber('DAILY_GRANT_CREDITS'),
     WELCOME_GRANT_CREDITS: readPositiveProcessNumber('WELCOME_GRANT_CREDITS'),
     DEFAULT_CREDITS_PURCHASE: readPositiveProcessNumber('DEFAULT_CREDITS_PURCHASE'),
+    FIRST_USER_IS_ADMIN: false,
     IS_STRIPE_ENABLED: stripeFlag === 'true',
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ?? '',
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? '',

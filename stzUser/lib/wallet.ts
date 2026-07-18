@@ -1,13 +1,22 @@
 import { createServerFn } from '@tanstack/react-start'
 import * as v from 'valibot'
 import { requireSessionUser } from './server-auth'
-import { getWalletStatusInternal, consumeResourceInternal, grantCreditsInternal, type WalletStatus, getTransactionsInternal, claimWelcomeGrantInternal, checkPurchaseInternal } from './wallet.logic'
+import {
+  getWalletStatusInternal,
+  consumeResourceInternal,
+  type WalletStatus,
+  getTransactionsInternal,
+  claimWelcomeGrantInternal,
+  checkPurchaseInternal,
+  MAX_RESOURCE_CONSUMPTION,
+  MAX_RESOURCE_TYPE_LENGTH,
+} from './wallet.logic'
 import { clientEnv } from './env'
 import { sendEmail } from './mail-utilities'
 
 // Defensive upper bound on a single purchase, independent of the Stripe cents ceiling. Generous —
 // the real gate is the cents floor/ceiling in the create core — but it stops an absurd quantity here.
-const MAX_CREDITS_PURCHASE = 10_000_000
+export const MAX_CREDITS_PURCHASE = 10_000_000
 // The client sends a per-attempt UUID (crypto.randomUUID) for double-click dedupe; we namespace it
 // to the user before handing it to Stripe (keys are account-global). Shape-check it here.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -28,6 +37,47 @@ export const CreatePaymentIntentSchema = v.object({
   idempotencyKey: v.pipe(
     v.string('idempotencyKey must be a string'),
     v.regex(UUID_RE, 'idempotencyKey must be a UUID'),
+  ),
+})
+
+export const ConsumeResourceSchema = v.strictObject({
+  resourceType: v.pipe(
+    v.string('resourceType must be a string'),
+    v.trim(),
+    v.nonEmpty('resourceType is required'),
+    v.maxLength(
+      MAX_RESOURCE_TYPE_LENGTH,
+      `resourceType must be no longer than ${MAX_RESOURCE_TYPE_LENGTH} characters`,
+    ),
+  ),
+  amount: v.optional(
+    v.pipe(
+      v.number('amount must be a number'),
+      v.finite('amount must be finite'),
+      v.integer('amount must be a whole number'),
+      v.minValue(1, 'amount must be positive'),
+      v.maxValue(
+        MAX_RESOURCE_CONSUMPTION,
+        `amount must be no greater than ${MAX_RESOURCE_CONSUMPTION}`,
+      ),
+    ),
+    1,
+  ),
+})
+
+export const BankTransferRequestSchema = v.strictObject({
+  amount: v.pipe(
+    v.number('amount must be a number'),
+    v.finite('amount must be finite'),
+    v.integer('amount must be a whole number'),
+    v.minValue(
+      clientEnv.MIN_CREDITS_PURCHASE,
+      `Minimum purchase is ${clientEnv.MIN_CREDITS_PURCHASE} credits`,
+    ),
+    v.maxValue(
+      MAX_CREDITS_PURCHASE,
+      `Maximum purchase is ${MAX_CREDITS_PURCHASE} credits`,
+    ),
   ),
 })
 
@@ -59,7 +109,7 @@ export const getWalletStatus = createServerFn({
 export const useConsumeResource = createServerFn({
   method: 'POST',
 })
-  .inputValidator((data: { resourceType: string; amount?: number }) => data)
+  .inputValidator((data: unknown) => v.parse(ConsumeResourceSchema, data))
   .handler(async ({ data }) => {
     const user = await requireSessionUser()
 
@@ -67,22 +117,21 @@ export const useConsumeResource = createServerFn({
   })
 
 /**
- * Server function to grant credits to a user (e.g., for testing).
+ * Temporary compile bridge for the application-owned smoke route, which Slice 3 replaces.
+ * The old session-user grant endpoint is retired: this is deliberately not a server function
+ * and can never change credits.
  */
-export const useGrantCredits = createServerFn({
-  method: 'POST',
-})
-  .inputValidator((data: { amount: number; type?: 'manual_adjustment' | 'purchase'; description: string }) => data)
-  .handler(async ({ data }) => {
-    const user = await requireSessionUser()
-
-    return grantCreditsInternal(
-      user.id,
-      data.amount,
-      data.type || 'manual_adjustment',
-      data.description
-    )
-  })
+export async function useGrantCredits(
+  _input: {
+    data: {
+      amount: number
+      type?: 'manual_adjustment' | 'purchase'
+      description: string
+    }
+  },
+): Promise<never> {
+  throw new Error('The self-service credit grant has been retired; use credit administration')
+}
 
 /**
  * Server function to get the current user's transaction history.
@@ -112,24 +161,28 @@ export const claimWelcomeGrant = createServerFn({
 export const requestBankTransfer = createServerFn({
   method: 'POST',
 })
-  .inputValidator((data: { amount: number }) => data)
+  .inputValidator((data: unknown) => v.parse(BankTransferRequestSchema, data))
   .handler(async ({ data }) => {
     const user = await requireSessionUser()
+    return requestBankTransferForUser(user, data)
+  })
 
-    if (data.amount < clientEnv.MIN_CREDITS_PURCHASE) {
-      throw new Error(`Minimum purchase is ${clientEnv.MIN_CREDITS_PURCHASE} credits`)
-    }
+export async function requestBankTransferForUser(
+  user: { id: string; email: string },
+  input: unknown,
+) {
+  // Repeat validation next to the email side effect so no future internal caller can bypass it.
+  const data = v.parse(BankTransferRequestSchema, input)
+  const cost = (data.amount * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
 
-    const cost = (data.amount * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
-
-    // Notify developer
-    await sendEmail({
-      data: {
-        to: clientEnv.SUPPORT_EMAIL_ADDRESS,
-        from: clientEnv.SUPPORT_EMAIL_ADDRESS,
-        subject: `💰 Credit Purchase Request: ${user.email}`,
-        text: `User ${user.email} (ID: ${user.id}) has requested to purchase ${data.amount} credits for AUD$${cost} via bank transfer.`,
-        html: `
+  // Notify developer
+  await sendEmail({
+    data: {
+      to: clientEnv.SUPPORT_EMAIL_ADDRESS,
+      from: clientEnv.SUPPORT_EMAIL_ADDRESS,
+      subject: `💰 Credit Purchase Request: ${user.email}`,
+      text: `User ${user.email} (ID: ${user.id}) has requested to purchase ${data.amount} credits for AUD$${cost} via bank transfer.`,
+      html: `
           <h3>Credit Purchase Request</h3>
           <p><strong>User:</strong> ${user.email}</p>
           <p><strong>User ID:</strong> ${user.id}</p>
@@ -137,11 +190,11 @@ export const requestBankTransfer = createServerFn({
           <p><strong>Total Cost:</strong> AUD$${cost}</p>
           <p>Please wait for payment verification before manually granting credits via the Admin panel.</p>
         `
-      }
-    })
-
-    return { success: true }
+    }
   })
+
+  return { success: true }
+}
 
 /**
  * Server function to create a Stripe PaymentIntent for the authenticated user. Quantity-only input;

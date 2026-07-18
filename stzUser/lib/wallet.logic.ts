@@ -54,6 +54,26 @@ export function computeStripeAmountCents(creditsRequested: number): number {
 }
 
 const DAILY_ALLOWANCE = clientEnv.DAILY_GRANT_CREDITS
+export const MAX_RESOURCE_CONSUMPTION = 1_000_000
+export const MAX_RESOURCE_TYPE_LENGTH = 100
+
+function assertPositiveWholeAmount(amount: number, maximum: number, label: string) {
+  if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount <= 0 || amount > maximum) {
+    throw new Error(`${label} must be a positive whole number no greater than ${maximum}`)
+  }
+}
+
+function assertResourceType(resourceType: string) {
+  if (
+    typeof resourceType !== 'string' ||
+    resourceType.trim().length === 0 ||
+    resourceType.length > MAX_RESOURCE_TYPE_LENGTH
+  ) {
+    throw new Error(
+      `resourceType must be non-empty and no longer than ${MAX_RESOURCE_TYPE_LENGTH} characters`,
+    )
+  }
+}
 
 /**
  * Logic: Fetches wallet status for a specific user.
@@ -124,6 +144,10 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
  * Logic: Consumes a resource (variable credits) for a specific user.
  */
 export async function consumeResourceInternal(userId: string, resourceType: string, amount: number = 1) {
+  // Validate before applyDailyGrant: rejected calls must not mint credits or touch the ledger.
+  assertPositiveWholeAmount(amount, MAX_RESOURCE_CONSUMPTION, 'Consumption amount')
+  assertResourceType(resourceType)
+
   // 1. Ensure daily allowance is applied (assume 0 offset for consumption side-effects unless we want to thread it through)
   // For safety, let's just default to server time (offset 0) for consumption triggers, 
   // or we could require it. For now, default 0 is safe (worst case they miss a grant until next load).
@@ -181,6 +205,8 @@ export async function grantCreditsInternal(
   type: 'daily_grant' | 'purchase' | 'manual_adjustment',
   description: string
 ) {
+  assertPositiveWholeAmount(amount, Number.MAX_SAFE_INTEGER, 'Credit grant amount')
+
   return await db.transaction().execute(async (trx) => {
     return await grantCreditsTx(trx, userId, amount, type, description)
   })
@@ -201,7 +227,7 @@ export async function grantCreditsInternal(
  * Existing callers (no PI id) keep the `{ success: true }` shape; the purchase path speaks
  * `{ granted, duplicate }`.
  */
-async function grantCreditsTx(
+export async function grantCreditsTx(
   trx: any,
   userId: string,
   amount: number,
@@ -209,6 +235,8 @@ async function grantCreditsTx(
   description: string,
   stripePaymentIntentId?: string
 ) {
+  assertPositiveWholeAmount(amount, Number.MAX_SAFE_INTEGER, 'Credit grant amount')
+
   // 1. Add ledger entry.
   if (stripePaymentIntentId) {
     const inserted = await trx
@@ -253,17 +281,20 @@ async function grantCreditsTx(
     .where('id', '=', userId)
     .executeTakeFirst()
 
-  // Vanished-user guard — Stripe grant path only (existing callers hold a live user).
-  if (stripePaymentIntentId) {
-    if (Number(updated?.numUpdatedRows ?? 0n) === 0) {
+  // A missing user rolls back the ledger insert for every grant path. Stripe needs its
+  // permanent-failure signal; other callers receive a plain domain error.
+  if (Number(updated?.numUpdatedRows ?? 0n) === 0) {
+    if (stripePaymentIntentId) {
       throw new StripeFulfillmentError(
         'Balance update touched no rows — user no longer exists',
         true,
         { userId, stripePaymentIntentId },
       )
     }
-    return { granted: true }
+    throw new Error('Credit target does not exist')
   }
+
+  if (stripePaymentIntentId) return { granted: true }
 
   return { success: true }
 }

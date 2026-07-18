@@ -1,40 +1,79 @@
-import { test, expect } from './utils/console-buffer';
-import { createAuthenticatedUser } from './utils/testAuthUtils';
-import { readE2eEnvFromProcess } from './config/e2e-env';
+import { test, expect } from './utils/console-buffer'
+import { createAuthenticatedUser } from './utils/testAuthUtils'
+import { readE2eEnvFromProcess } from './config/e2e-env'
 
-const e2eEnv = readE2eEnvFromProcess();
+const e2eEnv = readE2eEnvFromProcess()
 
 test.describe('Wallet Visibility and Reactivity', () => {
-  test('should show correct wallet status after signup and updates', async ({ page }) => {
-    test.setTimeout(60000);
+  test('admin credit adjustments and self-ledger purge react without a reload', async ({ page }) => {
+    test.setTimeout(60_000)
 
-    // 1. Create a verified admin user and inject session — no signup UI, no Mailpit
-    const { email: uniqueEmail } = await createAuthenticatedUser(page, { role: 'admin' });
-    await page.goto('/');
+    const {
+      email: uniqueEmail,
+      userId,
+    } = await createAuthenticatedUser(page, { role: 'admin' })
+    await page.goto('/')
 
-    // Wait for session to hydrate
-    await expect(page.locator('p', { hasText: uniqueEmail })).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('p', { hasText: uniqueEmail })).toBeVisible({
+      timeout: 15_000,
+    })
 
-    // The WalletWidget should be visible in the header showing the daily grant
-    const walletBadge = page.locator('span', { hasText: /Credits/ });
-    await expect(walletBadge).toBeVisible({ timeout: 15000 });
-    await expect(walletBadge).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS} Credits`);
+    const walletBadge = page.locator('span', { hasText: /Credits/ })
+    await expect(walletBadge).toBeVisible({ timeout: 15_000 })
+    await expect(walletBadge).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS} Credits`,
+    )
 
-    // 3. Grant 10 Credits via Admin Tools
-    await page.goto('/admin');
+    await page.goto('/admin')
+    await expect(page.getByRole('heading', {
+      name: 'Credit administration',
+    })).toBeVisible({ timeout: 15_000 })
 
-    await expect(page.locator('h1')).toContainText('Admin Tools', { timeout: 15000 });
+    await page.getByLabel('Exact user ID').fill(userId)
+    await page.getByRole('button', { name: 'Look up user' }).click()
+    await expect(page.getByText(`User ID: ${userId}`)).toBeVisible()
+    await expect(page.getByText(/Cached balance:/)).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS} credits`,
+    )
 
-    await page.fill('input[type="number"]', '10');
-    await page.getByRole('button', { name: 'Process Grant' }).click();
+    await page.locator('#admin-add-amount').fill('10')
+    await page.locator('#admin-add-description').fill('E2E add adjustment')
+    await page.getByRole('button', { name: 'Add credits' }).click()
+    await expect(page.getByText(/Credits added:/)).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS} → ${e2eEnv.DAILY_GRANT_CREDITS + 10}`,
+    )
+    await expect(walletBadge).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS + 10} Credits`,
+    )
 
-    // The header widget should now show daily + 10
-    await expect(walletBadge).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + 10} Credits`, { timeout: 10000 });
+    await page.locator('#admin-remove-amount').fill('1')
+    await page.locator('#admin-remove-description').fill('E2E remove adjustment')
+    await page.getByRole('button', { name: 'Remove credits' }).click()
+    await expect(page.getByText(/Credits removed:/)).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS + 10} → ${e2eEnv.DAILY_GRANT_CREDITS + 9}`,
+    )
+    await expect(walletBadge).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS + 9} Credits`,
+    )
 
-    // 4. Consume 1 Credit
-    await page.getByRole('button', { name: 'Consume 1 Credit' }).click();
+    await expect(page.getByText(/This includes/)).toContainText(
+      '0 Stripe purchase rows',
+    )
+    await page.getByLabel(/Type.*PURGE MY LEDGER.*to confirm/).fill(
+      'PURGE MY LEDGER',
+    )
+    await page.getByRole('button', { name: 'Purge ledger' }).click()
+    await expect(page.getByText(/Cached balance is zero/)).toBeVisible()
+    await expect(walletBadge).toContainText('0 Credits')
 
-    // Page reloads
-    await expect(walletBadge).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + 9} Credits`);
+    // A later ordinary wallet read legitimately creates a fresh daily grant because purge
+    // removed today's evidence. The old adjustment rows stay gone.
+    await page.goto('/auth/credits')
+    await expect(walletBadge).toContainText(
+      `${e2eEnv.DAILY_GRANT_CREDITS} Credits`,
+    )
+    await expect(page.getByText('Daily credit grant')).toBeVisible()
+    await expect(page.getByText('E2E add adjustment')).toHaveCount(0)
+    await expect(page.getByText('E2E remove adjustment')).toHaveCount(0)
   })
 })

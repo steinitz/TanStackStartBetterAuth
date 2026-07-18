@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
 import { db } from '~stzUser/lib/database'
 import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal } from '~stzUser/lib/wallet.logic'
+import { removeCreditsInternal } from '~stzUser/lib/admin-credit.logic'
 import { auth } from '~stzUser/lib/auth'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
 import { testConstants } from '~stzUser/test/constants'
@@ -84,7 +85,7 @@ describe.sequential('Wallet Ledger Integration', () => {
 
   it('should handle granting credits correctly', async () => {
     await grantCreditsInternal(testUserId, 50, 'purchase', 'Huge Grant')
-    await grantCreditsInternal(testUserId, -10, 'manual_adjustment', 'Adjustment')
+    await removeCreditsInternal(testUserId, 10, 'Adjustment')
 
     const status = await getWalletStatusInternal(testUserId)
     // 100 initial + 50 - 10 = 140

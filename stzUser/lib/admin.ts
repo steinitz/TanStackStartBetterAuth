@@ -5,13 +5,7 @@ import {
   MAX_ADMIN_DESCRIPTION_LENGTH,
   MAX_USER_ID_LENGTH,
   PURGE_LEDGER_CONFIRMATION,
-  addCreditsInternal,
-  getAdminCreditTargetInternal,
-  getLedgerPurgePreviewInternal,
-  purgeLedgerInternal,
-  removeCreditsInternal,
-} from './admin-credit.logic'
-import { getCurrentAdminStatus, requireAdminUser } from './server-auth'
+} from './admin-credit'
 
 const AdminTargetSchema = v.strictObject({
   userId: v.pipe(
@@ -54,11 +48,16 @@ export const PurgeLedgerSchema = v.strictObject({
 })
 
 export const getAdminStatus = createServerFn({ method: 'GET' })
-  .handler(() => getCurrentAdminStatus())
+  .handler(async () => {
+    const { getCurrentAdminStatus } = await import('./server-auth')
+    return getCurrentAdminStatus()
+  })
 
 export const lookupAdminCreditTarget = createServerFn({ method: 'GET' })
   .inputValidator((data: unknown) => v.parse(AdminTargetSchema, data))
   .handler(async ({ data }) => {
+    const { requireAdminUser } = await import('./server-auth')
+    const { getAdminCreditTargetInternal } = await import('./admin-credit.logic')
     await requireAdminUser()
     return getAdminCreditTargetInternal(data.userId)
   })
@@ -66,6 +65,8 @@ export const lookupAdminCreditTarget = createServerFn({ method: 'GET' })
 export const addCredits = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(AdminCreditAdjustmentSchema, data))
   .handler(async ({ data }) => {
+    const { requireAdminUser } = await import('./server-auth')
+    const { addCreditsInternal } = await import('./admin-credit.logic')
     await requireAdminUser()
     return addCreditsInternal(data.userId, data.amount, data.description)
   })
@@ -73,12 +74,16 @@ export const addCredits = createServerFn({ method: 'POST' })
 export const removeCredits = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(AdminCreditAdjustmentSchema, data))
   .handler(async ({ data }) => {
+    const { requireAdminUser } = await import('./server-auth')
+    const { removeCreditsInternal } = await import('./admin-credit.logic')
     await requireAdminUser()
     return removeCreditsInternal(data.userId, data.amount, data.description)
   })
 
 export const previewLedgerPurge = createServerFn({ method: 'GET' })
   .handler(async () => {
+    const { requireAdminUser } = await import('./server-auth')
+    const { getLedgerPurgePreviewInternal } = await import('./admin-credit.logic')
     const adminUser = await requireAdminUser()
     return getLedgerPurgePreviewInternal(adminUser.id)
   })
@@ -86,6 +91,8 @@ export const previewLedgerPurge = createServerFn({ method: 'GET' })
 export const purgeLedger = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(PurgeLedgerSchema, data))
   .handler(async () => {
+    const { requireAdminUser } = await import('./server-auth')
+    const { purgeLedgerInternal } = await import('./admin-credit.logic')
     const adminUser = await requireAdminUser()
     return purgeLedgerInternal(adminUser.id)
   })

@@ -10,7 +10,7 @@ import {
   previewLedgerPurge,
 } from './admin'
 import type { AdminStatus } from './admin-identity'
-import type { WalletStatus } from './wallet.logic'
+import type { WalletStatus } from './wallet-contracts'
 import { walletKeys } from './wallet-queries'
 
 const signedOutAdminStatus: AdminStatus = {

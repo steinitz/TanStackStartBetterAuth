@@ -86,6 +86,29 @@ pnpm test:e2e     # Run E2E tests
 pnpm dev:vite     # Start Vite directly, bypassing the dev launcher
 ```
 
+## Admin access and first-user bootstrap
+
+Administrative access is effective when either Better Auth stores `admin` in the
+user's role or the user's exact ID appears in the server-only, comma-separated
+`ADMIN_USER_IDS` environment variable. The `/admin` page and its Footer link use
+that same server-derived decision; hiding the link is only discovery, while every
+money-changing server function authorizes independently.
+
+`FIRST_USER_IS_ADMIN=true` promotes the first created user to the persisted Better
+Auth `admin` role. An unset value is false, and any value other than explicit
+`true` or `false` fails during configuration. The copied `.env.example` uses true
+for lone-operator self-hosting convenience; `.env.e2e.example` uses false so test
+fixtures never gain administration from creation order. Public deployments should
+explicitly set:
+
+```dotenv
+FIRST_USER_IS_ADMIN=false
+```
+
+`ADMIN_USER_IDS` remains the recovery route when automatic first-user promotion is
+disabled or an installation has no stored-role admin. Environment-admin IDs are
+never sent to the browser.
+
 ## Testing Stripe purchases locally
 
 Only relevant if you are working on the credit-purchase flow (`IS_STRIPE_ENABLED=true`). Otherwise ignore this — `pnpm dev` behaves like a normal dev server.

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { Footer } from './Footer'
@@ -15,6 +15,10 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('~stzUser/lib/auth-client', () => ({
   useSession: vi.fn(),
+}))
+
+vi.mock('~stzUser/lib/admin-queries', () => ({
+  useAdminStatus: vi.fn(),
 }))
 
 // Mock env.ts with all required exports
@@ -36,12 +40,16 @@ vi.mock('~stzUser/lib/env', () => {
 })
 
 import { clientEnv } from '~stzUser/lib/env'
-import { useSession } from '~stzUser/lib/auth-client'
+import { useAdminStatus } from '~stzUser/lib/admin-queries'
 
 describe('Footer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should render two-row layout with correct content for admin', () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: { user: { role: 'admin' } }
+    vi.mocked(useAdminStatus).mockReturnValue({
+      data: { isAdmin: true, source: 'role' },
     } as any)
 
     const { getByText } = render(<Footer />)
@@ -64,9 +72,18 @@ describe('Footer', () => {
     expect(getByText('Admin Tools')).toBeDefined()
   })
 
-  it('should NOT render Admin Tools for regular user', () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: { user: { role: 'user' } }
+  it('should render Admin Tools for an environment admin', () => {
+    vi.mocked(useAdminStatus).mockReturnValue({
+      data: { isAdmin: true, source: 'environment' },
+    } as any)
+
+    const { getByText } = render(<Footer />)
+    expect(getByText('Admin Tools')).toBeDefined()
+  })
+
+  it('should NOT render Admin Tools without effective admin status', () => {
+    vi.mocked(useAdminStatus).mockReturnValue({
+      data: { isAdmin: false, source: 'none' },
     } as any)
 
     const { queryByText } = render(<Footer />)
@@ -74,8 +91,8 @@ describe('Footer', () => {
   })
 
   it('should render single year copyright when start year is current year', () => {
-    vi.mocked(useSession).mockReturnValue({
-      data: { user: { role: 'admin' } }
+    vi.mocked(useAdminStatus).mockReturnValue({
+      data: { isAdmin: true, source: 'role' },
     } as any)
 
     const currentYear = new Date().getFullYear()

@@ -26,7 +26,10 @@ function TransactionsPage() {
     transactions,
     isPending: areTransactionsPending,
     isError: areTransactionsError,
-  } = useTransactions()
+  // Wallet status may create today's lazy grant. Do not race the ledger read against that write:
+  // an empty pre-grant result would then remain "fresh" forever under the intentional Infinity
+  // stale time, showing a 100-credit balance beside "No transactions found."
+  } = useTransactions(walletStatus !== null)
   const [purchaseAmount, setPurchaseAmount] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [isRequesting, setIsRequesting] = useState(false)
 

@@ -1,11 +1,16 @@
 import { db } from '~stzUser/lib/database'
 import { clientEnv } from '~stzUser/lib/env'
 import { logWithThrottledNotification } from '~stzUser/lib/logToServer'
+import {
+  MAX_RESOURCE_CONSUMPTION,
+  MAX_RESOURCE_TYPE_LENGTH,
+} from '~stzUser/lib/wallet-contracts'
 
-export type WalletStatus = {
-  credits: number
-  welcomeClaimed: boolean
-}
+export {
+  MAX_RESOURCE_CONSUMPTION,
+  MAX_RESOURCE_TYPE_LENGTH,
+} from '~stzUser/lib/wallet-contracts'
+export type { WalletStatus } from '~stzUser/lib/wallet-contracts'
 
 /**
  * A Stripe fulfillment failure the webhook must handle *deliberately*.
@@ -54,8 +59,6 @@ export function computeStripeAmountCents(creditsRequested: number): number {
 }
 
 const DAILY_ALLOWANCE = clientEnv.DAILY_GRANT_CREDITS
-export const MAX_RESOURCE_CONSUMPTION = 1_000_000
-export const MAX_RESOURCE_TYPE_LENGTH = 100
 
 function assertPositiveWholeAmount(amount: number, maximum: number, label: string) {
   if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount <= 0 || amount > maximum) {

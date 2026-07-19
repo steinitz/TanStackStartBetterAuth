@@ -16,6 +16,7 @@ import { useSession } from '~stzUser/lib/auth-client'
 import { getWalletStatus } from '~stzUser/lib/wallet'
 import {
   refreshWalletQueries,
+  transactionsQueryOptions,
   useRefreshWallet,
   useWallet,
   walletKeys,
@@ -70,6 +71,11 @@ describe('wallet queries', () => {
     expect(getWalletStatus).not.toHaveBeenCalled()
     expect(result.current.wallet).toBeNull()
     expect(result.current.credits).toBeNull()
+  })
+
+  it('can hold the ledger read until a lazy daily grant has finished', () => {
+    expect(transactionsQueryOptions('user-1', false).enabled).toBe(false)
+    expect(transactionsQueryOptions('user-1', true).enabled).toBe(true)
   })
 
   it('gives signed-in producers a user-scoped refresh without observing wallet status', async () => {

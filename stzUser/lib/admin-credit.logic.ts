@@ -1,18 +1,12 @@
 import type { Transaction } from 'kysely'
 import { db, type Database } from './database'
 import { grantCreditsTx } from './wallet.logic'
-
-export const MAX_ADMIN_CREDIT_ADJUSTMENT = 10_000_000
-export const MAX_ADMIN_DESCRIPTION_LENGTH = 500
-export const MAX_USER_ID_LENGTH = 255
-export const PURGE_LEDGER_CONFIRMATION = 'PURGE MY LEDGER'
-
-export type AdminCreditTarget = {
-  id: string
-  name: string
-  email: string
-  credits: number
-}
+import {
+  MAX_ADMIN_CREDIT_ADJUSTMENT,
+  MAX_ADMIN_DESCRIPTION_LENGTH,
+  MAX_USER_ID_LENGTH,
+  type AdminCreditTarget,
+} from './admin-credit'
 
 function assertTargetUserId(userId: string) {
   if (

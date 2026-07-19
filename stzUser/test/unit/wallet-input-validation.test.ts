@@ -13,8 +13,8 @@ import {
   BankTransferRequestSchema,
   ConsumeResourceSchema,
   MAX_CREDITS_PURCHASE,
-  requestBankTransferForUser,
 } from '~stzUser/lib/wallet'
+import { requestBankTransferForUser } from '~stzUser/lib/wallet-bank-transfer.server'
 import { MAX_RESOURCE_CONSUMPTION } from '~stzUser/lib/wallet.logic'
 
 describe('wallet server input validation', () => {

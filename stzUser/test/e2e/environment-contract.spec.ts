@@ -4,6 +4,7 @@ import { readE2eEnvFromProcess } from './config/e2e-env';
 test('E2E environment contract reaches the worker and browser', async ({ page, request }) => {
   const expected = readE2eEnvFromProcess();
   const serverOnlyKeys = [
+    'ADMIN_USER_IDS',
     'BETTER_AUTH_SECRET',
     'DATABASE_URL',
     'FIRST_USER_IS_ADMIN',

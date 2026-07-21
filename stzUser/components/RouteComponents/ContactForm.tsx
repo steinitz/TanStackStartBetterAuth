@@ -4,6 +4,7 @@ import {emailValidation, niceValidationIssues, sharedFormSubmission} from "~stzU
 import {type SyntheticEvent, useState} from "react";
 import {useSession} from "~stzUser/lib/auth-client";
 import {sendEmail} from "~stzUser/lib/mail-utilities";
+import {logToServer} from "~stzUser/lib/logToServer";
 import {ContactSent} from '~stzUser/components/Other/ContactSent';
 import {clientEnv} from '~stzUser/lib/env';
 import {Spacer} from "~stzUtils/components/Spacer";
@@ -116,21 +117,38 @@ export const ContactForm = ({
           ${fields.message}${senderIdFooter}`;
       };
 
-      const result = await sendEmail({
-        data: {
-          to: supportAddress,
-          from: fromAddress,
-          subject: `Contact form for ${companyName}`,
-          text: `${message(false)}`,
-          html: `<p>${message(true)}</p>`,
-        }
-      });
-
-      if (result) {
+      try {
+        await sendEmail({
+          data: {
+            to: supportAddress,
+            from: fromAddress,
+            subject: `Contact form for ${companyName}`,
+            text: `${message(false)}`,
+            html: `<p>${message(true)}</p>`,
+          }
+        });
         setMessageSent(true);
         onSuccess?.();
-      } else {
-        alert(`Message failed to send.`);
+      } catch (error) {
+        // sendEmail throws on failure — it never returns a falsy result — so the catch
+        // is the only place a failed send surfaces. Record it as server-side telemetry,
+        // carrying the sender's email and message so the note survives in a log the owner
+        // can still read. We deliberately do NOT notify: the alert email would travel the
+        // same SMTP path that just failed. Instead the alert hands the user the support
+        // address, so they can reach us from their own mail client, which does not.
+        void logToServer({
+          data: {
+            level: 'error',
+            message: 'Contact form failed to send',
+            context: {
+              name: fields.name,
+              email: fields.email,
+              message: fields.message,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          },
+        });
+        alert(`Message failed to send. Please email us directly at ${supportAddress}.`);
       }
     }
   };

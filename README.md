@@ -109,6 +109,12 @@ FIRST_USER_IS_ADMIN=false
 disabled or an installation has no stored-role admin. Environment-admin IDs are
 never sent to the browser.
 
+To obtain a user's ID without database access, sign in and send a message through
+the contact form; the sender's account ID appears at the foot of the resulting
+support email. A site owner can read their own ID from a test message — or a
+colleague's ID from a message that colleague sends — and add it to
+`ADMIN_USER_IDS`.
+
 ## Testing Stripe purchases locally
 
 Only relevant if you are working on the credit-purchase flow (`IS_STRIPE_ENABLED=true`). Otherwise ignore this — `pnpm dev` behaves like a normal dev server.

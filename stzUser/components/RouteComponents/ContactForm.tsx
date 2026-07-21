@@ -104,6 +104,14 @@ export const ContactForm = ({
         if (isHTML) {
           lineBreak = '<br>';
         }
+        // Stamp the signed-in user's account ID at the foot so a site owner can
+        // discover their own ID (for ADMIN_USER_IDS) by sending themselves a
+        // contact message. Sourced from the session, not the typed email field,
+        // so it always names the authenticated account. Omitted when signed out.
+        const senderId = session?.user?.id;
+        const senderIdFooter = senderId
+          ? `${lineBreak}${lineBreak}—${lineBreak}Sender account ID: ${senderId}`
+          : '';
         return `Contact-form support message from:
           ${lineBreak}
           ${fields.name}
@@ -112,7 +120,7 @@ export const ContactForm = ({
           ${lineBreak}${lineBreak}
           Message:
           ${lineBreak}
-          ${fields.message}`;
+          ${fields.message}${senderIdFooter}`;
       };
       
       console.log('📧 ContactForm: calling sendEmail to:', supportAddress, 'subject:', `Contact form for ${companyName}`);

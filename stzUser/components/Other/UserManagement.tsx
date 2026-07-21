@@ -1,13 +1,29 @@
-import { useDeleteUserById, useSetUserRole, useDemoteUserToUserRole, useUpdateEmailVerificationStatus, type User } from '~stzUser/lib/users-client'
+import {
+  useDeleteUserById,
+  useSetUserRole,
+  useDemoteUserToUserRole,
+  useUpdateEmailVerificationStatus,
+  userManagementKeys,
+  type User,
+} from '~stzUser/lib/users-client'
+import { adminStatusKeys } from '~stzUser/lib/admin-queries'
+import { hasStoredAdminRole, type AdminSource } from '~stzUser/lib/admin-identity'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useState, useEffect, useMemo } from 'react'
-import { admin } from '~stzUser/lib/auth-client'
+import { useState, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { userRoles, userRolesType } from '~stzUser/constants'
 import { testConstants } from '~stzUser/test/constants'
-import { useReactTable, getCoreRowModel, getSortedRowModel, createColumnHelper, flexRender } from '@tanstack/react-table'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  createColumnHelper,
+  flexRender,
+  type SortingState,
+} from '@tanstack/react-table'
 
 // takes a database date and formats it as 5 Aug 25
-const niceFormattedDate = (dateStringFromDB) => {
+const niceFormattedDate = (dateStringFromDB: string | Date) => {
   const options: Intl.DateTimeFormatOptions = {
     day: 'numeric',
     month: 'short',
@@ -23,18 +39,115 @@ const niceFormattedDate = (dateStringFromDB) => {
   return formatter.format(date);
 }
 
-export function UserManagement({ users }) {
-  const [adminUsers, setAdminUsers] = useState<Set<string>>(new Set())
-  const [sorting, setSorting] = useState([])
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const columnHelper = createColumnHelper<User>()
+const columnHelper = createColumnHelper<User>()
+
+const adminSourceLabels: Record<AdminSource, string> = {
+  none: 'User',
+  role: 'Stored-role admin',
+  environment: 'Environment admin',
+  both: 'Stored-role and environment admin',
+}
+
+const adminSourceRank: Record<AdminSource, number> = {
+  none: 0,
+  role: 1,
+  environment: 2,
+  both: 3,
+}
+
+function copyUserId(userId: string) {
+  navigator.clipboard.writeText(userId)
+  alert('User ID copied to clipboard!')
+}
+
+function AdminConfigurationDisclosure({ source }: { source: 'environment' | 'both' }) {
+  return (
+    <details
+      onClick={(event) => event.stopPropagation()}
+      style={{ display: 'inline-block', marginLeft: '0.5rem', verticalAlign: 'top' }}
+    >
+      <summary
+        aria-label={`Explain ${adminSourceLabels[source]}`}
+        style={{
+          alignItems: 'center',
+          border: '1px solid var(--color-link)',
+          borderRadius: '50%',
+          color: 'var(--color-link)',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          fontWeight: 'bold',
+          height: '1.5rem',
+          justifyContent: 'center',
+          listStyle: 'none',
+          width: '1.5rem',
+        }}
+      >
+        ?
+      </summary>
+      <div
+        role="note"
+        style={{
+          backgroundColor: 'var(--color-bg)',
+          border: '2px solid var(--color-link)',
+          color: 'var(--color-text)',
+          left: '50%',
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          padding: '1rem',
+          position: 'fixed',
+          top: '10vh',
+          transform: 'translateX(-50%)',
+          width: 'min(28rem, calc(100vw - 2rem))',
+          zIndex: 1000,
+        }}
+      >
+        <p>
+          Admin set through <code>ADMIN_USER_IDS</code> in a deployment environment variable or
+          an environment file such as <code>.env.production</code> or{' '}
+          <code>.env.development</code>. It is not editable here.
+        </p>
+        <p>To convert this account to database-based admin:</p>
+        <ol>
+          <li>Ensure you have a second admin account.</li>
+          <li>Remove the target user ID from <code>ADMIN_USER_IDS</code>.</li>
+          <li>Restart or redeploy the app. The target will temporarily lose admin access.</li>
+          <li>Sign in as the second administrator.</li>
+          <li>Return here and enable <strong>Stored admin role</strong> for the target account.</li>
+        </ol>
+        <p>The target finishes with the same admin privileges, now stored in the database.</p>
+        <button
+          type="button"
+          onClick={(event) => {
+            const details = event.currentTarget.closest('details')
+            if (details) {
+              details.open = false
+              details.querySelector('summary')?.focus()
+            }
+          }}
+        >
+          Close
+        </button>
+      </div>
+    </details>
+  )
+}
+
+export function UserManagement({ users }: { users: User[] }) {
+  const queryClient = useQueryClient()
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const selectedUser = users.find((user) => user.id === selectedUserId) ?? null
+
+  const refreshUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: userManagementKeys.all })
+  }
 
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
       try {
         await useDeleteUserById({ data: userId })
-        // Refresh the page to show updated user list
-        window.location.reload()
+        setSelectedUserId(null)
+        await refreshUsers()
       } catch (error) {
         console.error('Error deleting user:', error)
         // Show the specific error message from the server
@@ -61,8 +174,8 @@ export function UserManagement({ users }) {
         for (const user of testUsers) {
           await useDeleteUserById({ data: user.id })
         }
-        // Refresh the page to show updated user list
-        window.location.reload()
+        setSelectedUserId(null)
+        await refreshUsers()
       } catch (error) {
         console.error('Error deleting test users:', error)
         const errorMessage = error instanceof Error ? error.message : 'Failed to delete test users'
@@ -72,21 +185,24 @@ export function UserManagement({ users }) {
   }
 
   const handleAdminToggle = async (userId: string) => {
-    const newAdminUsers = new Set(adminUsers)
-    const isCurrentlyAdmin = newAdminUsers.has(userId)
+    const user = users.find((candidate) => candidate.id === userId)
+    if (!user || user.adminSource === 'environment' || user.adminSource === 'both') return
+
+    const isCurrentlyAdmin = hasStoredAdminRole(user.role)
 
     try {
       if (isCurrentlyAdmin) {
         // Demote from admin to regular user
         await useDemoteUserToUserRole({ data: { userId } })
-        newAdminUsers.delete(userId)
       } else {
         // Add admin role
         await useSetUserRole({ data: { userId, role: userRoles.admin as userRolesType } })
-        newAdminUsers.add(userId)
       }
 
-      setAdminUsers(newAdminUsers)
+      await Promise.all([
+        refreshUsers(),
+        queryClient.invalidateQueries({ queryKey: adminStatusKeys.all }),
+      ])
       console.log('Admin role updated for user:', userId, 'Is admin:', !isCurrentlyAdmin)
     } catch (error) {
       console.error('Error updating admin role:', error)
@@ -101,9 +217,7 @@ export function UserManagement({ users }) {
 
     try {
       await useUpdateEmailVerificationStatus({ data: { userId, emailVerified: newEmailVerified } })
-
-      // Update the selected user state to reflect the change immediately
-      setSelectedUser({ ...selectedUser, emailVerified: newEmailVerified })
+      await refreshUsers()
 
       console.log('Email verification status updated for user:', userId, 'Verified:', newEmailVerified)
     } catch (error) {
@@ -112,36 +226,8 @@ export function UserManagement({ users }) {
     }
   }
 
-  const copyUserId = (userId: string) => {
-    navigator.clipboard.writeText(userId)
-    alert('User ID copied to clipboard!')
-  }
-
-  // Load admin users on component mount
-  useEffect(() => {
-    const loadAdminUsers = async () => {
-      try {
-        const { data: usersData, error } = await admin.listUsers({
-          query: {}
-        })
-        if (!error && usersData) {
-          const usersList = Array.isArray(usersData) ? usersData : usersData.users || []
-          const adminUserIds = new Set(
-            usersList
-              .filter(user => user.role === userRoles.admin)
-              .map(user => user.id)
-          )
-          setAdminUsers(adminUserIds)
-          console.log('Loaded admin users:', adminUserIds)
-        }
-      } catch (error) {
-        console.error('Error loading admin users:', error)
-      }
-    }
-
-    loadAdminUsers()
-  }, [])
-
+  // React Table consumes stable column definitions; this is the named reason the
+  // legacy memo remains while the redundant effect and mirrored user state leave.
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Name',
@@ -179,34 +265,23 @@ export function UserManagement({ users }) {
     // Other have reported this issue/bug since 2022.
     columnHelper.accessor('id', {
       id: 'role',
-      header: 'Role',
+      header: 'Admin access',
       cell: ({ row }) => {
         const user = row.original
         return (
-          <div
-            style={{
-              color: (adminUsers.has(user.id) ?
-                'var(--color-text)' :
-                'var(--color-text-secondary)')
-            }}
-          >
-            {adminUsers.has(user.id) ? userRoles.admin : userRoles.user}&nbsp;
-            {adminUsers.has(user.id) ? '👑' : '👤'}
+          <div style={{ color: 'var(--color-text)' }}>
+            {adminSourceLabels[user.adminSource]}&nbsp;
+            {user.adminSource === 'none' ? '👤' : '👑'}
+            {user.adminSource === 'environment' || user.adminSource === 'both' ? (
+              <AdminConfigurationDisclosure source={user.adminSource} />
+            ) : null}
           </div>
         )
       },
       enableSorting: true,
       sortingFn: (rowA, rowB) => {
-        // utility function to determine if user is an admin
-        const isAdmin = (userId) => adminUsers.has(userId)
-
-        // we just compare booleans
-        const valueA = isAdmin(rowA.original.id)
-        const valueB = isAdmin(rowB.original.id)
-
-        // first sort will put admins at the top
-        return valueA === valueB ? 0 :
-          valueA > valueB ? -1 : 1
+        return adminSourceRank[rowB.original.adminSource] -
+          adminSourceRank[rowA.original.adminSource]
       },
     }),
     columnHelper.display({
@@ -218,7 +293,7 @@ export function UserManagement({ users }) {
           <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
             <span
               onClick={() => copyUserId(user.id)}
-              style={{ cursor: 'pointer', textDecoration: 'underline', color: '#0066cc' }}
+              style={{ cursor: 'pointer', textDecoration: 'underline', color: 'var(--color-link)' }}
               title="Click to copy User ID"
             >
               ID: {user.id.substring(0, 8)}...
@@ -228,18 +303,10 @@ export function UserManagement({ users }) {
       },
     }),
 
-  ], [adminUsers, handleAdminToggle, handleDeleteUser, copyUserId])
-
-  // Create computed users data that incorporates selectedUser updates
-  const tableData = useMemo(() => {
-    if (!selectedUser) return users
-    return users.map(user =>
-      user.id === selectedUser.id ? selectedUser : user
-    )
-  }, [users, selectedUser])
+  ], [])
 
   const table = useReactTable({
-    data: tableData,
+    data: users,
     columns,
     state: {
       sorting,
@@ -282,10 +349,17 @@ export function UserManagement({ users }) {
 
   const CheckboxAndLabel = (
     {
-      selectedUser,
+      checked,
       changeHandler,
       label,
       inputId,
+      userId,
+    }: {
+      checked: boolean,
+      changeHandler: (userId: string) => void,
+      label: string,
+      inputId: string,
+      userId: string,
     }
   ) => {
     return (
@@ -296,8 +370,8 @@ export function UserManagement({ users }) {
           style={checkboxStyle}
           type="checkbox"
           id={inputId}
-          checked={selectedUser.emailVerified}
-          onChange={() => changeHandler(selectedUser.id)}
+          checked={checked}
+          onChange={() => changeHandler(userId)}
         />
         <label
           style={checkboxLabelStyle}
@@ -393,7 +467,7 @@ export function UserManagement({ users }) {
                     key={row.id}
                     onClick={() => {
                       const user = row.original
-                      setSelectedUser(user)
+                      setSelectedUserId(user.id)
                     }}
                     style={{
                       cursor: 'pointer',
@@ -443,21 +517,32 @@ export function UserManagement({ users }) {
                 <div>
                   <p><strong>Email:</strong> {selectedUser.email}</p>
                   <p><strong>ID:</strong> {selectedUser.id}</p>
+                  <p><strong>Admin access:</strong> {adminSourceLabels[selectedUser.adminSource]}</p>
                 </div>
 
                 <CheckboxAndLabel
-                  selectedUser={selectedUser}
+                  checked={selectedUser.emailVerified}
                   changeHandler={handleEmailVerificationToggle}
                   label={'Email Verified'}
                   inputId={'email-verified-checkbox'}
+                  userId={selectedUser.id}
                 />
 
-                <CheckboxAndLabel
-                  selectedUser={selectedUser}
-                  changeHandler={handleAdminToggle}
-                  label={'Admin Role'}
-                  inputId={'admin-role-checkbox'}
-                />
+                {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
+                  <p>
+                    <strong>Stored admin role:</strong>{' '}
+                    {hasStoredAdminRole(selectedUser.role) ? 'Enabled' : 'Not enabled'} — read-only
+                    while environment configuration grants this account admin access.
+                  </p>
+                ) : (
+                  <CheckboxAndLabel
+                    checked={hasStoredAdminRole(selectedUser.role)}
+                    changeHandler={handleAdminToggle}
+                    label={'Stored admin role'}
+                    inputId={'admin-role-checkbox'}
+                    userId={selectedUser.id}
+                  />
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'stretch' }}>
                   <button
@@ -473,7 +558,7 @@ export function UserManagement({ users }) {
                   <Spacer orientation='horizontal' />
                   <button
                     type="button"
-                    onClick={() => setSelectedUser(null)}
+                    onClick={() => setSelectedUserId(null)}
                   >
                     Close
                   </button>

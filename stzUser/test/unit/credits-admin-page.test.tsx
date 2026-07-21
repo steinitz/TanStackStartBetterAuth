@@ -85,6 +85,29 @@ describe('CreditsAdminPage', () => {
     })
   })
 
+  it('offers user management to an environment administrator', async () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: {
+        user: {
+          id: 'environment-admin',
+          email: 'environment@example.com',
+          role: 'user',
+        },
+      },
+    } as any)
+    vi.mocked(getAdminStatus).mockResolvedValue({
+      isAdmin: true,
+      source: 'environment',
+    })
+
+    const { view } = renderPage()
+
+    expect(await view.findByRole('link', { name: 'View Users' }))
+      .toHaveAttribute('href', '/auth/users')
+    expect(view.getByText(/effective admin via environment configuration/))
+      .toBeInTheDocument()
+  })
+
   it('requires an exact lookup and clears confirmation as soon as the ID changes', async () => {
     const { view } = renderPage()
 

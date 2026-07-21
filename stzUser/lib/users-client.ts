@@ -2,6 +2,7 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
+import { queryOptions } from '@tanstack/react-query'
 import * as v from 'valibot'
 import { getAllUsers, deleteUserById, setUserRole, demoteUserToUserRole, updateEmailVerificationStatus, type User } from './users'
 import {userRolesType} from '~stzUser/constants'
@@ -32,6 +33,21 @@ export const useGetAllUsers = createServerFn({
   
   return await getAllUsers(request.headers)
 })
+
+export const userManagementKeys = {
+  all: ['user-management'] as const,
+  users: () => [...userManagementKeys.all, 'users'] as const,
+}
+
+export function adminUsersQueryOptions(isAdmin: boolean) {
+  return queryOptions({
+    queryKey: userManagementKeys.users(),
+    queryFn: () => useGetAllUsers(),
+    enabled: Boolean(isAdmin && typeof window !== 'undefined'),
+    retry: false,
+    staleTime: 0,
+  })
+}
 
 export const useDeleteUserById = createServerFn({ method: 'POST' })
   .inputValidator((userId: string) => userId)

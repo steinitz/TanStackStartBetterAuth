@@ -21,6 +21,10 @@ vi.mock('~stzUser/lib/database', () => ({
   },
 }))
 
+vi.mock('~stzUser/lib/admin-config.server', () => ({
+  adminUserIds: ['environment-user', 'both-user'],
+}))
+
 import {
   getAllUsers,
   updateEmailVerificationStatus,
@@ -36,11 +40,21 @@ describe('user-management authorization boundaries', () => {
     expect(selectFrom).not.toHaveBeenCalled()
   })
 
-  it('returns the Better Auth user list without consulting the fallback query', async () => {
-    const users = [{ id: 'user-1', role: 'user' }]
+  it('annotates the authorized Better Auth list without exposing its configured IDs', async () => {
+    const users = [
+      { id: 'regular-user', role: 'user' },
+      { id: 'role-user', role: 'user,admin' },
+      { id: 'environment-user', role: 'user' },
+      { id: 'both-user', role: 'admin' },
+    ]
     listUsers.mockResolvedValue({ users })
 
-    await expect(getAllUsers(new Headers())).resolves.toEqual(users)
+    await expect(getAllUsers(new Headers())).resolves.toEqual([
+      { ...users[0], adminSource: 'none' },
+      { ...users[1], adminSource: 'role' },
+      { ...users[2], adminSource: 'environment' },
+      { ...users[3], adminSource: 'both' },
+    ])
     expect(selectFrom).not.toHaveBeenCalled()
   })
 

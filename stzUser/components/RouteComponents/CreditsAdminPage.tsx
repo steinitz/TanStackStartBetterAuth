@@ -180,8 +180,6 @@ export function CreditsAdminPage() {
     : adminStatus.data.source === 'both'
       ? 'stored role and environment configuration'
       : 'stored role'
-  const canViewUsers =
-    adminStatus.data.source === 'role' || adminStatus.data.source === 'both'
   const totalRows = previewQuery.data?.totalRows ?? '…'
   const stripeRows = previewQuery.data?.stripePurchaseRows ?? '…'
 
@@ -191,7 +189,7 @@ export function CreditsAdminPage() {
       <p>
         Signed in as <strong>{session.user.email}</strong>, effective admin via {adminSource}.
       </p>
-      {canViewUsers ? <p><a href="/auth/users">View Users</a></p> : null}
+      <p><a href="/auth/users">View Users</a></p>
 
       <section aria-labelledby="target-credit-actions">
         <h2 id="target-credit-actions">User credit actions</h2>

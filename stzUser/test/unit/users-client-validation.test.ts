@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import * as v from 'valibot'
-import { UpdateEmailVerificationStatusSchema } from '~stzUser/lib/users-client'
+import {
+  UpdateEmailVerificationStatusSchema,
+  adminUsersQueryOptions,
+  userManagementKeys,
+} from '~stzUser/lib/users-client'
 
 describe('email-verification mutation input', () => {
   it('accepts the intended shape and trims the user ID', () => {
@@ -20,5 +24,20 @@ describe('email-verification mutation input', () => {
     { userId: 'target', emailVerified: true, extra: 'discarded' },
   ])('rejects malformed input %#', (input) => {
     expect(v.safeParse(UpdateEmailVerificationStatusSchema, input).success).toBe(false)
+  })
+})
+
+describe('admin user-list query', () => {
+  it('uses one stable key and waits for confirmed effective-admin access', () => {
+    expect(adminUsersQueryOptions(false)).toMatchObject({
+      queryKey: userManagementKeys.users(),
+      enabled: false,
+      retry: false,
+    })
+    expect(adminUsersQueryOptions(true)).toMatchObject({
+      queryKey: userManagementKeys.users(),
+      enabled: true,
+      retry: false,
+    })
   })
 })

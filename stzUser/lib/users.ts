@@ -1,7 +1,9 @@
 'use server'
 
 import { auth } from './auth'
-import { UserWithRole, ListUsersResponse, db } from './database'
+import { adminUserIds } from './admin-config.server'
+import { resolveAdminStatus } from './admin-identity'
+import { UserWithRole, ListUsersResponse, db, type AdminManagedUser } from './database'
 
 /**
  * Query users directly from the database using Kysely
@@ -65,7 +67,7 @@ export async function queryUserWithKysely(email: string): Promise<UserWithRole |
   }
 }
 
-export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
+export async function getAllUsers(headers: Headers): Promise<AdminManagedUser[]> {
   try {
     // Use Better Auth API to get users with role information
     const result = await (auth.api as any).listUsers({
@@ -73,8 +75,12 @@ export async function getAllUsers(headers: Headers): Promise<UserWithRole[]> {
       headers
     }) as ListUsersResponse
 
-    // Return the users array from the response
-    return result.users || []
+    // Annotate only the authorized result. The raw configured ID list remains
+    // server-only while each visible row tells the truth about effective access.
+    return (result.users || []).map((user) => ({
+      ...user,
+      adminSource: resolveAdminStatus(user, adminUserIds).source,
+    }))
   } catch (error) {
     console.error('Error fetching users from Better Auth API:', error)
     throw error
@@ -169,5 +175,6 @@ export async function updateEmailVerificationStatus(data: { userId: string; emai
   }
 }
 
-// Export the UserWithRole type as User for backward compatibility
-export type User = UserWithRole
+// Export the authorized management view as User for backward compatibility
+// with the legacy component and route names.
+export type User = AdminManagedUser

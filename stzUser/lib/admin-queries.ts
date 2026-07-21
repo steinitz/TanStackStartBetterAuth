@@ -25,9 +25,15 @@ export const adminCreditKeys = {
     [...adminCreditKeys.all, 'purge-preview', userId] as const,
 }
 
+export const adminStatusKeys = {
+  all: ['admin-status'] as const,
+  user: (userId: string | undefined) =>
+    [...adminStatusKeys.all, userId ?? 'signed-out'] as const,
+}
+
 export function adminStatusQueryOptions(userId: string | undefined) {
   return queryOptions({
-    queryKey: ['admin-status', userId ?? 'signed-out'],
+    queryKey: adminStatusKeys.user(userId),
     queryFn: () => getAdminStatus(),
     enabled: Boolean(userId && typeof window !== 'undefined'),
     retry: false,

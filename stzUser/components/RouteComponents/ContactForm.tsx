@@ -60,8 +60,6 @@ export const ContactForm = ({
   // validate the form fields
   const [validationIssues, setValidationIssues] = useState<any>({});
 
-  console.log('ContactForm running')
-
   const validateFormFields = (fields: ContactData) => {
     const valibotResult = v.safeParse(
       ContactSchema,
@@ -87,15 +85,10 @@ export const ContactForm = ({
 
   // sends the contact message
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
-    console.log('🔄 ContactForm: sendMessage called');
     const fields = sharedFormSubmission(event);
-    console.log('📝 ContactForm: extracted fields:', fields);
-    
-    console.log('📝 ContactForm: current state before update - name:', name, 'email:', email, 'message:', message);
     setName(fields.name as string);
     setEmail(fields.email as string);
     setMessage(fields.message as string);
-    console.log('📝 ContactForm: state updated with fields - name:', fields.name, 'email:', fields.email, 'message:', fields.message);
 
     const isValid = validateFormFields(fields);
     if (isValid) {
@@ -122,9 +115,7 @@ export const ContactForm = ({
           ${lineBreak}
           ${fields.message}${senderIdFooter}`;
       };
-      
-      console.log('📧 ContactForm: calling sendEmail to:', supportAddress, 'subject:', `Contact form for ${companyName}`);
-      
+
       const result = await sendEmail({
         data: {
           to: supportAddress,
@@ -135,14 +126,10 @@ export const ContactForm = ({
         }
       });
 
-      console.log ({result})
-      
       if (result) {
-        console.log('✅ ContactForm: email sent successfully, setting messageSent to true');
         setMessageSent(true);
         onSuccess?.();
       } else {
-        console.log('❌ ContactForm: email failed to send');
         alert(`Message failed to send.`);
       }
     }

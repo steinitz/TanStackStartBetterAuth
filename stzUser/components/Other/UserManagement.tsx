@@ -8,8 +8,9 @@ import {
 } from '~stzUser/lib/users-client'
 import { adminStatusKeys } from '~stzUser/lib/admin-queries'
 import { hasStoredAdminRole, type AdminSource } from '~stzUser/lib/admin-identity'
+import { HelpDisclosure } from '~stzUtils/components/HelpDisclosure'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { userRoles, userRolesType } from '~stzUser/constants'
 import { testConstants } from '~stzUser/test/constants'
@@ -62,75 +63,101 @@ function copyUserId(userId: string) {
 
 function AdminConfigurationDisclosure({ source }: { source: 'environment' | 'both' }) {
   return (
-    <details
-      onClick={(event) => event.stopPropagation()}
-      style={{ display: 'inline-block', marginLeft: '0.5rem', verticalAlign: 'top' }}
-    >
-      <summary
-        aria-label={`Explain ${adminSourceLabels[source]}`}
-        style={{
-          alignItems: 'center',
-          border: '1px solid var(--color-link)',
-          borderRadius: '50%',
-          color: 'var(--color-link)',
-          cursor: 'pointer',
-          display: 'inline-flex',
-          fontWeight: 'bold',
-          height: '1.5rem',
-          justifyContent: 'center',
-          listStyle: 'none',
-          width: '1.5rem',
-        }}
-      >
-        ?
-      </summary>
-      <div
-        role="note"
-        style={{
-          backgroundColor: 'var(--color-bg)',
-          border: '2px solid var(--color-link)',
-          color: 'var(--color-text)',
-          left: '50%',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          padding: '1rem',
-          position: 'fixed',
-          top: '10vh',
-          transform: 'translateX(-50%)',
-          width: 'min(28rem, calc(100vw - 2rem))',
-          zIndex: 1000,
-        }}
-      >
-        <p>
-          Admin set through <code>ADMIN_USER_IDS</code> in a deployment environment variable or
-          an environment file such as <code>.env.production</code> or{' '}
-          <code>.env.development</code>. It is not editable here.
-        </p>
-        <p>To convert this account to database-based admin:</p>
-        <ol>
-          <li>Ensure you have a second admin account.</li>
-          <li>Remove the target user ID from <code>ADMIN_USER_IDS</code>.</li>
-          <li>Restart or redeploy the app. The target will temporarily lose admin access.</li>
-          <li>Sign in as the second administrator.</li>
-          <li>Return here and enable <strong>Stored admin role</strong> for the target account.</li>
-        </ol>
-        <p>The target finishes with the same admin privileges, now stored in the database.</p>
-        <button
-          type="button"
-          onClick={(event) => {
-            const details = event.currentTarget.closest('details')
-            if (details) {
-              details.open = false
-              details.querySelector('summary')?.focus()
-            }
-          }}
-        >
-          Close
-        </button>
-      </div>
-    </details>
+    <HelpDisclosure label={`Explain ${adminSourceLabels[source]}`}>
+      <p>
+        Admin set through <code>ADMIN_USER_IDS</code> in a deployment environment variable or
+        an environment file such as <code>.env.production</code> or{' '}
+        <code>.env.development</code>. It is not editable here.
+      </p>
+      <p>To convert this account to database-based admin:</p>
+      <ol>
+        <li>Ensure you have a second admin account.</li>
+        <li>Remove the target user ID from <code>ADMIN_USER_IDS</code>.</li>
+        <li>Restart or redeploy the app. The target will temporarily lose admin access.</li>
+        <li>Sign in as the second administrator.</li>
+        <li>Return here and enable <strong>Stored admin role</strong> for the target account.</li>
+      </ol>
+      <p>The target finishes with the same admin privileges, now stored in the database.</p>
+    </HelpDisclosure>
   )
 }
+
+// Every callback and value used by the table columns is module-owned, so the
+// strongest stable identity is a module constant rather than hook machinery.
+const userManagementColumns = [
+  columnHelper.accessor('name', {
+    header: 'Name',
+    cell: info => <strong>{info.getValue() || 'No name'}</strong>,
+    enableSorting: true,  // doesn't seem necessary
+  }),
+  columnHelper.accessor('email', {
+    header: 'Email',
+    cell: info => info.getValue(),
+    enableSorting: true,  // doesn't seem necessary
+  }),
+  columnHelper.accessor('createdAt', {
+    header: 'Joined',
+    // cell: info => `${new Date(info.getValue()).toLocaleDateString('en-US')}`,
+    cell: info => niceFormattedDate(info.getValue()),
+    enableSorting: true,  // doesn't seem necessary
+    sortingFn: (rowA, rowB) => {
+      const dateA = new Date(rowA.getValue('createdAt'))
+      const dateB = new Date(rowB.getValue('createdAt'))
+      return dateA.getTime() - dateB.getTime()
+    },
+  }),
+  columnHelper.accessor('emailVerified', {
+    header: 'Status',
+    cell: info => info.getValue() ? 'Verified' : 'Unverified',
+    enableSorting: true, // doesn't seem necessary
+    sortingFn: (rowA, rowB) => {
+      const valueA = rowA.getValue('emailVerified')
+      const valueB = rowB.getValue('emailVerified')
+      return valueA === valueB ? 0 : valueA ? 1 : -1
+    },
+  }),
+  // This could be a columnHelper.display but sorting
+  // doesn't seem to get enabled for that column type
+  // Other have reported this issue/bug since 2022.
+  columnHelper.accessor('id', {
+    id: 'role',
+    header: 'Admin access',
+    cell: ({ row }) => {
+      const user = row.original
+      return (
+        <span style={{ color: 'var(--color-text)', lineHeight: '1.5rem' }}>
+          <span>{adminSourceLabels[user.adminSource]} {user.adminSource === 'none' ? '👤' : '👑'}</span>
+          {user.adminSource === 'environment' || user.adminSource === 'both' ? (
+            <AdminConfigurationDisclosure source={user.adminSource} />
+          ) : null}
+        </span>
+      )
+    },
+    enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      return adminSourceRank[rowB.original.adminSource] -
+        adminSourceRank[rowA.original.adminSource]
+    },
+  }),
+  columnHelper.display({
+    id: 'userId',
+    header: 'User ID',
+    cell: ({ row }) => {
+      const user = row.original
+      return (
+        <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+          <span
+            onClick={() => copyUserId(user.id)}
+            style={{ cursor: 'pointer', textDecoration: 'underline', color: 'var(--color-link)' }}
+            title="Click to copy User ID"
+          >
+            ID: {user.id.substring(0, 8)}...
+          </span>
+        </div>
+      )
+    },
+  }),
+]
 
 export function UserManagement({ users }: { users: User[] }) {
   const queryClient = useQueryClient()
@@ -226,88 +253,9 @@ export function UserManagement({ users }: { users: User[] }) {
     }
   }
 
-  // React Table consumes stable column definitions; this is the named reason the
-  // legacy memo remains while the redundant effect and mirrored user state leave.
-  const columns = useMemo(() => [
-    columnHelper.accessor('name', {
-      header: 'Name',
-      cell: info => <strong>{info.getValue() || 'No name'}</strong>,
-      enableSorting: true,  // doesn't seem necessary
-    }),
-    columnHelper.accessor('email', {
-      header: 'Email',
-      cell: info => info.getValue(),
-      enableSorting: true,  // doesn't seem necessary
-    }),
-    columnHelper.accessor('createdAt', {
-      header: 'Joined',
-      // cell: info => `${new Date(info.getValue()).toLocaleDateString('en-US')}`,
-      cell: info => niceFormattedDate(info.getValue()),
-      enableSorting: true,  // doesn't seem necessary
-      sortingFn: (rowA, rowB) => {
-        const dateA = new Date(rowA.getValue('createdAt'))
-        const dateB = new Date(rowB.getValue('createdAt'))
-        return dateA.getTime() - dateB.getTime()
-      },
-    }),
-    columnHelper.accessor('emailVerified', {
-      header: 'Status',
-      cell: info => info.getValue() ? 'Verified' : 'Unverified',
-      enableSorting: true, // doesn't seem necessary
-      sortingFn: (rowA, rowB) => {
-        const valueA = rowA.getValue('emailVerified')
-        const valueB = rowB.getValue('emailVerified')
-        return valueA === valueB ? 0 : valueA ? 1 : -1
-      },
-    }),
-    // This could be a columnHelper.display but sorting
-    // doesn't seem to get enabled for that column type
-    // Other have reported this issue/bug since 2022.
-    columnHelper.accessor('id', {
-      id: 'role',
-      header: 'Admin access',
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <div style={{ color: 'var(--color-text)' }}>
-            {adminSourceLabels[user.adminSource]}&nbsp;
-            {user.adminSource === 'none' ? '👤' : '👑'}
-            {user.adminSource === 'environment' || user.adminSource === 'both' ? (
-              <AdminConfigurationDisclosure source={user.adminSource} />
-            ) : null}
-          </div>
-        )
-      },
-      enableSorting: true,
-      sortingFn: (rowA, rowB) => {
-        return adminSourceRank[rowB.original.adminSource] -
-          adminSourceRank[rowA.original.adminSource]
-      },
-    }),
-    columnHelper.display({
-      id: 'userId',
-      header: 'User ID',
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-            <span
-              onClick={() => copyUserId(user.id)}
-              style={{ cursor: 'pointer', textDecoration: 'underline', color: 'var(--color-link)' }}
-              title="Click to copy User ID"
-            >
-              ID: {user.id.substring(0, 8)}...
-            </span>
-          </div>
-        )
-      },
-    }),
-
-  ], [])
-
   const table = useReactTable({
     data: users,
-    columns,
+    columns: userManagementColumns,
     state: {
       sorting,
     },
@@ -334,14 +282,14 @@ export function UserManagement({ users }: { users: User[] }) {
   }
 
   const checkboxStyle = {
-    // margin: '0', 
+    // margin: '0',
     // no effect maxWidth: '8px',
     // padding: '0',
   }
   const checkboxLabelStyle = {
     whiteSpace: 'nowrap',
     marginTop: '-12px' // aligns label and check box and packs the whole row tighter to match the other fields
-    // margin: '0', 
+    // margin: '0',
 
 
     //marginTop: '5px',
@@ -510,8 +458,8 @@ export function UserManagement({ users }: { users: User[] }) {
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  // no effect: justifyContent: 'flex-start', 
-                  // no effect: alignItems: 'flex-start', 
+                  // no effect: justifyContent: 'flex-start',
+                  // no effect: alignItems: 'flex-start',
                   gap: '1rem'
                 }}>
                 <div>

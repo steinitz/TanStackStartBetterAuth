@@ -1,37 +1,21 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { UserManagement } from '~stzUser/components/Other/UserManagement'
-import { useGetAllUsers } from '~stzUser/lib/users-client'
+import { adminUsersQueryOptions } from '~stzUser/lib/users-client'
+import { useAdminStatus } from '~stzUser/lib/admin-queries'
 import { useSession } from '~stzUser/lib/auth-client'
-import { useEffect, useState } from 'react'
-import type { User } from '~stzUser/lib/users-client'
-import { userRoles } from '~stzUser/constants'
 
 function UsersPage() {
-  const { data: session } = useSession()
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const { data: session, isPending: isSessionPending } = useSession()
+  const adminStatus = useAdminStatus()
+  const isAdmin = Boolean(adminStatus.data?.isAdmin)
+  const usersQuery = useQuery(adminUsersQueryOptions(isAdmin))
 
-  // Load users data when component mounts or session changes
-  useEffect(() => {
-    const loadUsers = async () => {
-      if (!session?.user) return // Only load if user is signed in
+  if (isSessionPending || (session?.user && adminStatus.isPending)) {
+    return <p>Loading Admin access…</p>
+  }
 
-      setIsLoadingUsers(true)
-      try {
-        const usersData = await useGetAllUsers()
-        setUsers(usersData || [])
-      } catch (error) {
-        console.error('Error loading users:', error)
-        setUsers([])
-      } finally {
-        setIsLoadingUsers(false)
-      }
-    }
-
-    loadUsers()
-  }, [session?.user?.id, session?.user?.role]) // Reload when user or role changes
-
-  if (!session?.user || session?.user?.role !== userRoles.admin) {
+  if (!session?.user || !isAdmin) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h1>Access Denied</h1>
@@ -44,10 +28,13 @@ function UsersPage() {
   return (
     <div>
       <h1>User Management</h1>
-      {isLoadingUsers ? (
+      <p><Link to="/admin">Back to Credit administration</Link></p>
+      {usersQuery.isPending ? (
         <p>Loading users...</p>
+      ) : usersQuery.isError ? (
+        <p role="alert">Users could not be loaded.</p>
       ) : (
-        <UserManagement users={users} />
+        <UserManagement users={usersQuery.data ?? []} />
       )}
     </div>
   )

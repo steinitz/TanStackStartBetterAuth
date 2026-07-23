@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import { Kysely } from "kysely";
 import { LibsqlDialect } from "kysely-libsql";
+import type { AdminSource } from './admin-identity';
 
 // Initialize LibSQL client
 const url = process.env.DATABASE_URL;
@@ -49,6 +50,12 @@ export interface UserWithRole extends User {
   banned: boolean | null;
   banReason: string | null;
   banExpires: Date | null;
+}
+
+// The authorized user-management view adds deployment-aware identity without
+// pretending that Better Auth's stored `role` column contains that information.
+export interface AdminManagedUser extends UserWithRole {
+  adminSource: AdminSource;
 }
 
 // Better Auth listUsers response structure

@@ -4,8 +4,10 @@ import { readE2eEnvFromProcess } from './config/e2e-env';
 test('E2E environment contract reaches the worker and browser', async ({ page, request }) => {
   const expected = readE2eEnvFromProcess();
   const serverOnlyKeys = [
+    'ADMIN_USER_IDS',
     'BETTER_AUTH_SECRET',
     'DATABASE_URL',
+    'FIRST_USER_IS_ADMIN',
     'SMTP_PASSWORD',
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
@@ -14,6 +16,7 @@ test('E2E environment contract reaches the worker and browser', async ({ page, r
   ];
 
   expect(expected.APP_NAME).toBeTruthy();
+  expect(expected.FIRST_USER_IS_ADMIN).toBe(false);
   expect(typeof expected.IS_STRIPE_ENABLED).toBe('boolean');
   expect(expected.DAILY_GRANT_CREDITS).toBeGreaterThan(0);
   expect(expected.COPYRIGHT_START_YEAR).toMatch(/^\d{4}$/);

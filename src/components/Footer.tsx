@@ -1,6 +1,5 @@
 import { clientEnv } from '~stzUser/lib/env'
-import { useSession } from '~stzUser/lib/auth-client'
-import { userRoles } from '~stzUser/constants'
+import { useAdminStatus } from '~stzUser/lib/admin-queries'
 import { Link } from '@tanstack/react-router'
 import {
   AboutLink,
@@ -16,8 +15,10 @@ import {
 const footerLinkStyle = { color: 'var(--color-text)' }
 
 export const Footer = () => {
-  const { data: session } = useSession()
-  const isAdmin = session?.user?.role === userRoles.admin
+  const { data: adminStatus } = useAdminStatus()
+  // Footer discovery follows the same server-derived effective identity as the page. Do not
+  // simplify this to session.user.role: configured environment admins may have role "user".
+  const isAdmin = Boolean(adminStatus?.isAdmin)
 
   const currentYear = new Date().getFullYear()
   const copyrightYear = clientEnv.COPYRIGHT_START_YEAR === currentYear.toString()

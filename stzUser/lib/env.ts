@@ -67,6 +67,20 @@ export type ClientEnv = {
   STRIPE_PUBLISHABLE_KEY: string | null
 }
 
+export function parsePositiveWholeNumberEnv(
+  name: 'DAILY_GRANT_CREDITS' | 'WELCOME_GRANT_CREDITS',
+  rawValue: string | undefined,
+  defaultValue: number,
+): number {
+  const value = Number(rawValue ?? defaultValue)
+
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a finite positive whole number`)
+  }
+
+  return value
+}
+
 // True in Node and Node-like test runtimes (Vitest/jsdom), false in a real browser.
 // This is the linchpin of the fail-loud contract below: it must be false in the browser so
 // the browser takes the require-injection path. The release-name check resists a browser
@@ -137,8 +151,16 @@ export function computeClientEnv(): ClientEnv {
     BANK_TRANSFER_ACC: process.env.BANK_TRANSFER_ACC ?? null,
     CREDIT_PRICE_AUD: Number(process.env.CREDIT_PRICE_AUD || '0.001'),
     MIN_CREDITS_PURCHASE: Number(process.env.MIN_CREDITS_PURCHASE || '10'),
-    DAILY_GRANT_CREDITS: Number(process.env.DAILY_GRANT_CREDITS || '100'),
-    WELCOME_GRANT_CREDITS: Number(process.env.WELCOME_GRANT_CREDITS || '500'),
+    DAILY_GRANT_CREDITS: parsePositiveWholeNumberEnv(
+      'DAILY_GRANT_CREDITS',
+      process.env.DAILY_GRANT_CREDITS,
+      100,
+    ),
+    WELCOME_GRANT_CREDITS: parsePositiveWholeNumberEnv(
+      'WELCOME_GRANT_CREDITS',
+      process.env.WELCOME_GRANT_CREDITS,
+      500,
+    ),
     DEFAULT_CREDITS_PURCHASE: Number(process.env.DEFAULT_CREDITS_PURCHASE || '5000'),
     IS_STRIPE_ENABLED: process.env.IS_STRIPE_ENABLED === 'true', // master kill-switch, env-driven (Step 0)
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ?? null,

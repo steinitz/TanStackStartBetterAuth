@@ -14,8 +14,15 @@ const { getRequest, getSession } = vi.hoisted(() => ({ getRequest: vi.fn(), getS
 
 vi.mock('@tanstack/react-start/server', () => ({ getRequest }))
 vi.mock('~stzUser/lib/auth', () => ({ auth: { api: { getSession } } }))
+vi.mock('~stzUser/lib/admin-config.server', () => ({
+  adminUserIds: ['environment-admin'],
+}))
 
-import { requireSessionUser } from '~stzUser/lib/server-auth'
+import {
+  getCurrentAdminStatus,
+  requireAdminUser,
+  requireSessionUser,
+} from '~stzUser/lib/server-auth'
 
 const withHeaders = () => ({ headers: new Headers({ cookie: 'session=abc' }) })
 
@@ -51,5 +58,39 @@ describe('requireSessionUser', () => {
     getRequest.mockReturnValue(withHeaders())
     getSession.mockResolvedValue({ user: null })
     await expect(requireSessionUser()).rejects.toThrow('Not authenticated')
+  })
+})
+
+describe('effective admin access', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it.each([
+    [{ id: 'role-admin', role: 'admin' }, { isAdmin: true, source: 'role' }],
+    [{ id: 'environment-admin', role: 'user' }, { isAdmin: true, source: 'environment' }],
+    [{ id: 'environment-admin', role: 'user,admin' }, { isAdmin: true, source: 'both' }],
+  ])('accepts an admin resolved from role, environment, or both', async (user, status) => {
+    getRequest.mockReturnValue(withHeaders())
+    getSession.mockResolvedValue({ user })
+
+    await expect(requireAdminUser()).resolves.toEqual(user)
+    await expect(getCurrentAdminStatus()).resolves.toEqual(status)
+  })
+
+  it('rejects an authenticated regular user without listing other users', async () => {
+    getRequest.mockReturnValue(withHeaders())
+    getSession.mockResolvedValue({ user: { id: 'regular', role: 'user' } })
+
+    await expect(requireAdminUser()).rejects.toThrow('Admin access required')
+    await expect(getCurrentAdminStatus()).resolves.toEqual({
+      isAdmin: false,
+      source: 'none',
+    })
+  })
+
+  it('preserves unauthenticated rejection', async () => {
+    getRequest.mockReturnValue(undefined)
+
+    await expect(requireAdminUser()).rejects.toThrow('Not authenticated')
+    await expect(getCurrentAdminStatus()).rejects.toThrow('Not authenticated')
   })
 })

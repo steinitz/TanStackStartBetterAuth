@@ -54,8 +54,15 @@ export function walletStatusQueryOptions(
   })
 }
 
-export function transactionsQueryOptions(userId: string | undefined) {
-  const isEnabled = Boolean(userId && typeof window !== 'undefined')
+export function transactionsQueryOptions(
+  userId: string | undefined,
+  isWalletReady = true,
+) {
+  const isEnabled = Boolean(
+    userId &&
+    isWalletReady &&
+    typeof window !== 'undefined'
+  )
 
   return queryOptions({
     queryKey: userId && typeof window !== 'undefined'
@@ -119,9 +126,9 @@ export function useWallet() {
   }
 }
 
-export function useTransactions() {
+export function useTransactions(isWalletReady = true) {
   const { data: session } = useSession()
-  const query = useQuery(transactionsQueryOptions(session?.user?.id))
+  const query = useQuery(transactionsQueryOptions(session?.user?.id, isWalletReady))
 
   return {
     ...query,

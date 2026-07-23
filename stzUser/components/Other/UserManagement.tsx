@@ -90,9 +90,9 @@ function copyUserId(userId: string) {
 function HybridAdminExplanation() {
   return (
     <p>
-      <strong>Warning:</strong> Admin access is granted independently by both the stored
-      database role and environment configuration. Removing either grant alone will not
-      remove admin access. <strong>Recommended:</strong> remove the user ID from{' '}
+      <strong>Warning:</strong> You have granted this account admin access using both the
+      stored database role and environment configuration. Removing either grant alone will
+      not remove admin access. <strong>Recommended:</strong> remove the user ID from{' '}
       <code>ADMIN_USER_IDS</code>, then restart or redeploy the app.
     </p>
   )

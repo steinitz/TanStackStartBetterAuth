@@ -241,7 +241,7 @@ describe('UserManagement effective admin display', () => {
     expect(view.getAllByLabelText('Explain Hybrid admin')).toHaveLength(1)
     expect(within(hybridDialog).queryByLabelText('Explain Hybrid admin')).not.toBeInTheDocument()
     expect(hybridDialog).toHaveTextContent(
-      'Warning: Admin access is granted independently by both the stored database role and environment configuration.',
+      'Warning: You have granted this account admin access using both the stored database role and environment configuration.',
     )
     expect(hybridDialog).toHaveTextContent(
       'Recommended: remove the user ID from ADMIN_USER_IDS, then restart or redeploy the app.',

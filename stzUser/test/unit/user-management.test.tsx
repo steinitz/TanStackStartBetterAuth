@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, waitFor } from '@testing-library/react'
+import { fireEvent, render, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -105,9 +105,32 @@ function renderManagement() {
   }
 }
 
+function installDialogTestSupport() {
+  // JSDOM 26 creates HTMLDialogElement but does not implement its modal methods.
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value(this: HTMLDialogElement) {
+      this.open = true
+    },
+  })
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value(this: HTMLDialogElement) {
+      this.open = false
+      this.dispatchEvent(new Event('close'))
+    },
+  })
+}
+
+function closeSelectedUserDialog(view: ReturnType<typeof render>) {
+  const dialog = view.getByRole('dialog')
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Close user editor' }))
+}
+
 describe('UserManagement effective admin display', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    installDialogTestSupport()
     useSetUserRole.mockResolvedValue({ success: true })
     useDemoteUserToUserRole.mockResolvedValue({ success: true })
     useUpdateEmailVerificationStatus.mockResolvedValue({ success: true })
@@ -119,27 +142,98 @@ describe('UserManagement effective admin display', () => {
     fireEvent.click(view.getByText('Plain Person'))
     expect(view.getByLabelText('Email Verified')).toBeChecked()
     expect(view.getByLabelText('Stored admin role')).not.toBeChecked()
+    expect(view.getByText('This account has no effective admin grant.')).toBeInTheDocument()
 
+    closeSelectedUserDialog(view)
     fireEvent.click(view.getByText('Stored Person'))
     expect(view.getByLabelText('Email Verified')).not.toBeChecked()
     expect(view.getByLabelText('Stored admin role')).toBeChecked()
+    expect(view.getByText('Admin status is defined in the database.')).toBeInTheDocument()
+  })
+
+  it('keeps every column left aligned and renders compact icon-first access labels', () => {
+    const { view } = renderManagement()
+
+    for (const cell of view.container.querySelectorAll('th, td')) {
+      expect(cell).toHaveStyle({ textAlign: 'left' })
+    }
+
+    const expectedAccessCells = [
+      ['Plain Person', '👤', 'User'],
+      ['Stored Person', '👑', 'Admin · DB'],
+      ['Environment Person', '👑', 'Admin · Env'],
+      ['Both Person', '👑', 'Admin · DB + Env'],
+    ]
+
+    for (const [name, icon, access] of expectedAccessCells) {
+      const row = view.getByText(name).closest('tr')
+      expect(row).not.toBeNull()
+      const accessGroup = within(row!).getAllByRole('cell')[4].querySelector('span > span')
+      expect(accessGroup?.children[0]).toHaveTextContent(icon)
+      expect(accessGroup?.children[1]).toHaveTextContent(access)
+    }
   })
 
   it('makes environment-controlled rows read-only and discloses the conversion gap', () => {
     const { view } = renderManagement()
 
     fireEvent.click(view.getByText('Environment Person'))
+    const dialog = view.getByRole('dialog', { name: /Edit User.*Environment Person/ })
     expect(view.queryByLabelText('Stored admin role')).not.toBeInTheDocument()
     expect(view.getByText(/Not enabled.*read-only/)).toBeInTheDocument()
+    expect(view.getByText(
+      'Admin status is defined by environment configuration and cannot be edited here.',
+    )).toBeInTheDocument()
 
-    const disclosure = view.getByLabelText('Explain Environment admin')
+    const disclosures = view.getAllByLabelText('Explain Environment admin')
+    expect(disclosures).toHaveLength(2)
+    const disclosure = within(dialog).getByLabelText('Explain Environment admin')
     fireEvent.click(disclosure)
     expect(disclosure.closest('details')).toHaveAttribute('open')
     expect(disclosure.closest('details')).toHaveTextContent(/temporarily lose admin access/)
 
+    fireEvent.click(disclosure)
+    closeSelectedUserDialog(view)
     fireEvent.click(view.getByText('Both Person'))
     expect(view.queryByLabelText('Stored admin role')).not.toBeInTheDocument()
     expect(view.getByText(/Enabled.*read-only/)).toBeInTheDocument()
+    expect(view.getByText(
+      'Admin status is defined in both the database and environment configuration. The environment grant cannot be edited here.',
+    )).toBeInTheDocument()
+  })
+
+  it('dismisses the selected-user dialog by outside click, Escape, or Close', () => {
+    const { view } = renderManagement()
+    const openPlainUser = () => {
+      fireEvent.click(view.getByText('Plain Person'))
+      return view.getByRole('dialog', { name: /Edit User.*Plain Person/ })
+    }
+
+    let dialog = openPlainUser()
+    vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue({
+      bottom: 500,
+      height: 400,
+      left: 100,
+      right: 500,
+      top: 100,
+      width: 400,
+      x: 100,
+      y: 100,
+      toJSON: () => ({}),
+    })
+
+    fireEvent.click(dialog, { clientX: 200, clientY: 200 })
+    expect(dialog).toHaveAttribute('open')
+    fireEvent.click(dialog, { clientX: 20, clientY: 20 })
+    expect(dialog).not.toHaveAttribute('open')
+
+    dialog = openPlainUser()
+    fireEvent(dialog, new Event('cancel', { cancelable: true }))
+    expect(dialog).not.toHaveAttribute('open')
+
+    dialog = openPlainUser()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close user editor' }))
+    expect(dialog).not.toHaveAttribute('open')
   })
 
   it('refreshes server truth and current admin status after a stored-role mutation', async () => {

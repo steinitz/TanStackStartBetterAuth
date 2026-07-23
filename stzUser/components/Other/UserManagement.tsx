@@ -10,7 +10,7 @@ import { adminStatusKeys } from '~stzUser/lib/admin-queries'
 import { hasStoredAdminRole, type AdminSource } from '~stzUser/lib/admin-identity'
 import { HelpDisclosure } from '~stzUtils/components/HelpDisclosure'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useState } from 'react'
+import { useRef, useState, type MouseEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { userRoles, userRolesType } from '~stzUser/constants'
 import { testConstants } from '~stzUser/test/constants'
@@ -49,12 +49,33 @@ const adminSourceLabels: Record<AdminSource, string> = {
   both: 'Stored-role and environment admin',
 }
 
+const adminSourceTableLabels: Record<AdminSource, string> = {
+  none: 'User',
+  role: 'Admin · DB',
+  environment: 'Admin · Env',
+  both: 'Admin · DB + Env',
+}
+
+const adminSourceDescriptions: Record<AdminSource, string> = {
+  none: 'This account has no effective admin grant.',
+  role: 'Admin status is defined in the database.',
+  environment: 'Admin status is defined by environment configuration and cannot be edited here.',
+  both: 'Admin status is defined in both the database and environment configuration. The environment grant cannot be edited here.',
+}
+
 const adminSourceRank: Record<AdminSource, number> = {
   none: 0,
   role: 1,
   environment: 2,
   both: 3,
 }
+
+const dialogBackdropStyle = `
+.stz-user-management-dialog::backdrop {
+  background: var(--color-link);
+  opacity: 0.18;
+}
+`
 
 function copyUserId(userId: string) {
   navigator.clipboard.writeText(userId)
@@ -125,8 +146,16 @@ const userManagementColumns = [
     cell: ({ row }) => {
       const user = row.original
       return (
-        <span style={{ color: 'var(--color-text)', lineHeight: '1.5rem' }}>
-          <span>{adminSourceLabels[user.adminSource]} {user.adminSource === 'none' ? '👤' : '👑'}</span>
+        <span style={{
+          alignItems: 'center',
+          color: 'var(--color-text)',
+          display: 'inline-flex',
+          lineHeight: '1.5rem',
+        }}>
+          <span style={{ alignItems: 'center', display: 'inline-flex', gap: '0.3rem' }}>
+            <span aria-hidden="true">{user.adminSource === 'none' ? '👤' : '👑'}</span>
+            <span>{adminSourceTableLabels[user.adminSource]}</span>
+          </span>
           {user.adminSource === 'environment' || user.adminSource === 'both' ? (
             <AdminConfigurationDisclosure source={user.adminSource} />
           ) : null}
@@ -161,9 +190,37 @@ const userManagementColumns = [
 
 export function UserManagement({ users }: { users: User[] }) {
   const queryClient = useQueryClient()
+  const userDialogRef = useRef<HTMLDialogElement>(null)
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const selectedUser = users.find((user) => user.id === selectedUserId) ?? null
+
+  const openUserDialog = (userId: string) => {
+    setSelectedUserId(userId)
+    const dialog = userDialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+  }
+
+  const closeUserDialog = () => {
+    const dialog = userDialogRef.current
+    if (dialog?.open) dialog.close()
+    setSelectedUserId(null)
+  }
+
+  const handleDialogBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
+    const dialog = event.currentTarget
+    // Descendant clicks — including the fixed HelpDisclosure card — are inside
+    // interactions even when their viewport coordinates sit outside this box.
+    if (event.target !== dialog) return
+
+    const bounds = dialog.getBoundingClientRect()
+    const clickedOutside = event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
+
+    if (clickedOutside) closeUserDialog()
+  }
 
   const refreshUsers = async () => {
     await queryClient.invalidateQueries({ queryKey: userManagementKeys.all })
@@ -173,7 +230,7 @@ export function UserManagement({ users }: { users: User[] }) {
     if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
       try {
         await useDeleteUserById({ data: userId })
-        setSelectedUserId(null)
+        closeUserDialog()
         await refreshUsers()
       } catch (error) {
         console.error('Error deleting user:', error)
@@ -415,7 +472,7 @@ export function UserManagement({ users }: { users: User[] }) {
                     key={row.id}
                     onClick={() => {
                       const user = row.original
-                      setSelectedUserId(user.id)
+                      openUserDialog(user.id)
                     }}
                     style={{
                       cursor: 'pointer',
@@ -434,6 +491,7 @@ export function UserManagement({ users }: { users: User[] }) {
                         style={{
                           padding: '8px',
                           borderBottom: '1px solid var(--color-border)',
+                          textAlign: 'left',
                           verticalAlign: 'top'
                         }}
                       >
@@ -447,74 +505,105 @@ export function UserManagement({ users }: { users: User[] }) {
           </div>
         )}
 
-        {selectedUser && (
-          <>
-            <Spacer />
-            <section>
-              <h3><span style={{ fontWeight: 'normal' }}>Edit User &nbsp;</span>{selectedUser.name || selectedUser.email}</h3>
-              <Spacer space={0} />
+        <dialog
+          ref={userDialogRef}
+          className="stz-user-management-dialog"
+          aria-labelledby={selectedUser ? 'selected-user-dialog-title' : undefined}
+          onCancel={(event) => {
+            event.preventDefault()
+            closeUserDialog()
+          }}
+          onClick={handleDialogBackdropClick}
+          onClose={() => setSelectedUserId(null)}
+          tabIndex={-1}
+          style={{
+            backgroundColor: 'var(--color-bg)',
+            border: '2px solid var(--color-link)',
+            boxSizing: 'border-box',
+            color: 'var(--color-text)',
+            inset: 0,
+            margin: 'auto',
+            maxHeight: 'calc(100vh - 2rem)',
+            overflowY: 'auto',
+            padding: '1.5rem',
+            position: 'fixed',
+            textAlign: 'left',
+            width: 'min(36rem, calc(100vw - 2rem))',
+          }}
+        >
+          <style>{dialogBackdropStyle}</style>
+          {selectedUser ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3 id="selected-user-dialog-title" style={{ marginTop: 0 }}>
+                <span style={{ fontWeight: 'normal' }}>Edit User &nbsp;</span>
+                {selectedUser.name || selectedUser.email}
+              </h3>
 
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  // no effect: justifyContent: 'flex-start',
-                  // no effect: alignItems: 'flex-start',
-                  gap: '1rem'
-                }}>
-                <div>
-                  <p><strong>Email:</strong> {selectedUser.email}</p>
-                  <p><strong>ID:</strong> {selectedUser.id}</p>
-                  <p><strong>Admin access:</strong> {adminSourceLabels[selectedUser.adminSource]}</p>
-                </div>
-
-                <CheckboxAndLabel
-                  checked={selectedUser.emailVerified}
-                  changeHandler={handleEmailVerificationToggle}
-                  label={'Email Verified'}
-                  inputId={'email-verified-checkbox'}
-                  userId={selectedUser.id}
-                />
-
-                {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
-                  <p>
-                    <strong>Stored admin role:</strong>{' '}
-                    {hasStoredAdminRole(selectedUser.role) ? 'Enabled' : 'Not enabled'} — read-only
-                    while environment configuration grants this account admin access.
-                  </p>
-                ) : (
-                  <CheckboxAndLabel
-                    checked={hasStoredAdminRole(selectedUser.role)}
-                    changeHandler={handleAdminToggle}
-                    label={'Stored admin role'}
-                    inputId={'admin-role-checkbox'}
-                    userId={selectedUser.id}
-                  />
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'stretch' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteUser(selectedUser.id, selectedUser.name || selectedUser.email)}
-                    style={{
-                      backgroundColor: "var(--color-error)",
-                      borderColor: "var(--color-error)"
-                    }}
-                  >
-                    Delete User
-                  </button>
-                  <Spacer orientation='horizontal' />
-                  <button
-                    type="button"
-                    onClick={() => setSelectedUserId(null)}
-                  >
-                    Close
-                  </button>
+              <div>
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                <p><strong>ID:</strong> {selectedUser.id}</p>
+                <p>
+                  <strong>Admin access:</strong>{' '}
+                  {selectedUser.adminSource === 'none' ? 'User' : 'Admin'}
+                </p>
+                <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap' }}>
+                  <span>{adminSourceDescriptions[selectedUser.adminSource]}</span>
+                  {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
+                    <AdminConfigurationDisclosure source={selectedUser.adminSource} />
+                  ) : null}
                 </div>
               </div>
-            </section>
-          </>
-        )}
+
+              <CheckboxAndLabel
+                checked={selectedUser.emailVerified}
+                changeHandler={handleEmailVerificationToggle}
+                label={'Email Verified'}
+                inputId={'email-verified-checkbox'}
+                userId={selectedUser.id}
+              />
+
+              {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
+                <p>
+                  <strong>Stored admin role:</strong>{' '}
+                  {hasStoredAdminRole(selectedUser.role) ? 'Enabled' : 'Not enabled'} — read-only
+                  while environment configuration grants this account admin access.
+                </p>
+              ) : (
+                <CheckboxAndLabel
+                  checked={hasStoredAdminRole(selectedUser.role)}
+                  changeHandler={handleAdminToggle}
+                  label={'Stored admin role'}
+                  inputId={'admin-role-checkbox'}
+                  userId={selectedUser.id}
+                />
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'stretch' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteUser(
+                    selectedUser.id,
+                    selectedUser.name || selectedUser.email,
+                  )}
+                  style={{
+                    backgroundColor: "var(--color-error)",
+                    borderColor: "var(--color-error)"
+                  }}
+                >
+                  Delete User
+                </button>
+                <Spacer orientation='horizontal' />
+                <button
+                  type="button"
+                  aria-label="Close user editor"
+                  onClick={closeUserDialog}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </dialog>
       </section>
     </main>
   )

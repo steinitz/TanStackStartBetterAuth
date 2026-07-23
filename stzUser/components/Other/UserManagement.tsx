@@ -56,11 +56,10 @@ const adminSourceTableLabels: Record<AdminSource, string> = {
   both: 'Hybrid',
 }
 
-const adminSourceDescriptions: Record<AdminSource, string> = {
+const adminSourceDescriptions: Record<Exclude<AdminSource, 'both'>, string> = {
   none: 'This account has no effective admin grant.',
   role: 'Admin status is defined in the database.',
   environment: 'Admin status is defined by environment configuration and cannot be edited here.',
-  both: 'Admin status is defined in both the database and environment configuration. The environment grant cannot be edited here.',
 }
 
 const adminSourceRank: Record<AdminSource, number> = {
@@ -77,10 +76,8 @@ const userManagementStyles = `
 }
 
 .stz-user-management-hybrid-label {
-  /* Preserve a readable orange in light and dark colour schemes. The visible
-     word "Hybrid" also carries the distinction when colour cannot. */
-  color: #9a4d00;
-  color: color-mix(in srgb, #ff8c00 55%, var(--color-text));
+  /* The visible word "Hybrid" also carries the distinction when colour cannot. */
+  color: var(--color-warning);
   font-weight: 600;
 }
 `
@@ -90,16 +87,22 @@ function copyUserId(userId: string) {
   alert('User ID copied to clipboard!')
 }
 
+function HybridAdminExplanation() {
+  return (
+    <p>
+      <strong>Warning:</strong> Admin access is granted independently by both the stored
+      database role and environment configuration. Removing either grant alone will not
+      remove admin access. <strong>Recommended:</strong> remove the user ID from{' '}
+      <code>ADMIN_USER_IDS</code>, then restart or redeploy the app.
+    </p>
+  )
+}
+
 function AdminConfigurationDisclosure({ source }: { source: 'environment' | 'both' }) {
   if (source === 'both') {
     return (
       <HelpDisclosure label={`Explain ${adminSourceLabels[source]}`}>
-        <p>
-          <strong>Warning:</strong> Admin access is granted independently by both the stored
-          database role and environment configuration. Removing either grant alone will not
-          remove admin access. <strong>Recommended:</strong> remove the user ID from{' '}
-          <code>ADMIN_USER_IDS</code>, then restart or redeploy the app.
-        </p>
+        <HybridAdminExplanation />
       </HelpDisclosure>
     )
   }
@@ -434,8 +437,8 @@ export function UserManagement({ users }: { users: User[] }) {
               type="button"
               onClick={handleCleanTestUsers}
               style={{
-                backgroundColor: "var(--color-warning, #ff9800)",
-                borderColor: "var(--color-warning, #ff9800)",
+                backgroundColor: "var(--color-warning)",
+                borderColor: "var(--color-warning)",
                 fontSize: '0.9rem',
                 padding: '0.5rem 1rem'
               }}
@@ -581,12 +584,16 @@ export function UserManagement({ users }: { users: User[] }) {
                   <strong>Admin access:</strong>{' '}
                   {selectedUser.adminSource === 'none' ? 'User' : 'Admin'}
                 </p>
-                <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap' }}>
-                  <span>{adminSourceDescriptions[selectedUser.adminSource]}</span>
-                  {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
-                    <AdminConfigurationDisclosure source={selectedUser.adminSource} />
-                  ) : null}
-                </div>
+                {selectedUser.adminSource === 'both' ? (
+                  <HybridAdminExplanation />
+                ) : (
+                  <div>
+                    <span>{adminSourceDescriptions[selectedUser.adminSource]}</span>
+                    {selectedUser.adminSource === 'environment' ? (
+                      <AdminConfigurationDisclosure source={selectedUser.adminSource} />
+                    ) : null}
+                  </div>
+                )}
               </div>
 
               <CheckboxAndLabel

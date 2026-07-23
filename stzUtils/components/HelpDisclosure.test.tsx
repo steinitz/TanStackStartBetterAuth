@@ -25,7 +25,12 @@ describe('HelpDisclosure', () => {
     expect(hostClick).not.toHaveBeenCalled()
     expect(view.getByRole('note')).toHaveTextContent('Deployment-owned help.')
 
-    fireEvent.click(view.getByRole('button', { name: 'Close' }))
+    const closeButton = view.getByRole('button', { name: 'Close' })
+    expect(closeButton.parentElement).toHaveStyle({
+      display: 'flex',
+      justifyContent: 'flex-end',
+    })
+    fireEvent.click(closeButton)
     expect(details).not.toHaveAttribute('open')
     expect(summary).toHaveFocus()
     expect(hostClick).not.toHaveBeenCalled()

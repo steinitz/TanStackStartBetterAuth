@@ -73,18 +73,20 @@ export function HelpDisclosure({
         }}
       >
         {children}
-        <button
-          type="button"
-          onClick={(event) => {
-            const details = event.currentTarget.closest('details')
-            if (details) {
-              details.open = false
-              details.querySelector('summary')?.focus()
-            }
-          }}
-        >
-          Close
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={(event) => {
+              const details = event.currentTarget.closest('details')
+              if (details) {
+                details.open = false
+                details.querySelector('summary')?.focus()
+              }
+            }}
+          >
+            Close
+          </button>
+        </div>
       </div>
     </details>
   )

@@ -161,8 +161,8 @@ describe('UserManagement effective admin display', () => {
     const expectedAccessCells = [
       ['Plain Person', '👤', 'User'],
       ['Stored Person', '👑', 'Admin · DB'],
-      ['Environment Person', '👑', 'Admin · Env'],
-      ['Both Person', '👑', 'Admin · DB + Env'],
+      ['Environment Person', '👑', 'Admin'],
+      ['Both Person', '👑', 'Hybrid'],
     ]
 
     for (const [name, icon, access] of expectedAccessCells) {
@@ -172,6 +172,8 @@ describe('UserManagement effective admin display', () => {
       expect(accessGroup?.children[0]).toHaveTextContent(icon)
       expect(accessGroup?.children[1]).toHaveTextContent(access)
     }
+
+    expect(view.getByText('Hybrid')).toHaveClass('stz-user-management-hybrid-label')
   })
 
   it('makes environment-controlled rows read-only and discloses the conversion gap', () => {
@@ -179,8 +181,15 @@ describe('UserManagement effective admin display', () => {
 
     fireEvent.click(view.getByText('Environment Person'))
     const dialog = view.getByRole('dialog', { name: /Edit User.*Environment Person/ })
-    expect(view.queryByLabelText('Stored admin role')).not.toBeInTheDocument()
-    expect(view.getByText(/Not enabled.*read-only/)).toBeInTheDocument()
+    const environmentRoleCheckbox = view.getByLabelText('Stored admin role') as HTMLInputElement
+    expect(environmentRoleCheckbox).toBeDisabled()
+    expect(environmentRoleCheckbox).not.toBeChecked()
+    expect(environmentRoleCheckbox.labels?.[0]).toHaveStyle({
+      color: 'var(--color-text-secondary)',
+    })
+    expect(view.getByText(
+      'Read-only while environment configuration grants this account admin access.',
+    )).toBeInTheDocument()
     expect(view.getByText(
       'Admin status is defined by environment configuration and cannot be edited here.',
     )).toBeInTheDocument()
@@ -195,11 +204,21 @@ describe('UserManagement effective admin display', () => {
     fireEvent.click(disclosure)
     closeSelectedUserDialog(view)
     fireEvent.click(view.getByText('Both Person'))
-    expect(view.queryByLabelText('Stored admin role')).not.toBeInTheDocument()
-    expect(view.getByText(/Enabled.*read-only/)).toBeInTheDocument()
+    expect(view.getByLabelText('Stored admin role')).toBeDisabled()
+    expect(view.getByLabelText('Stored admin role')).toBeChecked()
     expect(view.getByText(
       'Admin status is defined in both the database and environment configuration. The environment grant cannot be edited here.',
     )).toBeInTheDocument()
+
+    const hybridDisclosures = view.getAllByLabelText('Explain Hybrid admin')
+    expect(hybridDisclosures).toHaveLength(2)
+    fireEvent.click(within(view.getByRole('dialog')).getByLabelText('Explain Hybrid admin'))
+    expect(view.getByRole('dialog')).toHaveTextContent(
+      'Warning: Admin access is granted independently by both the stored database role and environment configuration.',
+    )
+    expect(view.getByRole('dialog')).toHaveTextContent(
+      'Recommended: remove the user ID from ADMIN_USER_IDS, then restart or redeploy the app.',
+    )
   })
 
   it('dismisses the selected-user dialog by outside click, Escape, or Close', () => {
@@ -232,6 +251,8 @@ describe('UserManagement effective admin display', () => {
     expect(dialog).not.toHaveAttribute('open')
 
     dialog = openPlainUser()
+    const actionGroup = within(dialog).getByRole('button', { name: 'Close user editor' }).parentElement
+    expect(actionGroup).toHaveStyle({ justifyContent: 'space-between' })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close user editor' }))
     expect(dialog).not.toHaveAttribute('open')
   })

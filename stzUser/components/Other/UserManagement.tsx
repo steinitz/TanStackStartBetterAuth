@@ -46,14 +46,14 @@ const adminSourceLabels: Record<AdminSource, string> = {
   none: 'User',
   role: 'Stored-role admin',
   environment: 'Environment admin',
-  both: 'Stored-role and environment admin',
+  both: 'Hybrid admin',
 }
 
 const adminSourceTableLabels: Record<AdminSource, string> = {
   none: 'User',
   role: 'Admin · DB',
-  environment: 'Admin · Env',
-  both: 'Admin · DB + Env',
+  environment: 'Admin',
+  both: 'Hybrid',
 }
 
 const adminSourceDescriptions: Record<AdminSource, string> = {
@@ -70,10 +70,18 @@ const adminSourceRank: Record<AdminSource, number> = {
   both: 3,
 }
 
-const dialogBackdropStyle = `
+const userManagementStyles = `
 .stz-user-management-dialog::backdrop {
   background: var(--color-link);
   opacity: 0.18;
+}
+
+.stz-user-management-hybrid-label {
+  /* Preserve a readable orange in light and dark colour schemes. The visible
+     word "Hybrid" also carries the distinction when colour cannot. */
+  color: #9a4d00;
+  color: color-mix(in srgb, #ff8c00 55%, var(--color-text));
+  font-weight: 600;
 }
 `
 
@@ -83,6 +91,19 @@ function copyUserId(userId: string) {
 }
 
 function AdminConfigurationDisclosure({ source }: { source: 'environment' | 'both' }) {
+  if (source === 'both') {
+    return (
+      <HelpDisclosure label={`Explain ${adminSourceLabels[source]}`}>
+        <p>
+          <strong>Warning:</strong> Admin access is granted independently by both the stored
+          database role and environment configuration. Removing either grant alone will not
+          remove admin access. <strong>Recommended:</strong> remove the user ID from{' '}
+          <code>ADMIN_USER_IDS</code>, then restart or redeploy the app.
+        </p>
+      </HelpDisclosure>
+    )
+  }
+
   return (
     <HelpDisclosure label={`Explain ${adminSourceLabels[source]}`}>
       <p>
@@ -154,7 +175,12 @@ const userManagementColumns = [
         }}>
           <span style={{ alignItems: 'center', display: 'inline-flex', gap: '0.3rem' }}>
             <span aria-hidden="true">{user.adminSource === 'none' ? '👤' : '👑'}</span>
-            <span>{adminSourceTableLabels[user.adminSource]}</span>
+            <span className={user.adminSource === 'both'
+              ? 'stz-user-management-hybrid-label'
+              : undefined}
+            >
+              {adminSourceTableLabels[user.adminSource]}
+            </span>
           </span>
           {user.adminSource === 'environment' || user.adminSource === 'both' ? (
             <AdminConfigurationDisclosure source={user.adminSource} />
@@ -359,12 +385,16 @@ export function UserManagement({ users }: { users: User[] }) {
       label,
       inputId,
       userId,
+      disabled = false,
+      descriptionId,
     }: {
       checked: boolean,
       changeHandler: (userId: string) => void,
       label: string,
       inputId: string,
       userId: string,
+      disabled?: boolean,
+      descriptionId?: string,
     }
   ) => {
     return (
@@ -376,10 +406,15 @@ export function UserManagement({ users }: { users: User[] }) {
           type="checkbox"
           id={inputId}
           checked={checked}
+          disabled={disabled}
+          aria-describedby={descriptionId}
           onChange={() => changeHandler(userId)}
         />
         <label
-          style={checkboxLabelStyle}
+          style={{
+            ...checkboxLabelStyle,
+            color: disabled ? 'var(--color-text-secondary)' : undefined,
+          }}
           htmlFor={inputId}
         >
           {label}
@@ -390,6 +425,7 @@ export function UserManagement({ users }: { users: User[] }) {
 
   return (
     <main>
+      <style>{userManagementStyles}</style>
       <section>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
           <h3>Registered Users ({users.length})</h3>
@@ -531,7 +567,6 @@ export function UserManagement({ users }: { users: User[] }) {
             width: 'min(36rem, calc(100vw - 2rem))',
           }}
         >
-          <style>{dialogBackdropStyle}</style>
           {selectedUser ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <h3 id="selected-user-dialog-title" style={{ marginTop: 0 }}>
@@ -563,11 +598,20 @@ export function UserManagement({ users }: { users: User[] }) {
               />
 
               {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
-                <p>
-                  <strong>Stored admin role:</strong>{' '}
-                  {hasStoredAdminRole(selectedUser.role) ? 'Enabled' : 'Not enabled'} — read-only
-                  while environment configuration grants this account admin access.
-                </p>
+                <div>
+                  <CheckboxAndLabel
+                    checked={hasStoredAdminRole(selectedUser.role)}
+                    changeHandler={handleAdminToggle}
+                    label={'Stored admin role'}
+                    inputId={'admin-role-checkbox'}
+                    userId={selectedUser.id}
+                    disabled
+                    descriptionId="stored-admin-role-read-only-note"
+                  />
+                  <p id="stored-admin-role-read-only-note" style={{ margin: '0.25rem 0 0' }}>
+                    Read-only while environment configuration grants this account admin access.
+                  </p>
+                </div>
               ) : (
                 <CheckboxAndLabel
                   checked={hasStoredAdminRole(selectedUser.role)}
@@ -578,7 +622,7 @@ export function UserManagement({ users }: { users: User[] }) {
                 />
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'stretch' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <button
                   type="button"
                   onClick={() => handleDeleteUser(
@@ -592,7 +636,6 @@ export function UserManagement({ users }: { users: User[] }) {
                 >
                   Delete User
                 </button>
-                <Spacer orientation='horizontal' />
                 <button
                   type="button"
                   aria-label="Close user editor"

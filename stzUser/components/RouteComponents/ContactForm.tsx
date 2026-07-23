@@ -4,6 +4,7 @@ import {emailValidation, niceValidationIssues, sharedFormSubmission} from "~stzU
 import {type SyntheticEvent, useState} from "react";
 import {useSession} from "~stzUser/lib/auth-client";
 import {sendEmail} from "~stzUser/lib/mail-utilities";
+import {logToServer} from "~stzUser/lib/logToServer";
 import {ContactSent} from '~stzUser/components/Other/ContactSent';
 import {clientEnv} from '~stzUser/lib/env';
 import {Spacer} from "~stzUtils/components/Spacer";
@@ -60,8 +61,6 @@ export const ContactForm = ({
   // validate the form fields
   const [validationIssues, setValidationIssues] = useState<any>({});
 
-  console.log('ContactForm running')
-
   const validateFormFields = (fields: ContactData) => {
     const valibotResult = v.safeParse(
       ContactSchema,
@@ -87,15 +86,10 @@ export const ContactForm = ({
 
   // sends the contact message
   const sendMessage = async (event: SyntheticEvent<HTMLFormElement>) => {
-    console.log('🔄 ContactForm: sendMessage called');
     const fields = sharedFormSubmission(event);
-    console.log('📝 ContactForm: extracted fields:', fields);
-    
-    console.log('📝 ContactForm: current state before update - name:', name, 'email:', email, 'message:', message);
     setName(fields.name as string);
     setEmail(fields.email as string);
     setMessage(fields.message as string);
-    console.log('📝 ContactForm: state updated with fields - name:', fields.name, 'email:', fields.email, 'message:', fields.message);
 
     const isValid = validateFormFields(fields);
     if (isValid) {
@@ -104,6 +98,14 @@ export const ContactForm = ({
         if (isHTML) {
           lineBreak = '<br>';
         }
+        // Stamp the signed-in user's account ID at the foot so a site owner can
+        // discover their own ID (for ADMIN_USER_IDS) by sending themselves a
+        // contact message. Sourced from the session, not the typed email field,
+        // so it always names the authenticated account. Omitted when signed out.
+        const senderId = session?.user?.id;
+        const senderIdFooter = senderId
+          ? `${lineBreak}${lineBreak}—${lineBreak}Sender account ID: ${senderId}`
+          : '';
         return `Contact-form support message from:
           ${lineBreak}
           ${fields.name}
@@ -112,30 +114,41 @@ export const ContactForm = ({
           ${lineBreak}${lineBreak}
           Message:
           ${lineBreak}
-          ${fields.message}`;
+          ${fields.message}${senderIdFooter}`;
       };
-      
-      console.log('📧 ContactForm: calling sendEmail to:', supportAddress, 'subject:', `Contact form for ${companyName}`);
-      
-      const result = await sendEmail({
-        data: {
-          to: supportAddress,
-          from: fromAddress,
-          subject: `Contact form for ${companyName}`,
-          text: `${message(false)}`,
-          html: `<p>${message(true)}</p>`,
-        }
-      });
 
-      console.log ({result})
-      
-      if (result) {
-        console.log('✅ ContactForm: email sent successfully, setting messageSent to true');
+      try {
+        await sendEmail({
+          data: {
+            to: supportAddress,
+            from: fromAddress,
+            subject: `Contact form for ${companyName}`,
+            text: `${message(false)}`,
+            html: `<p>${message(true)}</p>`,
+          }
+        });
         setMessageSent(true);
         onSuccess?.();
-      } else {
-        console.log('❌ ContactForm: email failed to send');
-        alert(`Message failed to send.`);
+      } catch (error) {
+        // sendEmail throws on failure — it never returns a falsy result — so the catch
+        // is the only place a failed send surfaces. Record it as server-side telemetry,
+        // carrying the sender's email and message so the note survives in a log the owner
+        // can still read. We deliberately do NOT notify: the alert email would travel the
+        // same SMTP path that just failed. Instead the alert hands the user the support
+        // address, so they can reach us from their own mail client, which does not.
+        void logToServer({
+          data: {
+            level: 'error',
+            message: 'Contact form failed to send',
+            context: {
+              name: fields.name,
+              email: fields.email,
+              message: fields.message,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          },
+        });
+        alert(`Message failed to send. Please email us directly at ${supportAddress}.`);
       }
     }
   };

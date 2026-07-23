@@ -140,7 +140,22 @@ describe('UserManagement effective admin display', () => {
     const { view } = renderManagement()
 
     fireEvent.click(view.getByText('Plain Person'))
-    expect(view.getByLabelText('Email Verified')).toBeChecked()
+    const emailVerificationCheckbox = view.getByLabelText('Email Verified') as HTMLInputElement
+    expect(emailVerificationCheckbox).toBeChecked()
+    expect(emailVerificationCheckbox.parentElement).toHaveStyle({
+      alignItems: 'center',
+      display: 'flex',
+      gap: '0.5rem',
+    })
+    expect(emailVerificationCheckbox).toHaveStyle({
+      margin: '0',
+      minWidth: 'auto',
+      padding: '0',
+    })
+    expect(emailVerificationCheckbox.labels?.[0]).toHaveStyle({
+      margin: '0',
+      position: 'static',
+    })
     expect(view.getByLabelText('Stored admin role')).not.toBeChecked()
     expect(view.getByText('This account has no effective admin grant.')).toBeInTheDocument()
 

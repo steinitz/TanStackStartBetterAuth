@@ -53,9 +53,9 @@ button {
   padding: 0.6rem 1.5rem;
 }
 
-input {
+input:not([type="checkbox"]):not([type="radio"]) {
   min-width: 91%;
-  /* this might be extreme and mess up certain inputs */
+  /* Legacy form-field sizing; native choice controls must keep their own width. */
 }
 
 main {

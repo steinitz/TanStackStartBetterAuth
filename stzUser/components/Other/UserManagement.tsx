@@ -10,7 +10,7 @@ import { adminStatusKeys } from '~stzUser/lib/admin-queries'
 import { hasStoredAdminRole, type AdminSource } from '~stzUser/lib/admin-identity'
 import { HelpDisclosure } from '~stzUtils/components/HelpDisclosure'
 import { Spacer } from '~stzUtils/components/Spacer'
-import { useRef, useState, type MouseEvent } from 'react'
+import { useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { userRoles, userRolesType } from '~stzUser/constants'
 import { testConstants } from '~stzUser/test/constants'
@@ -350,36 +350,26 @@ export function UserManagement({ users }: { users: User[] }) {
     getSortedRowModel: getSortedRowModel(),
   })
 
+  // MVP.css already pairs a checkbox with its adjacent label. Neutralize the
+  // generic form-control geometry, then let flex alignment do the rest; the
+  // old negative offsets escaped the dialog padding in iPad Safari.
   const checkboxAndLabelFlexStyle = {
-    display: 'flex', // don't need because mvc.css inlines
     alignItems: 'center',
-    width: '50px', // without this box and label are really wide
-    marginLeft: '-20px',
-    marginTop: '-13px', // why needed?
-
-
-    // marginTop: '-10px' // can't get them verticallyl aligned without
-
-    // failed tries:
-    // paddingTop: '0', // no effect
-    // paddingBottom: '0',  // no effect
-    // textAlign: 'left', // causes typescript error
-    // selfAlign: 'flex-start' // no effect
-  }
+    display: 'flex',
+    gap: '0.5rem',
+  } satisfies CSSProperties
 
   const checkboxStyle = {
-    // margin: '0',
-    // no effect maxWidth: '8px',
-    // padding: '0',
-  }
+    margin: 0,
+    minWidth: 'auto',
+    padding: 0,
+  } satisfies CSSProperties
+
   const checkboxLabelStyle = {
+    margin: 0,
+    position: 'static',
     whiteSpace: 'nowrap',
-    marginTop: '-12px' // aligns label and check box and packs the whole row tighter to match the other fields
-    // margin: '0',
-
-
-    //marginTop: '5px',
-  }
+  } satisfies CSSProperties
 
   const CheckboxAndLabel = (
     {

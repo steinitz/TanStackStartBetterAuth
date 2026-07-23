@@ -79,12 +79,16 @@ For detailed foundation documentation, see [README-STZUSER.md](./README-STZUSER.
 
 ```bash
 pnpm dev          # Start development server
+pnpm dev --host   # Also expose it on the local network for device testing
 pnpm build        # Build for production
 pnpm typecheck    # Check TypeScript types
 pnpm test         # Run unit tests
 pnpm test:e2e     # Run E2E tests
 pnpm dev:vite     # Start Vite directly, bypassing the dev launcher
 ```
+
+Arguments after `pnpm dev` are forwarded to Vite. If `--port` is supplied, the
+automatic Stripe webhook relay uses the same port.
 
 ## Admin access and first-user bootstrap
 

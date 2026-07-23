@@ -15,8 +15,22 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
-const port = process.env.PORT || '3000'
+const viteArgs = process.argv.slice(2)
 const children = []
+
+function optionValue(args, name) {
+  const assigned = args.find((arg) => arg.startsWith(`${name}=`))
+  if (assigned) return assigned.slice(name.length + 1)
+
+  const index = args.indexOf(name)
+  const value = index === -1 ? undefined : args[index + 1]
+  return value && !value.startsWith('-') ? value : undefined
+}
+
+// Vite arguments belong to Vite, but the Stripe relay must share an explicitly
+// selected port or purchases will succeed while their webhooks visit the wrong
+// server. PORT remains the default path; CLI --port and --port= override it.
+const port = optionValue(viteArgs, '--port') || process.env.PORT || '3000'
 
 // Read the opt-in flag straight from .env.development. A missing file (fresh clone) or any parse
 // trouble is treated as off, so a newcomer or non-Stripe developer gets plain Vite.
@@ -85,8 +99,8 @@ try {
   console.warn('  [dev] Stripe launcher skipped (' + (err && err.message) + '); continuing with plain Vite.')
 }
 
-// The guarantee: Vite always starts, behaving exactly like `vite dev`.
-const vite = spawn('vite', ['dev'], {
+// The guarantee: Vite always starts with the developer's Vite arguments intact.
+const vite = spawn('vite', ['dev', ...viteArgs], {
   stdio: 'inherit',
   shell: true,
   env: { ...process.env, ...viteEnv },

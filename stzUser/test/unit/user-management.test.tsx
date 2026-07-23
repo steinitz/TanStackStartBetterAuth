@@ -141,6 +141,18 @@ describe('UserManagement effective admin display', () => {
 
     fireEvent.click(view.getByText('Plain Person'))
     const emailVerificationCheckbox = view.getByLabelText('Email Verified') as HTMLInputElement
+    const identityAndVerificationGroup = emailVerificationCheckbox.parentElement?.parentElement
+    expect(view.getByRole('heading', { name: /Edit User.*Plain Person/ })).toHaveStyle({ margin: '0' })
+    expect(identityAndVerificationGroup).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+    })
+    expect(identityAndVerificationGroup?.firstElementChild).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+    })
     expect(emailVerificationCheckbox).toBeChecked()
     expect(emailVerificationCheckbox.parentElement).toHaveStyle({
       alignItems: 'center',
@@ -267,7 +279,10 @@ describe('UserManagement effective admin display', () => {
 
     dialog = openPlainUser()
     const actionGroup = within(dialog).getByRole('button', { name: 'Close user editor' }).parentElement
-    expect(actionGroup).toHaveStyle({ justifyContent: 'space-between' })
+    expect(actionGroup).toHaveStyle({
+      justifyContent: 'space-between',
+      marginTop: '1rem',
+    })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close user editor' }))
     expect(dialog).not.toHaveAttribute('open')
   })

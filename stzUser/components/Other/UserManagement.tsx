@@ -562,37 +562,41 @@ export function UserManagement({ users }: { users: User[] }) {
         >
           {selectedUser ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h3 id="selected-user-dialog-title" style={{ marginTop: 0 }}>
-                <span style={{ fontWeight: 'normal' }}>Edit User &nbsp;</span>
-                {selectedUser.name || selectedUser.email}
-              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h3 id="selected-user-dialog-title" style={{ margin: 0 }}>
+                    <span style={{ fontWeight: 'normal' }}>Edit User &nbsp;</span>
+                    {selectedUser.name || selectedUser.email}
+                  </h3>
 
-              <div>
-                <p><strong>Email:</strong> {selectedUser.email}</p>
-                <p><strong>ID:</strong> {selectedUser.id}</p>
-                <p>
-                  <strong>Admin access:</strong>{' '}
-                  {selectedUser.adminSource === 'none' ? 'User' : 'Admin'}
-                </p>
-                {selectedUser.adminSource === 'both' ? (
-                  <HybridAdminExplanation />
-                ) : (
                   <div>
-                    <span>{adminSourceDescriptions[selectedUser.adminSource]}</span>
-                    {selectedUser.adminSource === 'environment' ? (
-                      <AdminConfigurationDisclosure source={selectedUser.adminSource} />
-                    ) : null}
+                    <p><strong>Email:</strong> {selectedUser.email}</p>
+                    <p><strong>ID:</strong> {selectedUser.id}</p>
+                    <p>
+                      <strong>Admin access:</strong>{' '}
+                      {selectedUser.adminSource === 'none' ? 'User' : 'Admin'}
+                    </p>
+                    {selectedUser.adminSource === 'both' ? (
+                      <HybridAdminExplanation />
+                    ) : (
+                      <div>
+                        <span>{adminSourceDescriptions[selectedUser.adminSource]}</span>
+                        {selectedUser.adminSource === 'environment' ? (
+                          <AdminConfigurationDisclosure source={selectedUser.adminSource} />
+                        ) : null}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
 
-              <CheckboxAndLabel
-                checked={selectedUser.emailVerified}
-                changeHandler={handleEmailVerificationToggle}
-                label={'Email Verified'}
-                inputId={'email-verified-checkbox'}
-                userId={selectedUser.id}
-              />
+                <CheckboxAndLabel
+                  checked={selectedUser.emailVerified}
+                  changeHandler={handleEmailVerificationToggle}
+                  label={'Email Verified'}
+                  inputId={'email-verified-checkbox'}
+                  userId={selectedUser.id}
+                />
+              </div>
 
               {selectedUser.adminSource === 'environment' || selectedUser.adminSource === 'both' ? (
                 <div>
@@ -620,7 +624,7 @@ export function UserManagement({ users }: { users: User[] }) {
                 />
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
                 <button
                   type="button"
                   onClick={() => handleDeleteUser(

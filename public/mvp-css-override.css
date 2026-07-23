@@ -1,5 +1,7 @@
 :root {
   --color-error: darkred;
+  --color-warning: #ff8c00;
+  /* Dark orange */
   --color-success: #008000;
   /* Dark green */
 }
@@ -9,6 +11,8 @@
     --color-bg: #222;
     /* darker background for better readability */
     --color-error: red;
+    --color-warning: #ffa500;
+    /* Orange */
     --color-success: #32cd32;
     /* Lime green */
   }

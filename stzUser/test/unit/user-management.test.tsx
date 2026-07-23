@@ -174,9 +174,12 @@ describe('UserManagement effective admin display', () => {
     }
 
     expect(view.getByText('Hybrid')).toHaveClass('stz-user-management-hybrid-label')
+    expect(view.container.querySelector('style')).toHaveTextContent(
+      'color: var(--color-warning)',
+    )
   })
 
-  it('makes environment-controlled rows read-only and discloses the conversion gap', () => {
+  it('keeps configured roles read-only and explains each source honestly', () => {
     const { view } = renderManagement()
 
     fireEvent.click(view.getByText('Environment Person'))
@@ -206,17 +209,14 @@ describe('UserManagement effective admin display', () => {
     fireEvent.click(view.getByText('Both Person'))
     expect(view.getByLabelText('Stored admin role')).toBeDisabled()
     expect(view.getByLabelText('Stored admin role')).toBeChecked()
-    expect(view.getByText(
-      'Admin status is defined in both the database and environment configuration. The environment grant cannot be edited here.',
-    )).toBeInTheDocument()
 
-    const hybridDisclosures = view.getAllByLabelText('Explain Hybrid admin')
-    expect(hybridDisclosures).toHaveLength(2)
-    fireEvent.click(within(view.getByRole('dialog')).getByLabelText('Explain Hybrid admin'))
-    expect(view.getByRole('dialog')).toHaveTextContent(
+    const hybridDialog = view.getByRole('dialog')
+    expect(view.getAllByLabelText('Explain Hybrid admin')).toHaveLength(1)
+    expect(within(hybridDialog).queryByLabelText('Explain Hybrid admin')).not.toBeInTheDocument()
+    expect(hybridDialog).toHaveTextContent(
       'Warning: Admin access is granted independently by both the stored database role and environment configuration.',
     )
-    expect(view.getByRole('dialog')).toHaveTextContent(
+    expect(hybridDialog).toHaveTextContent(
       'Recommended: remove the user ID from ADMIN_USER_IDS, then restart or redeploy the app.',
     )
   })

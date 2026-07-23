@@ -190,9 +190,9 @@ describe('UserManagement effective admin display', () => {
     expect(environmentRoleCheckbox.labels?.[0]).toHaveStyle({
       color: 'var(--color-text-secondary)',
     })
-    expect(view.getByText(
-      'Read-only while environment configuration grants this account admin access.',
-    )).toBeInTheDocument()
+    expect(view.container.querySelector('#stored-admin-role-read-only-note')).toHaveTextContent(
+      'Stored admin role is read-only while environment configuration grants this account admin access.',
+    )
     expect(view.getByText(
       'Admin status is defined by environment configuration and cannot be edited here.',
     )).toBeInTheDocument()

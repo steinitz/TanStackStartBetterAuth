@@ -616,7 +616,8 @@ export function UserManagement({ users }: { users: User[] }) {
                     descriptionId="stored-admin-role-read-only-note"
                   />
                   <p id="stored-admin-role-read-only-note" style={{ margin: '0.25rem 0 0' }}>
-                    Read-only while environment configuration grants this account admin access.
+                    <strong>Stored admin role</strong> is read-only while environment
+                    configuration grants this account admin access.
                   </p>
                 </div>
               ) : (

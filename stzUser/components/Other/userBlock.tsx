@@ -3,6 +3,7 @@ import { signOut, useSession } from '~stzUser/lib/auth-client'
 import { routeStrings } from "~/constants";
 import { activeLinkStyle } from "~stzUtils/components/styles";
 import { WalletWidget } from './WalletWidget'
+import type { MouseEvent } from 'react'
 
 
 /*
@@ -25,9 +26,39 @@ export const navLinkStyle = {
   color: 'var(--color-link)',
 }
 
+const signOutTimeoutMs = 10_000
+const signOutFailureMessage = 'Sign-out could not be confirmed. Please try again.'
+
 export function UserBlock() {
   const navigate = useNavigate()
   const { data: session, isPending } = useSession()
+
+  const handleSignOut = async (event: MouseEvent<HTMLAnchorElement>) => {
+    // This remains a Link to preserve the long-settled shared-header layout, but
+    // its navigation must not outrun the request that makes that destination true.
+    event.preventDefault()
+
+    try {
+      const { error } = await signOut({
+        fetchOptions: {
+          timeout: signOutTimeoutMs,
+        },
+      })
+
+      if (error) {
+        console.error('Sign-out failed:', error)
+        alert(signOutFailureMessage)
+        return
+      }
+
+      navigate({ to: routeStrings.signin })
+    } catch (error) {
+      // Better Auth normally returns failures as { error }; retain this boundary
+      // for an unexpected rejection, including an aborted or failed network request.
+      console.error('Sign-out failed:', error)
+      alert(signOutFailureMessage)
+    }
+  }
 
   const containerStyle = {
     display: 'flex',
@@ -89,15 +120,7 @@ export function UserBlock() {
         session?.user ?
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <Link
-              onClick={() => {
-                signOut({
-                  fetchOptions: {
-                    onSuccess: () => {
-                      navigate({ to: routeStrings.signin })
-                    },
-                  },
-                })
-              }}
+              onClick={handleSignOut}
               style={navLinkStyle}
               to={routeStrings.signin}
             >

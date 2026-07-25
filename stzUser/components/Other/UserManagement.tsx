@@ -441,8 +441,13 @@ export function UserManagement({ users }: { users: User[] }) {
         {users.length === 0 ? (
           <p>No users registered yet.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', margin: '0 auto' }}>
-            <table style={{ borderCollapse: 'collapse' }}>
+          <div style={{
+            margin: '0 auto',
+            maxWidth: '100%',
+            overflowX: 'auto',
+            width: '100%',
+          }}>
+            <table style={{ borderCollapse: 'collapse', margin: '0 auto', whiteSpace: 'nowrap' }}>
               <thead>
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>

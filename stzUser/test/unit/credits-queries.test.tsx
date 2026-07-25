@@ -104,17 +104,19 @@ describe('transaction queries', () => {
     expect(getTransactions).toHaveBeenCalledTimes(1)
   })
 
-  it('refreshes active wallet and transaction observers as one user family', async () => {
+  it('refreshes wallet truth before the ledger and reports both fetching phases', async () => {
     vi.mocked(useSession).mockReturnValue({
       data: { user: { id: 'user-1' } },
     } as any)
     vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
+    const refreshedWallet = deferred<{ credits: number; welcomeClaimed: boolean }>()
+    const refreshedLedger = deferred<WalletTransaction[]>()
     vi.mocked(getWalletStatus)
       .mockResolvedValueOnce({ credits: 10, welcomeClaimed: false })
-      .mockResolvedValueOnce({ credits: 20, welcomeClaimed: true })
+      .mockReturnValueOnce(refreshedWallet.promise as ReturnType<typeof getWalletStatus>)
     vi.mocked(getTransactions)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([transaction])
+      .mockReturnValueOnce(refreshedLedger.promise as ReturnType<typeof getTransactions>)
     const queryClient = createQueryClient()
     const { result } = renderHook(() => ({
       wallet: useWallet(),
@@ -128,13 +130,40 @@ describe('transaction queries', () => {
       expect(result.current.ledger.transactions).toEqual([])
     })
 
+    let refreshPromise!: Promise<void>
+    act(() => {
+      refreshPromise = result.current.wallet.refreshWallet()
+    })
+
+    await waitFor(() => {
+      expect(getWalletStatus).toHaveBeenCalledTimes(2)
+      expect(result.current.wallet.isFetching).toBe(true)
+    })
+    expect(getTransactions).toHaveBeenCalledTimes(1)
+    expect(result.current.ledger.isFetching).toBe(false)
+
+    act(() => {
+      refreshedWallet.resolve({ credits: 20, welcomeClaimed: true })
+    })
+
+    await waitFor(() => {
+      expect(getTransactions).toHaveBeenCalledTimes(2)
+      expect(result.current.wallet.isFetching).toBe(false)
+      expect(result.current.ledger.isFetching).toBe(true)
+    })
+
+    act(() => {
+      refreshedLedger.resolve([transaction])
+    })
     await act(async () => {
-      await result.current.wallet.refreshWallet()
+      await refreshPromise
     })
 
     await waitFor(() => {
       expect(result.current.wallet.credits).toBe(20)
       expect(result.current.ledger.transactions).toEqual([transaction])
+      expect(result.current.wallet.isFetching).toBe(false)
+      expect(result.current.ledger.isFetching).toBe(false)
     })
     expect(getWalletStatus).toHaveBeenCalledTimes(2)
     expect(getTransactions).toHaveBeenCalledTimes(2)
@@ -178,7 +207,7 @@ describe('TransactionLedger', () => {
     view.rerender(
       <TransactionLedger transactions={undefined} isPending={false} isError={true} />,
     )
-    expect(view.getByText(/could not be loaded/i)).toBeInTheDocument()
+    expect(view.getByText(/could not be refreshed/i)).toBeInTheDocument()
     expect(view.queryByText('No transactions found.')).not.toBeInTheDocument()
 
     view.rerender(

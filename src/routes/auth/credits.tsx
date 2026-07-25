@@ -21,13 +21,18 @@ type CreditsSearch = {
 
 function TransactionsPage() {
   const { data: session } = useSession()
-  const { wallet: walletStatus, refreshWallet } = useWallet()
+  const {
+    wallet: walletStatus,
+    refreshWallet,
+    isFetching: isWalletFetching,
+  } = useWallet()
   // This hook refreshes and awaits the grant-bearing wallet Query before reading the ledger.
   // That order keeps the header balance and its explanation on one server snapshot.
   const {
     transactions,
     isPending: areTransactionsPending,
     isError: areTransactionsError,
+    isFetching: areTransactionsFetching,
   } = useTransactions()
   const [purchaseAmount, setPurchaseAmount] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [isRequesting, setIsRequesting] = useState(false)
@@ -85,18 +90,46 @@ function TransactionsPage() {
 
   const showBankSection = !clientEnv.IS_STRIPE_ENABLED && clientEnv.BANK_TRANSFER_BSB && clientEnv.BANK_TRANSFER_ACC
   const totalCost = (Number(purchaseAmount || 0) * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
+  const isRefreshing = isWalletFetching || areTransactionsFetching
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
-      <h1>Credits</h1>
+    <div style={{
+      boxSizing: 'border-box',
+      margin: '0 auto',
+      maxWidth: '56rem',
+      padding: '2rem clamp(0.75rem, 1.5vw, 1rem)',
+      width: '100%',
+    }}>
+      <div style={{
+        alignItems: 'center',
+        display: 'flex',
+        gap: '1rem',
+        justifyContent: 'space-between',
+        marginBottom: '1rem',
+      }}>
+        <h1 style={{ margin: 0 }}>Credits</h1>
+        <button
+          type="button"
+          aria-busy={isRefreshing}
+          aria-label="Refresh credit balance and ledger"
+          disabled={isRefreshing}
+          onClick={() => void refreshWallet()}
+          style={{ margin: 0 }}
+        >
+          {isRefreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
 
       <section style={{
         border: '1px solid var(--color-bg-secondary)',
-        padding: '2rem',
+        boxSizing: 'border-box',
+        padding: 'clamp(1rem, 4vw, 2rem)',
         borderRadius: '12px',
         display: 'flex',
         flexDirection: 'column',
         gap: '0rem',
+        margin: '0 auto',
+        maxWidth: '52rem',
         width: '100%',
       }}>
         <h2 style={{ marginTop: '0', marginBottom: '3rem', textAlign: 'center' }}>Top Up Credits</h2>
@@ -204,7 +237,7 @@ function TransactionsPage() {
 
       <Spacer orientation="vertical" />
 
-      <div style={{ marginTop: '2rem' }}>
+      <div style={{ margin: '2rem auto 0', maxWidth: '56rem', width: '100%' }}>
         <h3>History Ledger</h3>
         <p>A complete ledger of your credit grants and consumption.</p>
         <TransactionLedger

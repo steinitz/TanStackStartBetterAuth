@@ -58,6 +58,14 @@ input:not([type="checkbox"]):not([type="radio"]) {
   /* Legacy form-field sizing; native choice controls must keep their own width. */
 }
 
+/* Let tables lay out as tables. MVP makes each table an inline scrolling box,
+   which can leave its border wider than the rows inside it. Responsive overflow
+   belongs on a table's local wrapper instead. */
+table {
+  display: table;
+  overflow-x: visible;
+}
+
 main {
   padding-top: 0.5rem;
   max-width: 1000px;

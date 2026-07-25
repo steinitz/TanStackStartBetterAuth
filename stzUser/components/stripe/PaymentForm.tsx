@@ -175,7 +175,15 @@ function CheckoutForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <form onSubmit={handleSubmit} style={{
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1.5rem',
+      maxWidth: '100%',
+      minWidth: 0,
+      width: '100%',
+    }}>
       <PaymentElement />
       {error && <p style={{ margin: 0, color: 'var(--color-error)' }}>{error}</p>}
       <AppleButtonGroup

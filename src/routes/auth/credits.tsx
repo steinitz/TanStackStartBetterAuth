@@ -129,7 +129,6 @@ function TransactionsPage() {
         flexDirection: 'column',
         gap: '0rem',
         margin: '0 auto',
-        maxWidth: '52rem',
         width: '100%',
       }}>
         <h2 style={{ marginTop: '0', marginBottom: '3rem', textAlign: 'center' }}>Top Up Credits</h2>

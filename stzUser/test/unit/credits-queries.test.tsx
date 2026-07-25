@@ -61,6 +61,10 @@ describe('transaction queries', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useSession).mockReturnValue({ data: null } as any)
+    vi.mocked(getWalletStatus).mockResolvedValue({
+      credits: 10,
+      welcomeClaimed: false,
+    })
   })
 
   afterEach(() => {
@@ -96,7 +100,7 @@ describe('transaction queries', () => {
       </QueryClientProvider>,
     )
 
-    expect(await view.findAllByText('1')).toHaveLength(2)
+    await waitFor(() => expect(view.getAllByText('1')).toHaveLength(2))
     expect(getTransactions).toHaveBeenCalledTimes(1)
   })
 

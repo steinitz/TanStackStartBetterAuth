@@ -87,9 +87,26 @@ export function transactionsQueryOptions(
  */
 export async function refreshWalletQueries(queryClient: QueryClient, userId: string) {
   const queryKey = walletKeys.user(userId)
+  const statusKey = [...queryKey, 'status'] as const
 
   await queryClient.cancelQueries({ queryKey })
-  await queryClient.invalidateQueries({ queryKey })
+
+  // Wallet status may create today's lazy grant. Let every active status read settle before
+  // refreshing the ledger, so the history cannot snapshot the instant before that write.
+  try {
+    await queryClient.invalidateQueries(
+      { queryKey: statusKey },
+      { throwOnError: true },
+    )
+  } catch {
+    // The status Query already owns and exposes the error. Keep the ledger at the same older
+    // snapshot rather than publishing new history beside a balance that could not be refreshed.
+    return
+  }
+
+  await queryClient.invalidateQueries({
+    queryKey: walletKeys.transactions(userId),
+  })
 }
 
 function createRefreshWallet(queryClient: QueryClient, userId: string | undefined) {
@@ -126,12 +143,24 @@ export function useWallet() {
   }
 }
 
-export function useTransactions(isWalletReady = true) {
+export function useTransactions() {
   const { data: session } = useSession()
-  const query = useQuery(transactionsQueryOptions(session?.user?.id, isWalletReady))
+  const userId = session?.user?.id
+  const timezoneOffset = getBrowserTimezoneOffset()
+  const walletRefreshQuery = useQuery({
+    ...walletStatusQueryOptions(userId, timezoneOffset),
+    // Entering Credits is a deliberate server-truth boundary. This observer shares the
+    // header's status cache, but unlike the long-lived header it treats that cache as stale.
+    staleTime: 0,
+  })
+  const isWalletReady = walletRefreshQuery.isSuccess && !walletRefreshQuery.isFetching
+  const query = useQuery(transactionsQueryOptions(userId, isWalletReady))
 
   return {
     ...query,
-    transactions: query.data,
+    transactions: isWalletReady ? query.data : undefined,
+    isPending: walletRefreshQuery.isPending || walletRefreshQuery.isFetching || query.isPending,
+    isError: walletRefreshQuery.isError || query.isError,
+    error: walletRefreshQuery.error ?? query.error,
   }
 }

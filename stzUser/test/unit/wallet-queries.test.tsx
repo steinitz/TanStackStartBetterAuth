@@ -13,11 +13,12 @@ vi.mock('~stzUser/lib/wallet', () => ({
 }))
 
 import { useSession } from '~stzUser/lib/auth-client'
-import { getWalletStatus } from '~stzUser/lib/wallet'
+import { getTransactions, getWalletStatus } from '~stzUser/lib/wallet'
 import {
   refreshWalletQueries,
   transactionsQueryOptions,
   useRefreshWallet,
+  useTransactions,
   useWallet,
   walletKeys,
   walletStatusQueryOptions,
@@ -56,6 +57,11 @@ describe('wallet queries', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useSession).mockReturnValue({ data: null } as any)
+    vi.mocked(getWalletStatus).mockResolvedValue({
+      credits: 10,
+      welcomeClaimed: false,
+    })
+    vi.mocked(getTransactions).mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -73,9 +79,64 @@ describe('wallet queries', () => {
     expect(result.current.credits).toBeNull()
   })
 
-  it('can hold the ledger read until a lazy daily grant has finished', () => {
+  it('can hold the ledger read until wallet status is current', () => {
+    expect(transactionsQueryOptions(undefined, true).enabled).toBe(false)
     expect(transactionsQueryOptions('user-1', false).enabled).toBe(false)
     expect(transactionsQueryOptions('user-1', true).enabled).toBe(true)
+  })
+
+  it('publishes fresh wallet truth before reading the ledger', async () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { id: 'user-1' } },
+    } as any)
+    vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
+    const queryClient = createQueryClient()
+    const freshWallet = deferred<{ credits: number; welcomeClaimed: boolean }>()
+    vi.mocked(getWalletStatus).mockReturnValue(
+      freshWallet.promise as ReturnType<typeof getWalletStatus>,
+    )
+    queryClient.setQueryData(walletKeys.status('user-1', 0), {
+      credits: 10,
+      welcomeClaimed: false,
+    })
+
+    const { result } = renderHook(() => ({
+      headerWallet: useWallet(),
+      creditsLedger: useTransactions(),
+    }), {
+      wrapper: wrapperFor(queryClient),
+    })
+
+    await waitFor(() => expect(getWalletStatus).toHaveBeenCalledTimes(1))
+    expect(getTransactions).not.toHaveBeenCalled()
+    expect(result.current.headerWallet.credits).toBe(10)
+    expect(result.current.creditsLedger.transactions).toBeUndefined()
+
+    freshWallet.resolve({ credits: 25, welcomeClaimed: true })
+
+    await waitFor(() => expect(getTransactions).toHaveBeenCalledTimes(1))
+    expect(result.current.headerWallet.credits).toBe(25)
+    expect(queryClient.getQueryData(walletKeys.status('user-1', 0))).toEqual({
+      credits: 25,
+      welcomeClaimed: true,
+    })
+  })
+
+  it('does not publish a newer ledger beside wallet truth that failed to refresh', async () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { id: 'user-1' } },
+    } as any)
+    vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
+    vi.mocked(getWalletStatus).mockRejectedValue(new Error('wallet unavailable'))
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useTransactions(), {
+      wrapper: wrapperFor(queryClient),
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.transactions).toBeUndefined()
+    expect(getTransactions).not.toHaveBeenCalled()
   })
 
   it('gives signed-in producers a user-scoped refresh without observing wallet status', async () => {
@@ -95,9 +156,16 @@ describe('wallet queries', () => {
       await result.current()
     })
 
-    const queryKey = walletKeys.user('user-1')
-    expect(cancelQueries).toHaveBeenCalledWith({ queryKey })
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey })
+    expect(cancelQueries).toHaveBeenCalledWith({
+      queryKey: walletKeys.user('user-1'),
+    })
+    expect(invalidateQueries).toHaveBeenCalledWith(
+      { queryKey: [...walletKeys.user('user-1'), 'status'] },
+      { throwOnError: true },
+    )
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: walletKeys.transactions('user-1'),
+    })
     expect(getWalletStatus).not.toHaveBeenCalled()
   })
 

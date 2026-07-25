@@ -22,14 +22,13 @@ type CreditsSearch = {
 function TransactionsPage() {
   const { data: session } = useSession()
   const { wallet: walletStatus, refreshWallet } = useWallet()
+  // This hook refreshes and awaits the grant-bearing wallet Query before reading the ledger.
+  // That order keeps the header balance and its explanation on one server snapshot.
   const {
     transactions,
     isPending: areTransactionsPending,
     isError: areTransactionsError,
-  // Wallet status may create today's lazy grant. Do not race the ledger read against that write:
-  // an empty pre-grant result would then remain "fresh" forever under the intentional Infinity
-  // stale time, showing a 100-credit balance beside "No transactions found."
-  } = useTransactions(walletStatus !== null)
+  } = useTransactions()
   const [purchaseAmount, setPurchaseAmount] = useState<number | ''>(clientEnv.DEFAULT_CREDITS_PURCHASE)
   const [isRequesting, setIsRequesting] = useState(false)
 

@@ -49,7 +49,7 @@ vi.mock('~stzUser/lib/admin-credit.logic', () => ({
   MAX_ADMIN_CREDIT_ADJUSTMENT: 10_000_000,
   MAX_ADMIN_DESCRIPTION_LENGTH: 500,
   MAX_USER_ID_LENGTH: 255,
-  PURGE_LEDGER_CONFIRMATION: 'PURGE MY LEDGER',
+  PURGE_LEDGER_CONFIRMATION: 'purge my ledger',
   addCreditsInternal,
   removeCreditsInternal,
   getAdminCreditTargetInternal,

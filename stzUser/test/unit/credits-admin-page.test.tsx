@@ -8,7 +8,7 @@ vi.mock('~stzUser/lib/auth-client', () => ({
 }))
 
 vi.mock('~stzUser/lib/admin', () => ({
-  PURGE_LEDGER_CONFIRMATION: 'PURGE MY LEDGER',
+  PURGE_LEDGER_CONFIRMATION: 'purge my ledger',
   getAdminStatus: vi.fn(),
   lookupAdminCreditTarget: vi.fn(),
   previewLedgerPurge: vi.fn(),
@@ -127,13 +127,32 @@ describe('CreditsAdminPage', () => {
     expect(addButton).toBeEnabled()
     expect(removeButton).toBeEnabled()
 
-    fireEvent.change(view.getByLabelText('Exact user ID'), {
-      target: { value: 'target-user-edited' },
-    })
+    expect(view.queryByLabelText('Exact user ID')).not.toBeInTheDocument()
+    fireEvent.click(view.getByRole('button', { name: 'Change target' }))
 
     expect(view.queryByText('Target Person')).not.toBeInTheDocument()
+    expect(view.getByLabelText('Exact user ID')).toHaveValue('target-user')
     expect(addButton).toBeDisabled()
     expect(removeButton).toBeDisabled()
+  })
+
+  it('keeps lookup errors inside the target-selection form', async () => {
+    vi.mocked(lookupAdminCreditTarget).mockRejectedValueOnce(
+      new Error('No user has that exact ID'),
+    )
+    const { view } = renderPage()
+
+    await view.findByRole('heading', { name: 'Credit administration' })
+    const targetForm = view.getByRole('form', { name: 'Credit target selection' })
+    fireEvent.change(view.getByLabelText('Exact user ID'), {
+      target: { value: 'missing-user' },
+    })
+    fireEvent.click(view.getByRole('button', { name: 'Look up user' }))
+
+    const feedback = await view.findByRole('alert')
+    expect(feedback).toHaveTextContent('No user has that exact ID')
+    expect(targetForm).toContainElement(feedback)
+    expect(view.getByLabelText('Exact user ID')).toHaveValue('missing-user')
   })
 
   it('refreshes the confirmed target after reversible add and remove mutations', async () => {
@@ -206,7 +225,7 @@ describe('CreditsAdminPage', () => {
     })
   })
 
-  it('warns about both Stripe losses and requires the exact purge phrase', async () => {
+  it('warns about repeated Stripe delivery and requires the exact purge phrase', async () => {
     vi.mocked(purgeLedger).mockResolvedValue({
       userId: 'admin-user',
       deletedRows: 4,
@@ -216,20 +235,24 @@ describe('CreditsAdminPage', () => {
     const { view } = renderPage()
 
     await view.findByText(/2 Stripe purchase rows/)
-    expect(view.getByText(/record that those payments were received/)).toBeInTheDocument()
-    expect(view.getByText(/PaymentIntent identifiers/)).toBeInTheDocument()
+    expect(view.getByText(/removes its local delivery record/)).toBeInTheDocument()
+    expect(view.getByText(/retry or webhook resend may add the credits again/)).toBeInTheDocument()
 
     const purgeButton = view.getByRole('button', { name: 'Purge ledger' })
     expect(purgeButton).toBeDisabled()
-    fireEvent.change(view.getByLabelText(/Type.*PURGE MY LEDGER.*to confirm/), {
+    fireEvent.change(view.getByLabelText(/Type.*purge my ledger.*to confirm/), {
       target: { value: 'PURGE MY LEDGER' },
+    })
+    expect(purgeButton).toBeDisabled()
+    fireEvent.change(view.getByLabelText(/Type.*purge my ledger.*to confirm/), {
+      target: { value: 'purge my ledger' },
     })
     expect(purgeButton).toBeEnabled()
     fireEvent.click(purgeButton)
 
     await view.findByText(/Purged 4 ledger rows/)
     expect(purgeLedger).toHaveBeenCalledWith({
-      data: { confirmation: 'PURGE MY LEDGER' },
+      data: { confirmation: 'purge my ledger' },
     })
     expect(getWalletStatus).not.toHaveBeenCalled()
   })

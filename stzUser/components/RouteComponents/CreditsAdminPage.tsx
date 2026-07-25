@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
+import {
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import {
   PURGE_LEDGER_CONFIRMATION,
   addCredits,
@@ -21,6 +26,102 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'The operation failed'
 }
 
+const adminPageStyle: CSSProperties = {
+  boxSizing: 'border-box',
+  margin: '0 auto',
+  padding: '0.5rem 1.5rem 3rem',
+  width: 'min(100%, 70rem)',
+}
+
+const adminSectionStyle: CSSProperties = {
+  boxSizing: 'border-box',
+  display: 'block',
+  padding: '1rem 0',
+  width: '100%',
+}
+
+const formCardStyle: CSSProperties = {
+  boxSizing: 'border-box',
+  margin: '1rem 0',
+  maxWidth: 'none',
+  minWidth: 0,
+  width: '100%',
+}
+
+const adminColumnStyle: CSSProperties = {
+  flex: '1 1 18rem',
+  minWidth: 0,
+}
+
+const columnFormStyle: CSSProperties = {
+  ...formCardStyle,
+  ...adminColumnStyle,
+  margin: 0,
+}
+
+const formFeedbackStyle: CSSProperties = {
+  lineHeight: 1.4,
+  margin: '0.65rem 0 0',
+}
+
+function AdminTwoColumnRow({
+  children,
+  marginTop = '1.5rem',
+}: {
+  children: ReactNode
+  marginTop?: CSSProperties['marginTop']
+}) {
+  return (
+    <div
+      style={{
+        alignItems: 'flex-start',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '2rem',
+        marginTop,
+        width: '100%',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function FormActionRow({
+  feedback,
+  children,
+}: {
+  feedback?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <div
+      style={{
+        alignItems: 'flex-start',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '0.5rem 1rem',
+        justifyContent: 'flex-end',
+        marginTop: '0.5rem',
+        minHeight: '3rem',
+      }}
+    >
+      <div
+        style={{
+          flex: '1 1 0',
+          minHeight: '1.5rem',
+          minWidth: feedback ? '12rem' : 0,
+        }}
+      >
+        {feedback}
+      </div>
+      <div style={{ flex: '0 0 auto', marginLeft: 'auto' }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function mutationFeedback(
   mutation: {
     isError: boolean
@@ -31,11 +132,15 @@ function mutationFeedback(
   successLabel: string,
 ) {
   if (mutation.isError) {
-    return <p role="alert">{errorMessage(mutation.error)}</p>
+    return (
+      <p role="alert" style={formFeedbackStyle}>
+        {errorMessage(mutation.error)}
+      </p>
+    )
   }
   if (mutation.isSuccess && mutation.data) {
     return (
-      <p role="status">
+      <p role="status" style={formFeedbackStyle}>
         {successLabel}: {mutation.data.oldBalance} → {mutation.data.newBalance} credits.
       </p>
     )
@@ -100,6 +205,13 @@ export function CreditsAdminPage() {
     } catch {
       // Mutation state renders the server's validation, authorization, or not-found message.
     }
+  }
+
+  const handleChangeTarget = () => {
+    setConfirmedUserId(undefined)
+    lookupMutation.reset()
+    addMutation.reset()
+    removeMutation.reset()
   }
 
   const refreshAfterAdjustment = async (userId: string) => {
@@ -184,48 +296,81 @@ export function CreditsAdminPage() {
   const stripeRows = previewQuery.data?.stripePurchaseRows ?? '…'
 
   return (
-    <main style={{ width: 'min(100%, 70rem)', margin: '0 auto' }}>
+    <main style={adminPageStyle}>
       <h1>Credit administration</h1>
       <p>
         Signed in as <strong>{session.user.email}</strong>, effective admin via {adminSource}.
       </p>
       <p><a href="/auth/users">View Users</a></p>
 
-      <section aria-labelledby="target-credit-actions">
+      <section aria-labelledby="target-credit-actions" style={adminSectionStyle}>
         <h2 id="target-credit-actions">User credit actions</h2>
-        <p>Paste the exact user ID and confirm the account before changing its credits.</p>
+        <AdminTwoColumnRow marginTop={0}>
+          <div style={adminColumnStyle}>
+            <p style={{ marginTop: 0 }}>
+              Administrators can adjust any user’s credit balance. Each addition or removal
+              creates a ledger entry, so choose a description that clearly records why the
+              balance changed.
+            </p>
+            <p>
+              Enter the exact user ID and choose <strong>Look up user</strong> to enable{' '}
+              <strong>Add credits</strong> and <strong>Remove credits</strong>. Check the confirmed
+              account before making an adjustment.
+            </p>
+            <p>
+              User IDs are available through <strong>View Users</strong>, above.
+            </p>
+          </div>
 
-        <form onSubmit={handleLookup}>
-          <label htmlFor="admin-target-user-id">Exact user ID</label>
-          <input
-            id="admin-target-user-id"
-            name="userId"
-            value={enteredUserId}
-            onChange={(event) => handleTargetIdChange(event.target.value)}
-            autoComplete="off"
-          />
-          <button type="submit" disabled={lookupMutation.isPending}>
-            {lookupMutation.isPending ? 'Looking up…' : 'Look up user'}
-          </button>
-        </form>
+          <form
+            aria-label="Credit target selection"
+            onSubmit={handleLookup}
+            style={columnFormStyle}
+          >
+            {target ? (
+              <div aria-label="Confirmed credit target" aria-live="polite">
+                <h3>Confirmed target</h3>
+                <p><strong>{target.name}</strong> — {target.email}</p>
+                <p>User ID: <code>{target.id}</code></p>
+                <p>Cached balance: <strong>{target.credits} credits</strong></p>
+                <FormActionRow>
+                  <button
+                    type="button"
+                    onClick={handleChangeTarget}
+                    disabled={addMutation.isPending || removeMutation.isPending}
+                  >
+                    Change target
+                  </button>
+                </FormActionRow>
+              </div>
+            ) : (
+              <>
+                <label htmlFor="admin-target-user-id">Exact user ID</label>
+                <input
+                  id="admin-target-user-id"
+                  name="userId"
+                  value={enteredUserId}
+                  onChange={(event) => handleTargetIdChange(event.target.value)}
+                  autoComplete="off"
+                />
+                <FormActionRow
+                  feedback={lookupMutation.isError ? (
+                    <p role="alert" style={formFeedbackStyle}>
+                      {errorMessage(lookupMutation.error)}
+                    </p>
+                  ) : undefined}
+                >
+                  <button type="submit" disabled={lookupMutation.isPending}>
+                    {lookupMutation.isPending ? 'Looking up…' : 'Look up user'}
+                  </button>
+                </FormActionRow>
+              </>
+            )}
+          </form>
+        </AdminTwoColumnRow>
 
-        {lookupMutation.isError ? (
-          <p role="alert">{errorMessage(lookupMutation.error)}</p>
-        ) : null}
-
-        {target ? (
-          <article aria-label="Confirmed credit target">
-            <h3>Confirmed target</h3>
-            <p><strong>{target.name}</strong> — {target.email}</p>
-            <p>User ID: <code>{target.id}</code></p>
-            <p>Cached balance: <strong>{target.credits} credits</strong></p>
-          </article>
-        ) : (
-          <p>No target confirmed. Add and remove actions are disabled.</p>
-        )}
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'flex-start' }}>
-          <form onSubmit={handleAddCredits} style={{ flex: '1 1 18rem' }}>
+        <AdminTwoColumnRow>
+          <form onSubmit={handleAddCredits} style={columnFormStyle}>
             <h3>Add credits</h3>
             <label htmlFor="admin-add-amount">Amount</label>
             <input
@@ -242,13 +387,14 @@ export function CreditsAdminPage() {
               value={addDescription}
               onChange={(event) => setAddDescription(event.target.value)}
             />
-            <button type="submit" disabled={!target || addMutation.isPending}>
-              {addMutation.isPending ? 'Adding…' : 'Add credits'}
-            </button>
-            {mutationFeedback(addMutation, 'Credits added')}
+            <FormActionRow feedback={mutationFeedback(addMutation, 'Credits added')}>
+              <button type="submit" disabled={!target || addMutation.isPending}>
+                {addMutation.isPending ? 'Adding…' : 'Add credits'}
+              </button>
+            </FormActionRow>
           </form>
 
-          <form onSubmit={handleRemoveCredits} style={{ flex: '1 1 18rem' }}>
+          <form onSubmit={handleRemoveCredits} style={columnFormStyle}>
             <h3>Remove credits</h3>
             <label htmlFor="admin-remove-amount">Amount</label>
             <input
@@ -265,63 +411,76 @@ export function CreditsAdminPage() {
               value={removeDescription}
               onChange={(event) => setRemoveDescription(event.target.value)}
             />
-            <button type="submit" disabled={!target || removeMutation.isPending}>
-              {removeMutation.isPending ? 'Removing…' : 'Remove credits'}
-            </button>
-            {mutationFeedback(removeMutation, 'Credits removed')}
+            <FormActionRow feedback={mutationFeedback(removeMutation, 'Credits removed')}>
+              <button type="submit" disabled={!target || removeMutation.isPending}>
+                {removeMutation.isPending ? 'Removing…' : 'Remove credits'}
+              </button>
+            </FormActionRow>
           </form>
-        </div>
+        </AdminTwoColumnRow>
       </section>
 
       <section
         aria-labelledby="development-ledger-purge"
-        style={{ border: '0.2rem solid var(--color-link)', padding: '1.5rem' }}
+        style={{ ...adminSectionStyle, marginTop: '1rem' }}
       >
         <h2 id="development-ledger-purge">Development ledger purge</h2>
-        <p>
-          This permanent, self-only tool deletes your entire development ledger and sets your
-          cached balance to zero. It is not an accounting correction.
-        </p>
-        <p>
-          Purge all <strong>{totalRows}</strong> ledger rows? This includes{' '}
-          <strong>{stripeRows} Stripe purchase rows</strong>. Purging permanently removes the
-          record that those payments were received and the PaymentIntent identifiers used to
-          recognize a repeated delivery. A later Stripe retry or manual webhook resend may add
-          those credits again.
-        </p>
-        {previewQuery.isError ? (
-          <p role="alert">The current row counts could not be loaded. The purge remains self-only.</p>
-        ) : null}
-        <form onSubmit={handlePurgeLedger}>
-          <label htmlFor="purge-ledger-confirmation">
-            Type <code>{PURGE_LEDGER_CONFIRMATION}</code> to confirm
-          </label>
-          <input
-            id="purge-ledger-confirmation"
-            value={purgeConfirmation}
-            onChange={(event) => setPurgeConfirmation(event.target.value)}
-            autoComplete="off"
-          />
-          <button
-            type="submit"
-            disabled={
-              purgeConfirmation !== PURGE_LEDGER_CONFIRMATION ||
-              purgeMutation.isPending
-            }
-          >
-            {purgeMutation.isPending ? 'Purging…' : 'Purge ledger'}
-          </button>
-        </form>
-        {purgeMutation.isError ? (
-          <p role="alert">{errorMessage(purgeMutation.error)}</p>
-        ) : null}
-        {purgeMutation.isSuccess ? (
-          <p role="status">
-            Purged {purgeMutation.data.deletedRows} ledger rows, including{' '}
-            {purgeMutation.data.deletedStripePurchaseRows} Stripe purchase rows. Cached balance is
-            zero.
-          </p>
-        ) : null}
+        <AdminTwoColumnRow marginTop={0}>
+          <div style={adminColumnStyle}>
+            <p style={{ marginTop: 0 }}>
+              This permanent, self-only tool deletes your entire development ledger and sets your
+              cached balance to zero. It is not an accounting correction.
+            </p>
+            <p>
+              Purge all <strong>{totalRows}</strong> ledger rows, including{' '}
+              <strong>{stripeRows} Stripe purchase rows</strong>?
+            </p>
+            <p>
+              Purging a Stripe purchase row removes its local delivery record, so a retry or
+              webhook resend may add the credits again.
+            </p>
+            {previewQuery.isError ? (
+              <p role="alert">
+                The current row counts could not be loaded. The purge remains self-only.
+              </p>
+            ) : null}
+          </div>
+
+          <form onSubmit={handlePurgeLedger} style={columnFormStyle}>
+            <label htmlFor="purge-ledger-confirmation">
+              Type <code>{PURGE_LEDGER_CONFIRMATION}</code> to confirm
+            </label>
+            <input
+              id="purge-ledger-confirmation"
+              value={purgeConfirmation}
+              onChange={(event) => setPurgeConfirmation(event.target.value)}
+              autoComplete="off"
+            />
+            <FormActionRow
+              feedback={purgeMutation.isError ? (
+                <p role="alert" style={formFeedbackStyle}>
+                  {errorMessage(purgeMutation.error)}
+                </p>
+              ) : purgeMutation.isSuccess ? (
+                <p role="status" style={formFeedbackStyle}>
+                  Purged {purgeMutation.data.deletedRows} ledger rows ({
+                    purgeMutation.data.deletedStripePurchaseRows
+                  } Stripe). Cached balance is zero.
+                </p>
+              ) : undefined}
+            >
+              <button
+                type="submit"
+                disabled={
+                  purgeConfirmation !== PURGE_LEDGER_CONFIRMATION ||
+                  purgeMutation.isPending
+                }
+              >
+                {purgeMutation.isPending ? 'Purging…' : 'Purge ledger'}
+              </button>
+            </FormActionRow>
+          </form>
+        </AdminTwoColumnRow>
       </section>
     </main>
   )

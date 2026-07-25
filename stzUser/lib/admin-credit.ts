@@ -3,7 +3,7 @@
 export const MAX_ADMIN_CREDIT_ADJUSTMENT = 10_000_000
 export const MAX_ADMIN_DESCRIPTION_LENGTH = 500
 export const MAX_USER_ID_LENGTH = 255
-export const PURGE_LEDGER_CONFIRMATION = 'PURGE MY LEDGER'
+export const PURGE_LEDGER_CONFIRMATION = 'purge my ledger'
 
 export type AdminCreditTarget = {
   id: string

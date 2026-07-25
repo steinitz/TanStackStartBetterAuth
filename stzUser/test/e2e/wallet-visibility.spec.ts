@@ -56,11 +56,11 @@ test.describe('Wallet Visibility and Reactivity', () => {
       `${e2eEnv.DAILY_GRANT_CREDITS + 9} Credits`,
     )
 
-    await expect(page.getByText(/This includes/)).toContainText(
+    await expect(page.getByText(/Purge all/)).toContainText(
       '0 Stripe purchase rows',
     )
-    await page.getByLabel(/Type.*PURGE MY LEDGER.*to confirm/).fill(
-      'PURGE MY LEDGER',
+    await page.getByLabel(/Type.*purge my ledger.*to confirm/).fill(
+      'purge my ledger',
     )
     await page.getByRole('button', { name: 'Purge ledger' }).click()
     await expect(page.getByText(/Cached balance is zero/)).toBeVisible()

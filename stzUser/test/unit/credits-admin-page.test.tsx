@@ -136,7 +136,7 @@ describe('CreditsAdminPage', () => {
     expect(view.getByLabelText('Selected credit target')).toHaveTextContent(
       'target@example.com',
     )
-    expect(view.queryByLabelText('Exact user ID')).not.toBeInTheDocument()
+    expect(view.queryByLabelText('Please enter a user ID')).not.toBeInTheDocument()
     expect(lookupAdminCreditTarget).toHaveBeenCalledWith({
       data: { userId: 'target-user' },
     })
@@ -158,18 +158,18 @@ describe('CreditsAdminPage', () => {
 
   it('lets the admin recover when a route-selected user is no longer available', async () => {
     vi.mocked(lookupAdminCreditTarget).mockRejectedValueOnce(
-      new Error('No user has that exact ID'),
+      new Error('User ID not found'),
     )
     const { view } = renderPage({ initialUserId: 'missing-user' })
 
-    expect(await view.findByRole('alert')).toHaveTextContent('No user has that exact ID')
+    expect(await view.findByRole('alert')).toHaveTextContent('User ID not found')
     expect(view.getByRole('button', { name: 'View Users' })).toBeInTheDocument()
 
     fireEvent.click(view.getByRole('button', { name: 'Change target' }))
-    expect(view.getByLabelText('Exact user ID')).toHaveValue('missing-user')
+    expect(view.getByLabelText('Please enter a user ID')).toHaveValue('missing-user')
   })
 
-  it('requires an exact lookup and clears confirmation as soon as the ID changes', async () => {
+  it('requires a lookup and clears confirmation as soon as the ID changes', async () => {
     const { view } = renderPage()
 
     await view.findByRole('heading', { name: 'Credit administration' })
@@ -178,42 +178,67 @@ describe('CreditsAdminPage', () => {
     expect(addButton).toBeDisabled()
     expect(removeButton).toBeDisabled()
 
-    fireEvent.change(view.getByLabelText('Exact user ID'), {
+    const targetIdInput = view.getByLabelText('Please enter a user ID')
+    const lookupButton = view.getByRole('button', { name: 'Look up user' })
+    expect(lookupButton).toBeDisabled()
+    fireEvent.submit(view.getByRole('form', { name: 'Credit target selection' }))
+    expect(lookupAdminCreditTarget).not.toHaveBeenCalled()
+
+    fireEvent.change(targetIdInput, { target: { value: '   ' } })
+    expect(lookupButton).toBeDisabled()
+
+    fireEvent.change(targetIdInput, {
       target: { value: 'target-user' },
     })
-    fireEvent.click(view.getByRole('button', { name: 'Look up user' }))
+    expect(lookupButton).toBeEnabled()
+    fireEvent.click(lookupButton)
 
     await view.findByText('Target Person')
     expect(view.getByText(/Credit balance:/)).toHaveTextContent('5 credits')
     expect(addButton).toBeEnabled()
     expect(removeButton).toBeEnabled()
 
-    expect(view.queryByLabelText('Exact user ID')).not.toBeInTheDocument()
+    expect(view.queryByLabelText('Please enter a user ID')).not.toBeInTheDocument()
     fireEvent.click(view.getByRole('button', { name: 'Change target' }))
 
     expect(view.queryByText('Target Person')).not.toBeInTheDocument()
-    expect(view.getByLabelText('Exact user ID')).toHaveValue('target-user')
+    expect(view.getByLabelText('Please enter a user ID')).toHaveValue('target-user')
     expect(addButton).toBeDisabled()
     expect(removeButton).toBeDisabled()
   })
 
   it('keeps lookup errors inside the target-selection form', async () => {
     vi.mocked(lookupAdminCreditTarget).mockRejectedValueOnce(
-      new Error('No user has that exact ID'),
+      new Error('User ID not found'),
     )
     const { view } = renderPage()
 
     await view.findByRole('heading', { name: 'Credit administration' })
     const targetForm = view.getByRole('form', { name: 'Credit target selection' })
-    fireEvent.change(view.getByLabelText('Exact user ID'), {
+    const feedbackSlot = view.getByLabelText('Credit target lookup feedback')
+    expect(feedbackSlot).toBeEmptyDOMElement()
+    expect(feedbackSlot).toHaveStyle({ minHeight: '1.5rem' })
+
+    const targetIdInput = view.getByLabelText('Please enter a user ID')
+    expect(targetIdInput).toHaveAttribute('aria-invalid', 'false')
+
+    fireEvent.change(targetIdInput, {
       target: { value: 'missing-user' },
     })
     fireEvent.click(view.getByRole('button', { name: 'Look up user' }))
 
     const feedback = await view.findByRole('alert')
-    expect(feedback).toHaveTextContent('No user has that exact ID')
+    expect(feedback).toHaveTextContent('User ID not found')
+    expect(feedbackSlot).toContainElement(feedback)
     expect(targetForm).toContainElement(feedback)
-    expect(view.getByLabelText('Exact user ID')).toHaveValue('missing-user')
+    expect(targetIdInput).toHaveValue('missing-user')
+    expect(targetIdInput).toHaveAttribute('aria-invalid', 'true')
+
+    fireEvent.change(targetIdInput, {
+      target: { value: 'another-user' },
+    })
+    expect(feedbackSlot).toBeEmptyDOMElement()
+    expect(targetIdInput).toHaveAttribute('aria-invalid', 'false')
   })
 
   it('refreshes the confirmed target after reversible add and remove mutations', async () => {
@@ -253,7 +278,7 @@ describe('CreditsAdminPage', () => {
     const { view } = renderPage()
     await view.findByRole('heading', { name: 'Credit administration' })
 
-    fireEvent.change(view.getByLabelText('Exact user ID'), {
+    fireEvent.change(view.getByLabelText('Please enter a user ID'), {
       target: { value: 'target-user' },
     })
     fireEvent.click(view.getByRole('button', { name: 'Look up user' }))

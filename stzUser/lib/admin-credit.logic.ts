@@ -52,7 +52,7 @@ export async function getAdminCreditTargetInternal(userId: string): Promise<Admi
     .where('id', '=', userId)
     .executeTakeFirst()
 
-  if (!user) throw new Error('Credit target does not exist')
+  if (!user) throw new Error('User ID not found')
 
   return {
     id: user.id,

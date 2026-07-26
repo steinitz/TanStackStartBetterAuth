@@ -64,6 +64,11 @@ const formFeedbackStyle: CSSProperties = {
   margin: '0.65rem 0 0',
 }
 
+const lookupFeedbackSlotStyle: CSSProperties = {
+  marginTop: '0.65rem',
+  minHeight: '1.5rem',
+}
+
 function AdminTwoColumnRow({
   children,
   marginTop = '1.5rem',
@@ -209,6 +214,8 @@ export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPag
   const handleLookup = async (event: FormEvent) => {
     event.preventDefault()
     const userId = enteredUserId.trim()
+    if (!userId || lookupMutation.isPending) return
+
     setConfirmedUserId(undefined)
 
     try {
@@ -299,6 +306,7 @@ export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPag
   }
 
   const target = targetQuery.data
+  const canLookUpTarget = enteredUserId.trim().length > 0 && !lookupMutation.isPending
   const adminSource = adminStatus.data.source === 'environment'
     ? 'environment configuration'
     : adminStatus.data.source === 'both'
@@ -324,7 +332,7 @@ export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPag
               balance changed.
             </p>
             <p>
-              Enter the exact user ID and choose <strong>Look up user</strong> to enable{' '}
+              Enter a user ID and choose <strong>Look up user</strong> to enable{' '}
               <strong>Add credits</strong> and <strong>Remove credits</strong>. Check the selected
               account before making an adjustment.
             </p>
@@ -391,25 +399,34 @@ export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPag
               </div>
             ) : (
               <>
-                <label htmlFor="admin-target-user-id">Exact user ID</label>
+                <label htmlFor="admin-target-user-id">Please enter a user ID</label>
                 <input
                   id="admin-target-user-id"
                   name="userId"
+                  aria-describedby="admin-target-user-id-feedback"
+                  aria-invalid={lookupMutation.isError}
                   value={enteredUserId}
                   onChange={(event) => handleTargetIdChange(event.target.value)}
                   autoComplete="off"
                 />
-                <FormActionRow
-                  feedback={lookupMutation.isError ? (
-                    <p role="alert" style={formFeedbackStyle}>
+                <div
+                  id="admin-target-user-id-feedback"
+                  aria-label="Credit target lookup feedback"
+                  aria-live="polite"
+                  style={lookupFeedbackSlotStyle}
+                >
+                  {lookupMutation.isError ? (
+                    <p role="alert" style={{ ...formFeedbackStyle, margin: 0 }}>
                       {errorMessage(lookupMutation.error)}
                     </p>
-                  ) : undefined}
+                  ) : null}
+                </div>
+                <FormActionRow
                   leadingAction={(
                     <button type="button" onClick={onViewUsers}>View Users</button>
                   )}
                 >
-                  <button type="submit" disabled={lookupMutation.isPending}>
+                  <button type="submit" disabled={!canLookUpTarget}>
                     {lookupMutation.isPending ? 'Looking up…' : 'Look up user'}
                   </button>
                 </FormActionRow>

@@ -29,10 +29,10 @@ test.describe('Wallet Visibility and Reactivity', () => {
       name: 'Credit administration',
     })).toBeVisible({ timeout: 15_000 })
 
-    await page.getByLabel('Exact user ID').fill(userId)
+    await page.getByLabel('Please enter a user ID').fill(userId)
     await page.getByRole('button', { name: 'Look up user' }).click()
     await expect(page.getByText(`User ID: ${userId}`)).toBeVisible()
-    await expect(page.getByText(/Cached balance:/)).toContainText(
+    await expect(page.getByText(/Credit balance:/)).toContainText(
       `${e2eEnv.DAILY_GRANT_CREDITS} credits`,
     )
 

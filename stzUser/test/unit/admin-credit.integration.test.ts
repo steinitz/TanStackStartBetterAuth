@@ -122,6 +122,12 @@ describe.sequential('admin credit accounting integration', () => {
     expect(await ledgerRows(user.id)).toEqual([])
   })
 
+  it('reports a missing lookup as an unknown user ID', async () => {
+    await expect(
+      getAdminCreditTargetInternal(`missing-${runId}`),
+    ).rejects.toThrow('User ID not found')
+  })
+
   it('adds credits and its positive ledger adjustment atomically', async () => {
     const user = await createUser('add-target')
 

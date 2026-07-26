@@ -325,7 +325,7 @@ export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPag
             </p>
             <p>
               Enter the exact user ID and choose <strong>Look up user</strong> to enable{' '}
-              <strong>Add credits</strong> and <strong>Remove credits</strong>. Check the confirmed
+              <strong>Add credits</strong> and <strong>Remove credits</strong>. Check the selected
               account before making an adjustment.
             </p>
             <p>
@@ -359,11 +359,22 @@ export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPag
                 </FormActionRow>
               </div>
             ) : target ? (
-              <div aria-label="Confirmed credit target" aria-live="polite">
-                <h3>Confirmed target</h3>
-                <p><strong>{target.name}</strong> — {target.email}</p>
+              <div aria-label="Selected credit target" aria-live="polite">
+                <div style={{
+                  alignItems: 'baseline',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem 1rem',
+                  justifyContent: 'space-between',
+                }}>
+                  <h3 style={{ margin: 0 }}>Selected target</h3>
+                  <span style={{ overflowWrap: 'anywhere' }}>{target.email}</span>
+                </div>
                 <p>User ID: <code>{target.id}</code></p>
-                <p>Cached balance: <strong>{target.credits} credits</strong></p>
+                <p>
+                  {target.name ? <><strong>{target.name}</strong> · </> : null}
+                  Credit balance: <strong>{target.credits} credits</strong>
+                </p>
                 <FormActionRow
                   leadingAction={(
                     <button type="button" onClick={onViewUsers}>View Users</button>

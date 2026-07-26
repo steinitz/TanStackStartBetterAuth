@@ -125,13 +125,35 @@ describe('CreditsAdminPage', () => {
     const { view } = renderPage({ initialUserId: 'target-user' })
 
     expect(await view.findByText('Target Person')).toBeInTheDocument()
-    expect(view.getByLabelText('Confirmed credit target')).toHaveTextContent(
+    const selectedTargetHeading = view.getByRole('heading', { name: 'Selected target' })
+    expect(selectedTargetHeading).toHaveStyle({ margin: '0' })
+    expect(selectedTargetHeading.parentElement).toHaveStyle({
+      display: 'flex',
+      justifyContent: 'space-between',
+    })
+    expect(selectedTargetHeading.parentElement)
+      .toContainElement(view.getByText('target@example.com'))
+    expect(view.getByLabelText('Selected credit target')).toHaveTextContent(
       'target@example.com',
     )
     expect(view.queryByLabelText('Exact user ID')).not.toBeInTheDocument()
     expect(lookupAdminCreditTarget).toHaveBeenCalledWith({
       data: { userId: 'target-user' },
     })
+  })
+
+  it('omits the name separator when the selected user has no name', async () => {
+    vi.mocked(lookupAdminCreditTarget).mockResolvedValueOnce({
+      id: 'unnamed-user',
+      name: '',
+      email: 'unnamed@example.com',
+      credits: 5,
+    })
+    const { view } = renderPage({ initialUserId: 'unnamed-user' })
+
+    const selectedTarget = await view.findByLabelText('Selected credit target')
+    expect(selectedTarget).toHaveTextContent('Credit balance: 5 credits')
+    expect(selectedTarget).not.toHaveTextContent('·')
   })
 
   it('lets the admin recover when a route-selected user is no longer available', async () => {
@@ -162,7 +184,7 @@ describe('CreditsAdminPage', () => {
     fireEvent.click(view.getByRole('button', { name: 'Look up user' }))
 
     await view.findByText('Target Person')
-    expect(view.getByText(/Cached balance:/)).toHaveTextContent('5 credits')
+    expect(view.getByText(/Credit balance:/)).toHaveTextContent('5 credits')
     expect(addButton).toBeEnabled()
     expect(removeButton).toBeEnabled()
 

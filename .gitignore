@@ -78,3 +78,4 @@ BuilderSuggestions.md
 reference/
 # Local Netlify folder
 .netlify
+test-discard.db*

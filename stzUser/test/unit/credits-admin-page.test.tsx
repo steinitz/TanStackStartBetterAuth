@@ -49,11 +49,20 @@ function wrapper(queryClient: QueryClient) {
   }
 }
 
-function renderPage() {
+function renderPage({
+  initialUserId,
+  onViewUsers = vi.fn(),
+}: {
+  initialUserId?: string
+  onViewUsers?: () => void
+} = {}) {
   const queryClient = createQueryClient()
   return {
     queryClient,
-    view: render(<CreditsAdminPage />, { wrapper: wrapper(queryClient) }),
+    view: render(
+      <CreditsAdminPage initialUserId={initialUserId} onViewUsers={onViewUsers} />,
+      { wrapper: wrapper(queryClient) },
+    ),
   }
 }
 
@@ -100,12 +109,42 @@ describe('CreditsAdminPage', () => {
       source: 'environment',
     })
 
-    const { view } = renderPage()
+    const onViewUsers = vi.fn()
+    const { view } = renderPage({ onViewUsers })
 
-    expect(await view.findByRole('link', { name: 'View Users' }))
-      .toHaveAttribute('href', '/auth/users')
+    const viewUsersButton = await view.findByRole('button', { name: 'View Users' })
+    expect(view.getByRole('form', { name: 'Credit target selection' }))
+      .toContainElement(viewUsersButton)
+    fireEvent.click(viewUsersButton)
+    expect(onViewUsers).toHaveBeenCalledOnce()
     expect(view.getByText(/effective admin via environment configuration/))
       .toBeInTheDocument()
+  })
+
+  it('confirms a route-selected user through the authoritative target query', async () => {
+    const { view } = renderPage({ initialUserId: 'target-user' })
+
+    expect(await view.findByText('Target Person')).toBeInTheDocument()
+    expect(view.getByLabelText('Confirmed credit target')).toHaveTextContent(
+      'target@example.com',
+    )
+    expect(view.queryByLabelText('Exact user ID')).not.toBeInTheDocument()
+    expect(lookupAdminCreditTarget).toHaveBeenCalledWith({
+      data: { userId: 'target-user' },
+    })
+  })
+
+  it('lets the admin recover when a route-selected user is no longer available', async () => {
+    vi.mocked(lookupAdminCreditTarget).mockRejectedValueOnce(
+      new Error('No user has that exact ID'),
+    )
+    const { view } = renderPage({ initialUserId: 'missing-user' })
+
+    expect(await view.findByRole('alert')).toHaveTextContent('No user has that exact ID')
+    expect(view.getByRole('button', { name: 'View Users' })).toBeInTheDocument()
+
+    fireEvent.click(view.getByRole('button', { name: 'Change target' }))
+    expect(view.getByLabelText('Exact user ID')).toHaveValue('missing-user')
   })
 
   it('requires an exact lookup and clears confirmation as soon as the ID changes', async () => {

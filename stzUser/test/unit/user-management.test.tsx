@@ -87,7 +87,11 @@ const users: User[] = [
   },
 ]
 
-function renderManagement() {
+function renderManagement({
+  onCreditAdmin = vi.fn(),
+}: {
+  onCreditAdmin?: (userId: string) => void
+} = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -101,7 +105,10 @@ function renderManagement() {
 
   return {
     invalidateQueries,
-    view: render(<UserManagement users={users} />, { wrapper }),
+    view: render(
+      <UserManagement users={users} onCreditAdmin={onCreditAdmin} />,
+      { wrapper },
+    ),
   }
 }
 
@@ -176,6 +183,23 @@ describe('UserManagement effective admin display', () => {
     expect(view.getByLabelText('Email Verified')).not.toBeChecked()
     expect(view.getByLabelText('Stored admin role')).toBeChecked()
     expect(view.getByText('Admin status is defined in the database.')).toBeInTheDocument()
+  })
+
+  it('copies a user ID without letting the row click open its editor', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    const { view } = renderManagement()
+
+    fireEvent.click(view.getByText('ID: plain-us...'))
+
+    expect(writeText).toHaveBeenCalledWith('plain-user')
+    expect(alertSpy).toHaveBeenCalledWith('User ID copied to clipboard!')
+    expect(view.queryByRole('dialog')).not.toBeInTheDocument()
+    alertSpy.mockRestore()
   })
 
   it('keeps every column left aligned and renders compact icon-first access labels', () => {
@@ -283,7 +307,20 @@ describe('UserManagement effective admin display', () => {
       justifyContent: 'space-between',
       marginTop: '1rem',
     })
+    expect(within(dialog).getAllByRole('button')).toHaveLength(3)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close user editor' }))
+    expect(dialog).not.toHaveAttribute('open')
+  })
+
+  it('hands the selected user to credit administration and closes the editor', () => {
+    const onCreditAdmin = vi.fn()
+    const { view } = renderManagement({ onCreditAdmin })
+
+    fireEvent.click(view.getByText('Plain Person'))
+    const dialog = view.getByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Credit Admin' }))
+
+    expect(onCreditAdmin).toHaveBeenCalledWith('plain-user')
     expect(dialog).not.toHaveAttribute('open')
   })
 

@@ -89,9 +89,11 @@ function AdminTwoColumnRow({
 
 function FormActionRow({
   feedback,
+  leadingAction,
   children,
 }: {
   feedback?: ReactNode
+  leadingAction?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -106,6 +108,11 @@ function FormActionRow({
         minHeight: '3rem',
       }}
     >
+      {leadingAction ? (
+        <div style={{ flex: '0 0 auto' }}>
+          {leadingAction}
+        </div>
+      ) : null}
       <div
         style={{
           flex: '1 1 0',
@@ -148,12 +155,17 @@ function mutationFeedback(
   return null
 }
 
-export function CreditsAdminPage() {
+type CreditsAdminPageProps = {
+  initialUserId?: string
+  onViewUsers: () => void
+}
+
+export function CreditsAdminPage({ initialUserId, onViewUsers }: CreditsAdminPageProps) {
   const { data: session } = useSession()
   const adminStatus = useAdminStatus()
   const queryClient = useQueryClient()
-  const [enteredUserId, setEnteredUserId] = useState('')
-  const [confirmedUserId, setConfirmedUserId] = useState<string>()
+  const [enteredUserId, setEnteredUserId] = useState(initialUserId ?? '')
+  const [confirmedUserId, setConfirmedUserId] = useState(initialUserId)
   const [addAmount, setAddAmount] = useState('10')
   const [addDescription, setAddDescription] = useState('Manual bank transfer')
   const [removeAmount, setRemoveAmount] = useState('1')
@@ -301,7 +313,6 @@ export function CreditsAdminPage() {
       <p>
         Signed in as <strong>{session.user.email}</strong>, effective admin via {adminSource}.
       </p>
-      <p><a href="/auth/users">View Users</a></p>
 
       <section aria-labelledby="target-credit-actions" style={adminSectionStyle}>
         <h2 id="target-credit-actions">User credit actions</h2>
@@ -318,7 +329,8 @@ export function CreditsAdminPage() {
               account before making an adjustment.
             </p>
             <p>
-              User IDs are available through <strong>View Users</strong>, above.
+              Use <strong>View Users</strong> below to browse accounts. Its{' '}
+              <strong>Credit Admin</strong> action returns here with the account selected.
             </p>
           </div>
 
@@ -327,13 +339,36 @@ export function CreditsAdminPage() {
             onSubmit={handleLookup}
             style={columnFormStyle}
           >
-            {target ? (
+            {confirmedUserId && targetQuery.isPending ? (
+              <div aria-live="polite">
+                <h3>Selected target</h3>
+                <p>Looking up selected user…</p>
+              </div>
+            ) : confirmedUserId && targetQuery.isError ? (
+              <div aria-live="polite">
+                <h3>Selected target unavailable</h3>
+                <p role="alert" style={formFeedbackStyle}>
+                  {errorMessage(targetQuery.error)}
+                </p>
+                <FormActionRow
+                  leadingAction={(
+                    <button type="button" onClick={onViewUsers}>View Users</button>
+                  )}
+                >
+                  <button type="button" onClick={handleChangeTarget}>Change target</button>
+                </FormActionRow>
+              </div>
+            ) : target ? (
               <div aria-label="Confirmed credit target" aria-live="polite">
                 <h3>Confirmed target</h3>
                 <p><strong>{target.name}</strong> — {target.email}</p>
                 <p>User ID: <code>{target.id}</code></p>
                 <p>Cached balance: <strong>{target.credits} credits</strong></p>
-                <FormActionRow>
+                <FormActionRow
+                  leadingAction={(
+                    <button type="button" onClick={onViewUsers}>View Users</button>
+                  )}
+                >
                   <button
                     type="button"
                     onClick={handleChangeTarget}
@@ -359,6 +394,9 @@ export function CreditsAdminPage() {
                       {errorMessage(lookupMutation.error)}
                     </p>
                   ) : undefined}
+                  leadingAction={(
+                    <button type="button" onClick={onViewUsers}>View Users</button>
+                  )}
                 >
                   <button type="submit" disabled={lookupMutation.isPending}>
                     {lookupMutation.isPending ? 'Looking up…' : 'Look up user'}

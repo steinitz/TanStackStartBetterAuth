@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { UserManagement } from '~stzUser/components/Other/UserManagement'
 import { adminUsersQueryOptions } from '~stzUser/lib/users-client'
@@ -6,6 +6,7 @@ import { useAdminStatus } from '~stzUser/lib/admin-queries'
 import { useSession } from '~stzUser/lib/auth-client'
 
 function UsersPage() {
+  const navigate = useNavigate()
   const { data: session, isPending: isSessionPending } = useSession()
   const adminStatus = useAdminStatus()
   const isAdmin = Boolean(adminStatus.data?.isAdmin)
@@ -34,7 +35,13 @@ function UsersPage() {
       ) : usersQuery.isError ? (
         <p role="alert">Users could not be loaded.</p>
       ) : (
-        <UserManagement users={usersQuery.data ?? []} />
+        <UserManagement
+          users={usersQuery.data ?? []}
+          onCreditAdmin={(userId) => navigate({
+            to: '/admin',
+            search: { userId },
+          })}
+        />
       )}
     </div>
   )

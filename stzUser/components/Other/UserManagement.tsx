@@ -205,7 +205,12 @@ const userManagementColumns = [
       return (
         <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
           <span
-            onClick={() => copyUserId(user.id)}
+            onClick={(event) => {
+              // The row opens its editor. Stop this click before alert() pauses delivery;
+              // otherwise propagation resumes after dismissal and opens the dialog too.
+              event.stopPropagation()
+              copyUserId(user.id)
+            }}
             style={{ cursor: 'pointer', textDecoration: 'underline', color: 'var(--color-link)' }}
             title="Click to copy User ID"
           >
@@ -217,7 +222,13 @@ const userManagementColumns = [
   }),
 ]
 
-export function UserManagement({ users }: { users: User[] }) {
+export function UserManagement({
+  users,
+  onCreditAdmin,
+}: {
+  users: User[]
+  onCreditAdmin: (userId: string) => void
+}) {
   const queryClient = useQueryClient()
   const userDialogRef = useRef<HTMLDialogElement>(null)
   const [sorting, setSorting] = useState<SortingState>([])
@@ -234,6 +245,11 @@ export function UserManagement({ users }: { users: User[] }) {
     const dialog = userDialogRef.current
     if (dialog?.open) dialog.close()
     setSelectedUserId(null)
+  }
+
+  const handleCreditAdmin = (userId: string) => {
+    closeUserDialog()
+    onCreditAdmin(userId)
   }
 
   const handleDialogBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
@@ -629,7 +645,13 @@ export function UserManagement({ users }: { users: User[] }) {
                 />
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                justifyContent: 'space-between',
+                marginTop: '1rem',
+              }}>
                 <button
                   type="button"
                   onClick={() => handleDeleteUser(
@@ -642,6 +664,12 @@ export function UserManagement({ users }: { users: User[] }) {
                   }}
                 >
                   Delete User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCreditAdmin(selectedUser.id)}
+                >
+                  Credit Admin
                 </button>
                 <button
                   type="button"

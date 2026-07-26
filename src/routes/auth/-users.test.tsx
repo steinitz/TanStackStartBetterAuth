@@ -1,8 +1,9 @@
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import type { ComponentType, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { useSession, useAdminStatus, useQuery, adminUsersQueryOptions } = vi.hoisted(() => ({
+const { navigate, useSession, useAdminStatus, useQuery, adminUsersQueryOptions } = vi.hoisted(() => ({
+  navigate: vi.fn(),
   useSession: vi.fn(),
   useAdminStatus: vi.fn(),
   useQuery: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ to, children }: { to: string; children: ReactNode }) => (
     <a href={to}>{children}</a>
   ),
+  useNavigate: () => navigate,
 }))
 
 vi.mock('@tanstack/react-query', () => ({ useQuery }))
@@ -21,8 +23,17 @@ vi.mock('~stzUser/lib/auth-client', () => ({ useSession }))
 vi.mock('~stzUser/lib/admin-queries', () => ({ useAdminStatus }))
 vi.mock('~stzUser/lib/users-client', () => ({ adminUsersQueryOptions }))
 vi.mock('~stzUser/components/Other/UserManagement', () => ({
-  UserManagement: ({ users }: { users: unknown[] }) => (
-    <p>User table with {users.length} rows</p>
+  UserManagement: ({
+    users,
+    onCreditAdmin,
+  }: {
+    users: unknown[]
+    onCreditAdmin: (userId: string) => void
+  }) => (
+    <>
+      <p>User table with {users.length} rows</p>
+      <button onClick={() => onCreditAdmin('target')}>Credit Admin</button>
+    </>
   ),
 }))
 
@@ -69,6 +80,17 @@ describe('/auth/users effective-admin route', () => {
     expect(view.getByText('Loading Admin access…')).toBeInTheDocument()
     expect(view.queryByText('Access Denied')).not.toBeInTheDocument()
     expect(adminUsersQueryOptions).toHaveBeenCalledWith(false)
+  })
+
+  it('carries a selected user to credit administration in route search state', () => {
+    const view = render(<Component />)
+
+    fireEvent.click(view.getByRole('button', { name: 'Credit Admin' }))
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/admin',
+      search: { userId: 'target' },
+    })
   })
 
   it('denies a regular user and keeps the list query disabled', () => {

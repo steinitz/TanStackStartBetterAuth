@@ -21,7 +21,7 @@ vi.mock('~stzUser/components/RouteComponents/SignIn', () => ({
 }))
 
 vi.mock('~stzUser/components/Other/UserManagement', () => ({
-  UserManagement: ({ users }: { users: any[] }) => 
+  UserManagement: ({ users }: { users: any[] }) =>
     React.createElement('div', { 'data-testid': 'user-management-mock' }, `UserManagement Mock - ${users?.length || 0} users`),
 }))
 
@@ -29,21 +29,26 @@ vi.mock('~stzUtils/components/Spacer', () => ({
   Spacer: () => React.createElement('div', { 'data-testid': 'spacer-mock' }, 'Spacer Mock'),
 }))
 
-// Generic framework mock to include in stzUser/test/unit/route-imports.test.tsx
+// Mock TanStack Start server utilities locally
+// This allows rendering application components that use server functions
+// without project-specific awareness.
 vi.mock('@tanstack/react-start', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-start')>()
   return {
     ...actual,
     createServerFn: () => {
       const fn = vi.fn(() => Promise.resolve([]))
-      return Object.assign(fn, {
+      const builder = Object.assign(fn, {
         handler: () => fn,
         middleware: () => ({
           handler: () => fn,
-          validator: () => fn,
+          validator: () => builder,
+          inputValidator: () => builder,
         }),
-        validator: () => fn,
+        validator: () => builder,
+        inputValidator: () => builder,
       })
+      return builder
     },
   }
 })
@@ -62,6 +67,11 @@ vi.mock('@tanstack/react-router', () => ({
       useLoaderData: mockUseLoaderData,
     })
   }),
+  useNavigate: vi.fn(() => vi.fn()),
+  useRouter: vi.fn(() => ({ invalidate: vi.fn() })),
+  Link: ({ children }: any) => React.createElement('a', {}, children),
+  useSearch: vi.fn(() => ({})),
+  useParams: vi.fn(() => ({})),
 }))
 
 describe('Route Import Tests', () => {
@@ -90,11 +100,11 @@ describe('Route Import Tests', () => {
   it('should import and render index route component', async () => {
     const indexModule = await import('~/routes/index')
     const RouteConfig = indexModule.Route
-    
+
     // Verify the route was created
     expect(RouteConfig).toBeDefined()
     expect(RouteConfig.options?.component).toBeDefined()
-    
+
     // Test that the component can be rendered
     const Component = RouteConfig.options?.component
     if (Component) {
@@ -107,11 +117,11 @@ describe('Route Import Tests', () => {
   it('should import and render signin route component', async () => {
     const signinModule = await import('~/routes/auth/signin')
     const RouteConfig = signinModule.Route
-    
+
     // Verify the route was created
     expect(RouteConfig).toBeDefined()
     expect(RouteConfig.options?.component).toBeDefined()
-    
+
     // Test that the component can be rendered
     const Component = RouteConfig.options?.component
     if (Component) {
@@ -124,7 +134,7 @@ describe('Route Import Tests', () => {
   it('should handle loader function in index route', async () => {
     const indexModule = await import('~/routes/index')
     const RouteConfig = indexModule.Route
-    
+
     // Verify the loader exists
     expect(RouteConfig.options?.loader).toBeDefined()
 

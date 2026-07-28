@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
+import { describe, it, expect, beforeEach, beforeAll, inject } from 'vitest'
 import { db } from '~stzUser/lib/database'
 import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal } from '~stzUser/lib/wallet.logic'
 import { removeCreditsInternal } from '~stzUser/lib/admin-credit.logic'
@@ -9,7 +9,7 @@ import { auth } from '~stzUser/lib/auth'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
 import { testConstants } from '~stzUser/test/constants'
 
-describe.sequential('Wallet Ledger Integration', () => {
+describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () => {
   let testUserId: string
 
   beforeAll(async () => {

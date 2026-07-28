@@ -5,6 +5,9 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
+    provide: {
+      dbLocked: false,
+    },
     environment: 'jsdom',
     // Integration tests share one on-disk libSQL file. SQLite is single-writer, so
     // running test *files* in parallel causes SQLITE_BUSY. Serialize files. Note: the per-file

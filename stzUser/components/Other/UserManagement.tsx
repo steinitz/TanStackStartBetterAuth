@@ -10,6 +10,7 @@ import { adminStatusKeys } from '~stzUser/lib/admin-queries'
 import { hasStoredAdminRole, type AdminSource } from '~stzUser/lib/admin-identity'
 import { HelpDisclosure } from '~stzUtils/components/HelpDisclosure'
 import { Spacer } from '~stzUtils/components/Spacer'
+import { TableViewport } from '~stzUtils/components/TableViewport'
 import { useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { userRoles, userRolesType } from '~stzUser/constants'
@@ -457,12 +458,7 @@ export function UserManagement({
         {users.length === 0 ? (
           <p>No users registered yet.</p>
         ) : (
-          <div style={{
-            margin: '0 auto',
-            maxWidth: '100%',
-            overflowX: 'auto',
-            width: '100%',
-          }}>
+          <TableViewport>
             <table style={{ borderCollapse: 'collapse', margin: '0 auto', whiteSpace: 'nowrap' }}>
               <thead>
                 {table.getHeaderGroups().map(headerGroup => (
@@ -552,7 +548,7 @@ export function UserManagement({
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableViewport>
         )}
 
         <dialog

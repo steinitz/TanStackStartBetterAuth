@@ -1,4 +1,5 @@
 import type { WalletTransaction } from '~stzUser/lib/wallet'
+import { TableViewport } from '~stzUtils/components/TableViewport'
 
 type TransactionLedgerProps = {
   transactions: WalletTransaction[] | undefined
@@ -20,7 +21,7 @@ export function TransactionLedger({
   if (!transactions?.length) return <p>No transactions found.</p>
 
   return (
-    <div style={{ maxWidth: '100%', overflowX: 'auto', width: '100%' }}>
+    <TableViewport>
       <table style={{
         borderCollapse: 'collapse',
         boxSizing: 'border-box',
@@ -58,6 +59,6 @@ export function TransactionLedger({
           ))}
         </tbody>
       </table>
-    </div>
+    </TableViewport>
   )
 }

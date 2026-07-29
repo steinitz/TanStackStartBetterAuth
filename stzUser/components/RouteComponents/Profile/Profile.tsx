@@ -302,8 +302,18 @@ export const Profile = () => {
           </form>
           :
           <>
+            {/* Reachable only by typing the URL now that the header hides Profile when
+                signed out, but it is the only thing guarding this route — there is no
+                beforeLoad anywhere in the app — so it stays.
+
+                No margin override at all, deliberately. It used to be -1rem on all four
+                sides and rode up over the header. The header carries marginBottom: -13px
+                app-wide, so anything following it with no top margin of its own lands
+                inside it — measured: margin 0 still overlapped by 13px. The h4's own
+                21.28px clears it by 8. Any heading that starts a page wants its natural
+                top margin, not a hand-picked one. */}
             <h4
-              style={{margin: '-1rem', fontWeight: 'normal'}}
+              style={{fontWeight: 'normal'}}
             >
               Sign In to access your Profile
             </h4>

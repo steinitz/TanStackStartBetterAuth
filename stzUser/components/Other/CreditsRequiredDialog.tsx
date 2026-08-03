@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Dialog, makeDialogRef } from '~stzUtils/components/Dialog'
 import { AppleButtonGroup } from '~stzUtils/components/AppleButtonGroup'
-import { WALLET_EVENTS } from '~stzUser/lib/wallet.client'
+import { WALLET_EVENTS } from '~stzUser/lib/wallet-client'
 
 export function CreditsRequiredDialog() {
   const dialogRef = makeDialogRef()

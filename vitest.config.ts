@@ -19,6 +19,15 @@ export default defineConfig({
        loading env files there is both too late and capable of redirecting tests to a developer DB. */
     env: {
       DATABASE_URL: 'file:stzUser/test/test-unit.db',
+      /* The money keys have no fallbacks — see computeClientEnv. Without them here every test
+         would run on NaN, which is worse than a wrong constant because a wrong constant is at
+         least visible. These are the values the suite ran on when they *were* fallbacks, so the
+         numbers below change nothing; they only stop being invented. */
+      CREDIT_PRICE_AUD: '0.001',
+      MIN_CREDITS_PURCHASE: '10',
+      DAILY_GRANT_CREDITS: '100',
+      WELCOME_GRANT_CREDITS: '500',
+      DEFAULT_CREDITS_PURCHASE: '5000',
     },
     setupFiles: ['./stzUser/test/unit/setup.ts'],
     globals: true, // Re-enable globals for jest-dom compatibility

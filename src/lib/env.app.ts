@@ -1,6 +1,7 @@
 import {
   computeClientEnv,
   isNodeLikeRuntime,
+  reportEnvProblems,
   requireInjectedEnv,
   isServer,
   type ClientEnv,
@@ -12,6 +13,10 @@ export type AppClientEnv = ClientEnv & {
 };
 
 // Extend the shared client-env computation with application-specific values.
+//
+// An app with money keys of its own writes its own rules and *merges* the resulting problems onto
+// the shared list — `envProblems: [...base.envProblems, ...findAppEnvProblems()]` — rather than
+// spreading over the top of it, which would silently discard everything stzUser found.
 function computeAppClientEnv(): AppClientEnv {
   return {
     ...computeClientEnv(),
@@ -27,3 +32,8 @@ export const clientEnv: AppClientEnv =
   isServer() || isNodeLikeRuntime()
     ? computeAppClientEnv()
     : requireInjectedEnv(window.__ENV, computeAppClientEnv, 'appClientEnv');
+
+// The signal is data, and data emits nothing. This call is its owner, and it belongs *here* rather
+// than in stzUser because this module is the only one that knows the complete list — shared keys
+// plus whatever the app added. Server-only and non-throwing; see reportEnvProblems.
+reportEnvProblems(clientEnv.envProblems);

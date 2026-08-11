@@ -36,6 +36,139 @@ export function getOptionalEnvVar(name: string, defaultValue?: string): string |
   return process.env[name] || defaultValue
 }
 
+// ---------------------------------------------------------------------------
+// Money configuration — one rule layer, two consumers
+//
+// None of the values below has a fallback, because inventing a price is worse than not having
+// one. That leaves a single hazard worth naming: an unset key reads as NaN, and every `<` and
+// `>` comparison against NaN is false, so a purchase guard written as a comparison waves the
+// broken configuration straight through.
+//
+// The rules are therefore declared once and read by both parties that care — `findEnvProblems`,
+// which describes what is wrong, and `assertValidPurchaseConfiguration`, which refuses the
+// transaction. Two consumers of one rule cannot disagree; two copies of a rule can drift until
+// the signal calls a configuration healthy while a guard admits it.
+// ---------------------------------------------------------------------------
+
+export const isPositiveFiniteNumber = (value: number) => Number.isFinite(value) && value > 0
+
+export const isPositiveWholeNumber = (value: number) =>
+  isPositiveFiniteNumber(value) && Number.isInteger(value)
+
+export type EnvValueRule = {
+  key: string
+  isValid: (value: number) => boolean
+  requirement: string
+}
+
+/**
+ * One rule against one raw value. Unset and blank are named rather than described: `Number('')`
+ * and `Number('   ')` are both 0, so they do fail the positivity rules — but "must be a number
+ * above zero" is a poor account of an empty box for the person who has to go and fill it.
+ */
+export function findEnvValueProblem(
+  rule: EnvValueRule,
+  rawValue: string | undefined,
+): string | null {
+  if (rawValue === undefined) return `${rule.key} is not set`
+  if (rawValue.trim() === '') return `${rule.key} is blank`
+  return rule.isValid(Number(rawValue)) ? null : `${rule.key} must be ${rule.requirement}`
+}
+
+export function findEnvValueProblems(rules: readonly EnvValueRule[]): string[] {
+  return rules
+    .map((rule) => findEnvValueProblem(rule, process.env[rule.key]))
+    .filter((problem): problem is string => problem !== null)
+}
+
+const WHOLE_ABOVE_ZERO = 'a whole number above zero'
+
+// The two keys that price a purchase, kept apart from the rest because the guard below checks
+// exactly these: a broken daily grant is a bad day, a broken price is a wrong charge.
+const purchaseEnvRules: readonly EnvValueRule[] = [
+  { key: 'CREDIT_PRICE_AUD', isValid: isPositiveFiniteNumber, requirement: 'a number above zero' },
+  { key: 'MIN_CREDITS_PURCHASE', isValid: isPositiveWholeNumber, requirement: WHOLE_ABOVE_ZERO },
+]
+
+const grantEnvRules: readonly EnvValueRule[] = [
+  { key: 'DEFAULT_CREDITS_PURCHASE', isValid: isPositiveWholeNumber, requirement: WHOLE_ABOVE_ZERO },
+  { key: 'DAILY_GRANT_CREDITS', isValid: isPositiveWholeNumber, requirement: WHOLE_ABOVE_ZERO },
+  { key: 'WELCOME_GRANT_CREDITS', isValid: isPositiveWholeNumber, requirement: WHOLE_ABOVE_ZERO },
+]
+
+/**
+ * The signal. Returns a list; never throws — see the boot-safety note above computeClientEnv.
+ * It rides to the browser on `window.__ENV` as `envProblems`, so server and client hold the same
+ * verdict with no new plumbing. An app with money keys of its own merges its list onto this one;
+ * see `src/lib/env.app.ts`.
+ */
+export function findEnvProblems(): string[] {
+  const problems = findEnvValueProblems([...purchaseEnvRules, ...grantEnvRules])
+
+  // The one cross-field rule, and it earns its place: a default below the minimum pre-fills the
+  // buy box with an amount whose own button is disabled on arrival — invisible until a user meets
+  // it. Only asked when both values are sane alone, since a comparison involving NaN is false
+  // either way and both keys have already reported themselves above.
+  const defaultCredits = Number(process.env.DEFAULT_CREDITS_PURCHASE)
+  const minimumCredits = Number(process.env.MIN_CREDITS_PURCHASE)
+  if (
+    isPositiveWholeNumber(defaultCredits) &&
+    isPositiveWholeNumber(minimumCredits) &&
+    defaultCredits < minimumCredits
+  ) {
+    problems.push('DEFAULT_CREDITS_PURCHASE must not be below MIN_CREDITS_PURCHASE')
+  }
+
+  return problems
+}
+
+/**
+ * The guard. Same rules as the signal, opposite posture: this one stops the transaction, because
+ * a signal is data and data stops nothing.
+ *
+ * Both purchase paths must call it. Card and bank transfer each compute their own amount from
+ * CREDIT_PRICE_AUD, so guarding only one leaves the other emailing `AUD$NaN` to support.
+ *
+ * The thrown message names no keys. Those go to the server log, where the person who can act on
+ * them is; the buyer gets the only fact they can act on, which is "not now".
+ */
+export function assertValidPurchaseConfiguration(): void {
+  const problems = findEnvValueProblems(purchaseEnvRules)
+  if (problems.length === 0) return
+
+  console.error(`[purchase] refused — ${problems.join('; ')}`)
+  throw new Error('Credit purchasing is unavailable: the server is missing pricing configuration')
+}
+
+/**
+ * The signal's server-side owner. `envProblems` is data, and data emits nothing — this is what
+ * puts it in front of an operator, once per server process, on the same notification throttle the
+ * Stripe fulfillment alerts use.
+ *
+ * Never throws and never blocks: a misconfigured deployment should serve a page that says so
+ * rather than refuse to boot. logToServer is imported dynamically for the same reason
+ * reportInjectionFailure does it — a static import would be a cycle (it imports clientEnv) and
+ * would drag the mail and database graph into every module that reads env.
+ */
+export function reportEnvProblems(problems: string[]): void {
+  if (!isServer() || problems.length === 0) return
+  try {
+    void import('~stzUser/lib/logToServer')
+      .then(({ logWithThrottledNotification }) =>
+        logWithThrottledNotification({
+          level: 'error',
+          source: 'Server',
+          // A stable throttle key; the varying detail rides in context, as the throttle expects.
+          message: 'Environment configuration is incomplete',
+          context: { problems },
+        }),
+      )
+      .catch(() => {})
+  } catch {
+    // reporting a broken configuration must never itself be the thing that breaks
+  }
+}
+
 // Client-safe environment variables.
 // Optional values are null, never undefined: JSON.stringify drops undefined keys, and the
 // browser validator (requireInjectedEnv) requires every key to survive the injection.
@@ -65,20 +198,9 @@ export type ClientEnv = {
   // Publishable key is client-safe by design (Stripe means it to ship to the browser).
   // The secret + webhook keys are server-only and never appear in ClientEnv — see stripe.server.ts.
   STRIPE_PUBLISHABLE_KEY: string | null
-}
-
-export function parsePositiveWholeNumberEnv(
-  name: 'DAILY_GRANT_CREDITS' | 'WELCOME_GRANT_CREDITS',
-  rawValue: string | undefined,
-  defaultValue: number,
-): number {
-  const value = Number(rawValue ?? defaultValue)
-
-  if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a finite positive whole number`)
-  }
-
-  return value
+  // Every money value that is missing or malformed, in words. Empty means the configuration is
+  // sound. Present on the client too, so a page can say so without asking the server.
+  envProblems: string[]
 }
 
 // True in Node and Node-like test runtimes (Vitest/jsdom), false in a real browser.
@@ -149,21 +271,18 @@ export function computeClientEnv(): ClientEnv {
     SUPPORT_LINK_URL: process.env.SUPPORT_LINK_URL || '/contact',
     BANK_TRANSFER_BSB: process.env.BANK_TRANSFER_BSB ?? null,
     BANK_TRANSFER_ACC: process.env.BANK_TRANSFER_ACC ?? null,
-    CREDIT_PRICE_AUD: Number(process.env.CREDIT_PRICE_AUD || '0.001'),
-    MIN_CREDITS_PURCHASE: Number(process.env.MIN_CREDITS_PURCHASE || '10'),
-    DAILY_GRANT_CREDITS: parsePositiveWholeNumberEnv(
-      'DAILY_GRANT_CREDITS',
-      process.env.DAILY_GRANT_CREDITS,
-      100,
-    ),
-    WELCOME_GRANT_CREDITS: parsePositiveWholeNumberEnv(
-      'WELCOME_GRANT_CREDITS',
-      process.env.WELCOME_GRANT_CREDITS,
-      500,
-    ),
-    DEFAULT_CREDITS_PURCHASE: Number(process.env.DEFAULT_CREDITS_PURCHASE || '5000'),
+    // No fallbacks below this line, deliberately: a money value is never invented. An unset key
+    // therefore reads as NaN rather than a plausible number — which is the point, since NaN is
+    // what findEnvProblems reports and assertValidPurchaseConfiguration refuses. Neither throws
+    // here, so a deployment missing its money keys still boots and can say what is wrong.
+    CREDIT_PRICE_AUD: Number(process.env.CREDIT_PRICE_AUD),
+    MIN_CREDITS_PURCHASE: Number(process.env.MIN_CREDITS_PURCHASE),
+    DAILY_GRANT_CREDITS: Number(process.env.DAILY_GRANT_CREDITS),
+    WELCOME_GRANT_CREDITS: Number(process.env.WELCOME_GRANT_CREDITS),
+    DEFAULT_CREDITS_PURCHASE: Number(process.env.DEFAULT_CREDITS_PURCHASE),
     IS_STRIPE_ENABLED: process.env.IS_STRIPE_ENABLED === 'true', // master kill-switch, env-driven (Step 0)
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ?? null,
+    envProblems: findEnvProblems(),
   }
 }
 

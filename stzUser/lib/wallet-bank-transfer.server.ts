@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import { clientEnv } from './env'
+import { assertValidPurchaseConfiguration, clientEnv } from './env'
 import { sendEmail } from './mail-utilities'
 import { BankTransferRequestSchema } from './wallet'
 
@@ -7,6 +7,10 @@ export async function requestBankTransferForUser(
   user: { id: string; email: string },
   input: unknown,
 ) {
+  // Before the email, and before the arithmetic that feeds it: this path prices the request
+  // itself, so an unset CREDIT_PRICE_AUD would otherwise send support a request for AUD$NaN.
+  assertValidPurchaseConfiguration()
+
   // Repeat validation next to the email side effect so no future internal caller can bypass it.
   const data = v.parse(BankTransferRequestSchema, input)
   const cost = (data.amount * clientEnv.CREDIT_PRICE_AUD).toFixed(2)

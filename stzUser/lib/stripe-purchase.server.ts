@@ -5,7 +5,7 @@
 // graph (Codex Step-3 P2: a top-level import here previously leaked SDK code into the client main bundle).
 import { getStripe, getStripeMinCents } from './stripe.server'
 import { computeStripeAmountCents } from './wallet.logic'
-import { clientEnv } from './env'
+import { assertValidPurchaseConfiguration, clientEnv } from './env'
 
 // Stripe's hard per-charge ceiling in the smallest currency unit. A create request above this is
 // rejected by Stripe, so we reject it first with a clear error.
@@ -24,6 +24,11 @@ export async function createPaymentIntentForUser(
   input: { creditsRequested: number; idempotencyKey: string },
 ) {
   if (!clientEnv.IS_STRIPE_ENABLED) throw new Error('Stripe payments are not enabled')
+
+  // First, because every guard below it is a comparison, and a comparison against a NaN price or
+  // minimum is false — so a missing money key would clear all three in a row and let Stripe be
+  // the only thing that says no.
+  assertValidPurchaseConfiguration()
 
   const { creditsRequested, idempotencyKey } = input
 

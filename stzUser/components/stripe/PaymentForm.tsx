@@ -272,7 +272,9 @@ export function PaymentForm({ onCreditsGranted }: { onCreditsGranted?: () => voi
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <p>
-        Purchase credits by card (AUD${clientEnv.CREDIT_PRICE_AUD.toFixed(3)} per credit).
+        {/* No toFixed: it was three places for a tenth-of-a-cent price, and it renders a one-cent
+            price as "0.010". The number formats itself correctly at any price. */}
+        Purchase credits by card (AUD${clientEnv.CREDIT_PRICE_AUD} per credit).
       </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>

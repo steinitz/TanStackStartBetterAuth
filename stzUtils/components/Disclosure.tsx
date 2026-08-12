@@ -59,6 +59,18 @@ type DisclosureProps = {
    * fifth thing to read in a list of four.
    */
   showClose?: boolean;
+  /**
+   * Dismiss when anything inside the panel is clicked — what a menu of links wants, and
+   * what the note above has always claimed happens. It did not: `open` lives in state here,
+   * and a client-side navigation does not remount this component, so picking an item used
+   * to leave the panel hanging over the page you had just navigated to, backdrop and all.
+   * The next click anywhere then went into dismissing it and nothing else, which reads as a
+   * tap that did nothing.
+   *
+   * Off by default. A panel whose contents are controls you adjust and re-read — the engine
+   * status on the play page — would be maddening if it shut on every click.
+   */
+  closeOnPanelClick?: boolean;
   children: React.ReactNode;
 };
 
@@ -71,6 +83,7 @@ export function Disclosure({
   open,
   onOpenChange,
   showClose = true,
+  closeOnPanelClick = false,
   children,
 }: DisclosureProps) {
   const [ownOpen, setOwnOpen] = useState(false);
@@ -114,10 +127,16 @@ export function Disclosure({
           swallow the click that closes the panel. It would still close — via the
           backdrop rather than the native toggle — but the cursor and hover state
           would belong to the wrong element. */}
+      {/* aria-label from the same string as the tooltip. Both callers draw an icon-only
+          summary — a user glyph, a status light — so there is no text for a name to be
+          computed from, and a screen reader reaches a control that announces nothing.
+          `title` is a fallback the name algorithm consults last and support for it varies;
+          this says the same word in the place that is actually read. */}
       <summary
         className={summaryClassName}
         style={{ cursor: 'pointer', position: 'relative', zIndex: 1, listStyle: 'none', ...summaryStyle }}
         title={title}
+        aria-label={title}
       >
         {summary}
       </summary>
@@ -127,6 +146,7 @@ export function Disclosure({
       )}
 
       <div
+        onClick={closeOnPanelClick ? close : undefined}
         style={{
           position: 'absolute',
           top: '100%',

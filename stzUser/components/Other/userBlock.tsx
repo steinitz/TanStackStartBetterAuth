@@ -233,6 +233,12 @@ export function UserBlock() {
         // No Close: picking something or clicking away already dismisses this, and a
         // button would be a fifth thing to read in a list of four.
         showClose={false}
+        // What makes the first half of that sentence true. Every item here navigates, and
+        // client-side routing does not remount this header — so without it the panel
+        // followed you to the page you had just chosen, and its backdrop then ate your
+        // next tap. Measured, not guessed: a probe drove the real app and found the
+        // details still open on /auth/profile with the backdrop still in the DOM.
+        closeOnPanelClick
         panelStyle={{
           // Anchored to the trailing edge, not the leading one. The control sits at the
           // right of the header, so a panel opening leftward from it would run off the

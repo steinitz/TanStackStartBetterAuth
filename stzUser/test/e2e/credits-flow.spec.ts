@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
 import { readE2eEnvFromProcess } from './config/e2e-env';
+import { expectWalletCredits, openAccountMenu, walletBadge } from './utils/accountMenu';
 import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits';
 
 const e2eEnv = readE2eEnvFromProcess();
@@ -11,14 +12,14 @@ test.describe('Credits Flow', () => {
     const { email: uniqueEmail } = await createAuthenticatedUser(page, { name: 'Credits Tester' });
     await page.goto('/');
 
-    // 2. Click the Wallet Widget in the header
-    // Wait for session to hydrate - we should see the user email
+    // 2. Open the account menu and click the Wallet Widget inside it
+    // Opening also waits for the session to hydrate — the email is the panel's own content
+    await openAccountMenu(page);
     await expect(page.locator('p', { hasText: uniqueEmail })).toBeVisible({ timeout: 15000 });
 
-    const walletWidget = page.locator('span', { hasText: /Credits/ });
-    await expect(walletWidget).toBeVisible({ timeout: 15000 });
-    await expect(walletWidget).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS} Credits`);
-    await walletWidget.click();
+    await expect(walletBadge(page)).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS} Credits`);
+    // Picking an item dismisses the panel, so nothing is left covering the page it opens.
+    await walletBadge(page).click();
 
     // 3. Verify we are on the Credits page
     await expect(page).toHaveURL(/\/auth\/credits/);
@@ -43,7 +44,7 @@ test.describe('Credits Flow', () => {
     await claimButton.click();
 
     // Verify balance updated
-    await expect(walletWidget).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS + e2eEnv.WELCOME_GRANT_CREDITS} Credits`, { timeout: 10000 });
+    await expectWalletCredits(page, `${e2eEnv.DAILY_GRANT_CREDITS + e2eEnv.WELCOME_GRANT_CREDITS} Credits`);
     await expect(page.getByText('One-time Welcome Grant')).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.body.dataset.creditsFlowDocument)).toBe('before-claim');
 

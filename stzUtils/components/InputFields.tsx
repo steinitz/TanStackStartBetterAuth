@@ -156,17 +156,18 @@ export const PreferredNameInput = ({validationErrors, defaultValue}: {
  * fieldName "fullName", until it turned out the real column had been sitting there all
  * along with a hand-rolled input of its own on the sign-up form.
  *
- * Optional, and staying that way: ChessHurdles wants a full name badly — it is what an
+ * Recommended rather than required. ChessHurdles wants a full name badly — it is what an
  * imported PGN's player headers are matched against — but other consumers of this repo
  * have no such need, and a required field upstream would be ChessHurdles' appetite
- * charged to everyone.
+ * charged to everyone. "(recommended)" is the honest middle: it nudges without refusing
+ * the form, and it is what UsernameInput above already says for the same reason.
  */
 export const FullNameInput = ({validationErrors, defaultValue}: {
   validationErrors: ValidationErrors, defaultValue?: string
 }) => {
   return <InputField
     fieldLabel="Full Name"
-    subtext="(optional)"
+    subtext="(recommended)"
     fieldName="name"
     defaultValue={defaultValue}
     validationErrors={validationErrors}

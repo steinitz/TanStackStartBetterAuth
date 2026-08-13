@@ -3,7 +3,7 @@ import { type SyntheticEvent, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { signUp, sendVerificationEmail } from '~stzUser/lib/auth-client'
 import { FormFieldError } from '~stzUtils/components/FormFieldError';
-import { PasswordInput } from '~stzUtils/components/InputFields';
+import { FullNameInput, PasswordInput } from '~stzUtils/components/InputFields';
 import { fieldsFromFormData } from "~stzUser/lib/form";
 import { Spacer } from "~stzUtils/components/Spacer";
 import { requiredPasswordValidation } from '~stzUser/lib/password-validation';
@@ -173,14 +173,14 @@ export const SignUp = () => {
             />
             <FormFieldError message={validationIssues?.email} />
           </label>
-          <label>Name
-            <input
-              name="name"
-              type="name"
-              defaultValue={''}
-              autoComplete="on"
-            />
-          </label>
+          {/* Was a hand-rolled label and input carrying type="name", which is not an
+              input type — browsers fell back to text, so it worked by accident and
+              showed no validation message. Same field, same `name`, now through the
+              component the profile also uses, so the two forms cannot drift. */}
+          <FullNameInput
+            validationErrors={validationIssues}
+            defaultValue={''}
+          />
           <PasswordInput
             validationIssue={validationIssues?.password}
           />

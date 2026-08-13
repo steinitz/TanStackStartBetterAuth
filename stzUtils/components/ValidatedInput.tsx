@@ -18,13 +18,15 @@ export function ValidatedInput(props: {
   fieldName: string,
   validationErrors: ValidationErrors,
   defaultValue?: string,
-  type?: string
+  type?: string,
+  autoComplete?: string
 }) {
   return <>
     <input
       type={props.type || "text"}
       name={props.fieldName}
       defaultValue={props.defaultValue}
+      {...(props.autoComplete && { autoComplete: props.autoComplete })}
     />
     <FormFieldError message={errorMessageFor(props.fieldName, props.validationErrors)} />
   </>

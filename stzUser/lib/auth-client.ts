@@ -12,6 +12,7 @@ export const {
 	resetPassword,
 	changeEmail,
 	changePassword,
+	updateUser,
 	deleteUser,
 	sendVerificationEmail,
 	admin,

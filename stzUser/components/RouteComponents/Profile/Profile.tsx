@@ -2,9 +2,9 @@ import {useNavigate} from "@tanstack/react-router";
 import {MouseEvent, SyntheticEvent, useEffect, useState} from "react";
 import * as v from "valibot";
 import {niceValidationIssues, preventDefaultFormSubmission, sharedFormSubmission} from "~stzUser/lib/form";
-import {changeEmail, changePassword, deleteUser, useSession} from "~stzUser/lib/auth-client";
+import {changeEmail, changePassword, deleteUser, updateUser, useSession} from "~stzUser/lib/auth-client";
 import {Spacer} from "~stzUtils/components/Spacer";
-import {EmailInput, PasswordInput} from "~stzUtils/components/InputFields";
+import {EmailInput, FullNameInput, PasswordInput} from "~stzUtils/components/InputFields";
 import {
   DeleteAccountConfirmationDialog,
 } from "./deleteAccountConfirmationDialog";
@@ -29,6 +29,7 @@ export const profileTestIds = {
 // Structural selectors - DOM-based selectors that can't be test IDs
 export const profileStructuralSelectors = {
   emailInput: 'input[type="email"]',
+  nameInput: 'input[name="name"]',
   currentPasswordInput: 'input[name="currentPassword"]',
   newPasswordInput: 'input[name="newPassword"]',
   spinnerContainer: '.spinner'
@@ -39,10 +40,13 @@ export const profileStrings = {
   passwordChangeError: 'Error changing password',
   currentPasswordLabel: 'Current password',
   newPasswordLabel: 'New password',
+  nameChangeSuccess: 'Name changed',
+  nameChangeError: 'Error changing name',
 }
 
 type ProfileData = {
   email: string
+  name?: string
   currentPassword?: string
   newPassword?: string
 }
@@ -54,6 +58,9 @@ const ProfileSchema = v.object({
     v.nonEmpty('email address required'),
     v.email('invalid email'),
   ),
+  // Optional and unvalidated, matching what sign-up asks of it. A name the user can
+  // leave blank is a deliberate upstream choice — see FullNameInput.
+  name: v.optional(v.string()),
   currentPassword: v.optional(currentPasswordValidation),
   newPassword: v.optional(passwordValidation),
 })
@@ -67,11 +74,13 @@ export const Profile = () => {
   const deleteAccountConfirmationDialogRef = makeDialogRef();
 
   const email = session?.user?.email
+  const name = session?.user?.name
 
   const [, setEmailChangeError] = useState<any>()
   const [, setNewEmailAddress] = useState('')
   const [shouldShowEmailChangeSpinner, setShouldShowEmailChangeSpinner] = useState(false)
   const [shouldShowPasswordChangeSpinner, setShouldShowPasswordChangeSpinner] = useState(false)
+  const [shouldShowNameChangeSpinner, setShouldShowNameChangeSpinner] = useState(false)
 
   const [validationIssues, setValidationIssues] = useState<any>({})
   const validateFormFields = (fields: ProfileData) => {
@@ -103,6 +112,25 @@ export const Profile = () => {
     const isValid = validateFormFields(fields as ProfileData)
 
     if (isValid) {
+      // Handled first, and deliberately above the either/or gate below, which returns
+      // early. A name change shares nothing with the other two — no verification email,
+      // no revoked sessions — so there is no reason for it to be refused alongside them,
+      // and every reason not to drop it silently when they are.
+      const newName = ((fields.name as string) ?? '').trim()
+      if (newName !== (name ?? '')) {
+        setShouldShowNameChangeSpinner(true)
+        try {
+          const {error} = await updateUser({name: newName})
+          // Better Auth's client fires its session signal on /update-user, so useSession
+          // refetches on its own — nothing here needs to push the new name anywhere.
+          alert(error ? `${profileStrings.nameChangeError}: ${error.message}` : profileStrings.nameChangeSuccess)
+        }
+        catch (error: any) {
+          alert(`${profileStrings.nameChangeError}: ${error?.message || 'Unknown error'}`)
+        }
+        setShouldShowNameChangeSpinner(false)
+      }
+
       // Prevent simultaneous email and password changes
       const isEmailChange = fields.email !== email
       const isPasswordChange = newPasswordValue && newPasswordValue.trim() !== '' && currentPasswordValue && currentPasswordValue.trim() !== ''
@@ -242,14 +270,21 @@ export const Profile = () => {
           >
             <div style={{display: "flex", flexDirection: "row", justifyContent: "flex-start"}}>
               <h1>Profile</h1>
-              {(shouldShowEmailChangeSpinner || shouldShowPasswordChangeSpinner) && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
+              {(shouldShowEmailChangeSpinner || shouldShowPasswordChangeSpinner || shouldShowNameChangeSpinner) && <div style={{margin: '1rem 5rem'}}><Spinner/></div>}
             </div>
             
             <p style={{marginTop: '0', color: 'var(--color-text-secondary)', fontSize: '0.9rem'}}>
-              Update your email address or change your password.<br />
+              Update your name or email address, or change your password.<br />
               Leave password fields empty to keep your current password.
             </p>
             
+            <Spacer />
+
+            <FullNameInput
+              validationErrors={validationIssues}
+              defaultValue={name}
+            />
+
             <Spacer />
 
             <EmailInput

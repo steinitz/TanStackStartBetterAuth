@@ -15,23 +15,43 @@ export const makeDialogRef = () => useRef<DialogMethodsType>({
 // The ref type that includes React's current property
 export type DialogRefType = RefObject<DialogMethodsType>;
 
+/**
+ * Two modes, and the type makes you pick one.
+ *
+ * `ref` — the dialog owns whether it is open, and callers command it through
+ * setIsOpen. Right for a dialog opened by a click and closed by a click, where
+ * nothing outside React has an opinion about its state.
+ *
+ * `isOpen` — the caller owns it, and the dialog only renders what it is told.
+ * Reach for this when the dialog's openness is *also* represented somewhere
+ * outside React — a URL search param being the case that prompted it, since such
+ * a dialog is bookmarkable and reachable from another page. Two representations
+ * of one fact must have one of them derived, and a ref can only command, never
+ * derive: hand-syncing the two is how you get a dialog that opens exactly once
+ * per page load.
+ */
+type DialogProps = { children: ReactNode } & (
+  | { ref: DialogRefType; isOpen?: never }
+  | { isOpen: boolean; ref?: never }
+);
+
 export const Dialog = ({
   children,
-  ref
-}: {
-  children: ReactNode,
-  ref: DialogRefType
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  
+  ref,
+  isOpen: controlledIsOpen
+}: DialogProps) => {
+  const [selfIsOpen, setSelfIsOpen] = useState(false);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : selfIsOpen;
+
   // Create stable method references that are unique to this Dialog instance
   const methods = {
     isOpen: () => isOpen,
-    setIsOpen: (value: boolean) => setIsOpen(value)
+    setIsOpen: (value: boolean) => setSelfIsOpen(value)
   };
-  
+
   // Update the ref's methods - each Dialog has its own ref from makeDialogRef
-  if (ref.current) {
+  if (ref?.current) {
     ref.current.isOpen = methods.isOpen;
     ref.current.setIsOpen = methods.setIsOpen;
   }
@@ -81,7 +101,14 @@ export const Dialog = ({
               padding: "0.5% 2% 1.5% 2%",
               border: "2px solid #000",
               borderRadius: "10px",
-              minWidth: "200px"
+              minWidth: "200px",
+              // Back-to-the-wall scrolling. The parent is position:fixed, so a
+              // dialog taller than the screen overflows a centred box in both
+              // directions and nothing can scroll it — the top goes out of reach.
+              // dvh, not vh: on iOS Safari vh ignores the browser chrome, which is
+              // exactly the inch a tall form runs out of.
+              maxHeight: "90dvh",
+              overflowY: "auto"
             }}
           >
             {children}

@@ -113,3 +113,60 @@ the validation errors are hidden and unselectable
 form {
   user-select: 'none',}
 */
+
+/* Radio rows.
+
+   mvp styles every input as if it were a text field — border, padding and
+   margin-bottom: 1rem — and then only switches radios and checkboxes to
+   inline-block. That 1rem stays, so a radio's margin box is 32px against a
+   24px label; any flex row centring the two centres the margin box faithfully
+   and leaves the visible 13px control riding high. Measured in Chrome
+   2026-08-15: zeroing it takes the offset from 6.5px to 0.
+
+   The label corrections are the same story. mvp's `label` carries a bottom
+   margin, which makes rows uneven, and `input[type="radio"] + label` adds a
+   top: 1px nudge that exists to drop the label onto the radio's baseline in
+   mvp's own inline flow. Centring already does that, so the nudge becomes a
+   pixel of droop.
+
+   Padding on the label rather than gap between rows, because the label is
+   wired with htmlFor: the padding is the click target, turning a 13px radio
+   into a 34px row. The two chosen numbers are that 5px and the group's 3px,
+   both Fibonacci. The 34px target and 37px pitch fall out of mvp's 24px
+   line-height — tweak the inputs, not the consequences.
+
+   No radio uses this upstream yet. It is here because the defect is mvp's,
+   not any one consumer's, and because `input:not([type="checkbox"]):not(
+   [type="radio"])` above is the same correction one property earlier —
+   someone already met this and patched the symptom they hit.
+
+   Markup this expects is input first, label as its SIBLING, not wrapped
+   inside it. Wrapping puts mvp's own `input + label` rule out of reach, and
+   the labels render bold against mvp's `label { font-weight: bold }`. */
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.radio-row input[type="radio"] {
+  margin: 0;
+}
+
+/* Selector matches mvp's own `input[type="radio"] + label` shape on purpose:
+   a plain `.radio-row label` scores lower and loses the top: 1px. It also puts
+   the sibling requirement in the selector, so markup that wraps the input
+   inside the label simply does not get styled. */
+.radio-row input[type="radio"] + label {
+  cursor: pointer;
+  margin-bottom: 0;
+  padding: 5px 0;
+  top: 0;
+}

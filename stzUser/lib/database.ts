@@ -7,22 +7,23 @@ import type { AdminSource } from './admin-identity';
 const url = process.env.DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
-if (!url && process.env.NODE_ENV === 'production') {
-  console.error("❌ DATABASE_URL is missing in production!");
-  // We throw here because falling back to file: in Lambda crashes the process
-  throw new Error("DATABASE_URL is required in production");
+// No fallback, in any environment. There used to be one — file:sqlite.db unless
+// NODE_ENV was production — and it did not save anyone, because .env.example
+// already carries that exact value for a new checkout to copy. What it did do
+// was hide a missing line: ChessHurdles had DATABASE_URL commented out of its
+// .env.development for months and nothing complained, because the fallback
+// silently supplied the same string. A crash names the problem; a fallback
+// answers a question nobody asked.
+if (!url) {
+  throw new Error(
+    "DATABASE_URL is not set. Copy it from .env.example — a local file database is file:sqlite.db.",
+  );
 }
 
 export const libsqlClient = createClient({
-  url: url || "file:sqlite.db",
+  url,
   authToken: authToken,
 });
-
-// Keep an accidental file fallback visible without announcing every configured
-// database connection in each process that imports this module.
-if (!url) {
-  console.warn("DATABASE_URL is not set; using file:sqlite.db");
-}
 
 /**
  * User-related database types

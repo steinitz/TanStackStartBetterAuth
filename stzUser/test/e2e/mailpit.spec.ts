@@ -13,13 +13,13 @@ test.describe('Mailpit Integration', () => {
     const testSubject = 'Test Email from E2E Test';
     const testText = 'This is a test email sent from the mailpit.spec.ts E2E test.';
     
-    const result = await sendEmail({ data: {
+    const result = await sendEmail({
       to: testAddress,
       from: testAddress,
       subject: testSubject,
       text: testText,
       html: '<p>This is a <strong>test email</strong> sent from the mailpit.spec.ts E2E test.</p>'
-    }});
+    });
 
     // Wait a moment for email to be processed
     await new Promise(resolve => setTimeout(resolve, 1000));

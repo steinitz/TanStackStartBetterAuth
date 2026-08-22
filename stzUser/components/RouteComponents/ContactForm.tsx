@@ -3,7 +3,7 @@ import * as v from "valibot";
 import {emailValidation, niceValidationIssues, sharedFormSubmission} from "~stzUser/lib/form";
 import {type SyntheticEvent, useState} from "react";
 import {useSession} from "~stzUser/lib/auth-client";
-import {sendEmail} from "~stzUser/lib/mail-utilities";
+import {sendContactMessage} from "~stzUser/lib/mail-utilities";
 import {logToServer} from "~stzUser/lib/logToServer";
 import {ContactSent} from '~stzUser/components/Other/ContactSent';
 import {clientEnv} from '~stzUser/lib/env';
@@ -46,9 +46,7 @@ const ContactSchema = v.object({
   message: v.pipe(v.string(), v.nonEmpty('please type a message')),
 });
 
-const fromAddress = clientEnv.SMTP_FROM_ADDRESS;
 const supportAddress = clientEnv.SUPPORT_EMAIL_ADDRESS || clientEnv.SMTP_FROM_ADDRESS;
-const companyName = clientEnv.COMPANY_NAME;
 
 export const ContactForm = ({
   heading,
@@ -93,44 +91,21 @@ export const ContactForm = ({
 
     const isValid = validateFormFields(fields);
     if (isValid) {
-      const message = (isHTML: boolean) => {
-        let lineBreak = '\n';
-        if (isHTML) {
-          lineBreak = '<br>';
-        }
-        // Stamp the signed-in user's account ID at the foot so a site owner can
-        // discover their own ID (for ADMIN_USER_IDS) by sending themselves a
-        // contact message. Sourced from the session, not the typed email field,
-        // so it always names the authenticated account. Omitted when signed out.
-        const senderId = session?.user?.id;
-        const senderIdFooter = senderId
-          ? `${lineBreak}${lineBreak}—${lineBreak}Sender account ID: ${senderId}`
-          : '';
-        return `Contact-form support message from:
-          ${lineBreak}
-          ${fields.name}
-          ${lineBreak}
-          ${fields.email}
-          ${lineBreak}${lineBreak}
-          Message:
-          ${lineBreak}
-          ${fields.message}${senderIdFooter}`;
-      };
-
       try {
-        await sendEmail({
+        // The envelope — recipient, sender, subject — is composed on the server, so this form can
+        // only ever reach the site owner's mailbox. It used to be built here and handed to a
+        // generic send endpoint, which let any caller choose where our mail server sent mail.
+        await sendContactMessage({
           data: {
-            to: supportAddress,
-            from: fromAddress,
-            subject: `Contact form for ${companyName}`,
-            text: `${message(false)}`,
-            html: `<p>${message(true)}</p>`,
+            name: fields.name as string,
+            email: fields.email as string,
+            message: fields.message as string,
           }
         });
         setMessageSent(true);
         onSuccess?.();
       } catch (error) {
-        // sendEmail throws on failure — it never returns a falsy result — so the catch
+        // sendContactMessage throws on failure — it never returns a falsy result — so the catch
         // is the only place a failed send surfaces. Record it as server-side telemetry,
         // carrying the sender's email and message so the note survives in a log the owner
         // can still read. We deliberately do NOT notify: the alert email would travel the

@@ -22,6 +22,19 @@ export async function requireSessionUser() {
   return session.user
 }
 
+/**
+ * The same preamble where signing in is optional — a public endpoint that treats a known user as
+ * extra information rather than a precondition. Returns null instead of throwing, so the caller
+ * cannot accidentally use absence as an error.
+ */
+export async function getOptionalSessionUser() {
+  const headers = getRequest()?.headers
+  if (!headers) return null
+
+  const session = await auth.api.getSession({ headers })
+  return session?.user ?? null
+}
+
 export async function requireAdminUser() {
   const user = await requireSessionUser()
   if (!isAdmin(user, adminUserIds)) throw new Error('Admin access required')

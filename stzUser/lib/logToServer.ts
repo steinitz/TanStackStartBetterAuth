@@ -110,12 +110,11 @@ export function deploymentSource(): { label: string; url: string } {
   return { label, url };
 }
 
-/** Send a plain-text notify email via the project's blessed sendEmail server fn. */
+/** Send a plain-text notify email. Server-only, like sendEmail itself. */
 async function sendNotifyEmail(event: LogEvent): Promise<void> {
-  const env = await getEmailEnvironmentVars({ data: undefined });
+  const env = getEmailEnvironmentVars();
   const source = deploymentSource();
   await sendEmail({
-    data: {
       from: env.from,
       to: env.supportEmailAddress || env.from,
       // Deployment label rides in the subject so the source is clear at a glance in the inbox.
@@ -131,8 +130,7 @@ async function sendNotifyEmail(event: LogEvent): Promise<void> {
         event.userAgent ? `User-Agent: ${event.userAgent}` : null,
         `Timestamp: ${new Date().toISOString()}`,
       ].filter(Boolean).join('\n'),
-    },
-  });
+    });
 }
 
 /**

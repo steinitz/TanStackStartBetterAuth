@@ -15,10 +15,18 @@ export async function requestBankTransferForUser(
   const data = v.parse(BankTransferRequestSchema, input)
   const cost = (data.amount * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
 
+  // Both address env vars are optional, so a site can be configured with neither. Typing sendEmail
+  // is what surfaced it: the old endpoint took `any`, so an unconfigured site addressed this
+  // request to null and nobody heard about it. Same class of misconfiguration as the unset price
+  // above, and the same remedy — refuse, rather than send a request nobody receives.
+  const supportAddress = clientEnv.SUPPORT_EMAIL_ADDRESS || clientEnv.SMTP_FROM_ADDRESS
+  if (!supportAddress) {
+    throw new Error('Cannot send a bank-transfer request: no support or from address is configured')
+  }
+
   await sendEmail({
-    data: {
-      to: clientEnv.SUPPORT_EMAIL_ADDRESS,
-      from: clientEnv.SUPPORT_EMAIL_ADDRESS,
+      to: supportAddress,
+      from: supportAddress,
       subject: `💰 Credit Purchase Request: ${user.email}`,
       text: `User ${user.email} (ID: ${user.id}) has requested to purchase ${data.amount} credits for AUD$${cost} via bank transfer.`,
       html: `
@@ -29,8 +37,7 @@ export async function requestBankTransferForUser(
           <p><strong>Total Cost:</strong> AUD$${cost}</p>
           <p>Please wait for payment verification before manually granting credits via the Admin panel.</p>
         `,
-    },
-  })
+    })
 
   return { success: true }
 }

@@ -18,8 +18,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const { mockCreate, mockSendEmail } = vi.hoisted(() => {
   // Captured by clientEnv at import: the flag must be on, or the card path refuses for that reason
-  // instead of the one under test.
+  // instead of the one under test. The support address is here for the same reason — the
+  // bank-transfer path now refuses when it has nowhere to send.
   process.env.IS_STRIPE_ENABLED = 'true'
+  process.env.SUPPORT_EMAIL_ADDRESS = 'support@example.com'
   return { mockCreate: vi.fn(), mockSendEmail: vi.fn() }
 })
 
@@ -119,8 +121,8 @@ describe('purchase configuration guard', () => {
 
       // Proves the refusals above come from the guard rather than from a path that is simply
       // broken: a sound configuration produces a real figure, not NaN.
-      const [{ data }] = mockSendEmail.mock.calls[0]
-      expect(data.text).not.toContain('NaN')
+      const [message] = mockSendEmail.mock.calls[0]
+      expect(message.text).not.toContain('NaN')
     })
   })
 })

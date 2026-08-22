@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as v from 'valibot'
 
-const { sendEmail } = vi.hoisted(() => ({
-  sendEmail: vi.fn(),
-}))
+const { sendEmail } = vi.hoisted(() => {
+  // Captured by clientEnv at import: the bank-transfer path refuses when it has nowhere to send.
+  process.env.SUPPORT_EMAIL_ADDRESS = 'support@example.com'
+  return { sendEmail: vi.fn() }
+})
 
 vi.mock('~stzUser/lib/mail-utilities', () => ({
   sendEmail,
@@ -77,10 +79,10 @@ describe('wallet server input validation', () => {
     )).resolves.toEqual({ success: true })
 
     expect(sendEmail).toHaveBeenCalledOnce()
-    expect(sendEmail).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
         text: expect.stringContaining('10 credits'),
       }),
-    })
+    )
   })
 })

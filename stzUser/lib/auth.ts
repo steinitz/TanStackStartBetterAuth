@@ -81,7 +81,6 @@ export const authOptions: BetterAuthOptions = {
         console.log('🔧 DEBUG: This function should send email to NEW address:', newEmail);
         // Send verification email to the NEW email address for email changes
         await sendEmail({
-          data: {
             to: newEmail, // Send to the new email address, not the old one
             from: from || 'test@example.com',
             subject: verifyChangeEmailSubject /* + ' - sendChangeEmailVerification' */,
@@ -92,8 +91,7 @@ export const authOptions: BetterAuthOptions = {
             html: `<p>${verifyChangeEmailInstructions} ${newEmail}</p>
           <br />
           <a href=${url}>${verifyChangeEmailLinkText}</a>`,
-          }
-        })
+          })
       }
     },
     deleteUser: {
@@ -111,14 +109,12 @@ export const authOptions: BetterAuthOptions = {
       console.log('🔄 Current time:', new Date().toISOString());
 
       await sendEmail({
-        data: {
           to: user.email,
           from: from || 'test@example.com',
           subject: passwordResetSubject,
           text: `${passwordResetLinkText}${url}`,
           html: `<a href="${url}">${passwordResetLinkText}</a>`,
-        }
-      })
+        })
     },
     onPasswordReset: async ({ user }, request) => {
       console.log('✅ Password reset completed for user:', user.email);
@@ -151,7 +147,6 @@ export const authOptions: BetterAuthOptions = {
         console.log('📧 sendVerificationEmail: sending signup verification email to', user.email);
 
         await sendEmail({
-          data: {
             to: user.email,
             from: from || 'test@example.com',
             subject: verifyEmailSubject /* + ' - sendVerificationEmail' */,
@@ -162,8 +157,7 @@ ${url}`,
             html: `<p>${verifyEmailInstructions}</p>
           <br />
           <a href="${url}">${verifyEmailLinkText}</a>`,
-          }
-        })
+          })
       }
       else {
         console.log('🚫 sendVerificationEmail: skipping old-email verification for change-email flow.  Calling verifyEmail directly, maybe for no good reason');

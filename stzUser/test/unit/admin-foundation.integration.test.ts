@@ -92,7 +92,7 @@ describe.sequential('effective admin foundation integration', () => {
     expect(await userRole(userId)).toBe('admin')
     expect(await sessionCount(userId)).toBe(0)
 
-    const emailText = sendEmail.mock.calls[0]?.[0]?.data?.text as string | undefined
+    const emailText = sendEmail.mock.calls[0]?.[0]?.text as string | undefined
     const verificationUrl = emailText?.match(/https?:\/\/\S+/)?.[0]
     expect(verificationUrl).toBeTruthy()
     const token = new URL(verificationUrl!).searchParams.get('token')

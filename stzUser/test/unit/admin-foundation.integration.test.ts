@@ -19,7 +19,7 @@ const { sendEmail, verifyTurnstileToken } = vi.hoisted(() => {
   }
 })
 
-vi.mock('~stzUser/lib/mail-utilities', () => ({
+vi.mock('~stzUser/lib/mail.server', () => ({
   sendEmail,
   transportOptions: {},
 }))

@@ -32,7 +32,7 @@ vi.mock('~stzUser/lib/stripe.server', () => ({
 
 // Only the parts that cannot run in a unit test are faked: Stripe's API and the SMTP send. The
 // guard, the pricing and the validation are all the real code.
-vi.mock('~stzUser/lib/mail-utilities', () => ({
+vi.mock('~stzUser/lib/mail.server', () => ({
   sendEmail: mockSendEmail,
 }))
 

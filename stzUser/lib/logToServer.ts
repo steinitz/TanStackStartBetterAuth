@@ -12,7 +12,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import * as v from 'valibot';
-import { sendEmail, getEmailEnvironmentVars } from '~stzUser/lib/mail-utilities';
 import { clientEnv } from '~stzUser/lib/env';
 import { getDeviceType } from '~stzUtils/lib/getDeviceType';
 
@@ -112,6 +111,18 @@ export function deploymentSource(): { label: string; url: string } {
 
 /** Send a plain-text notify email. Server-only, like sendEmail itself. */
 async function sendNotifyEmail(event: LogEvent): Promise<void> {
+  // Two deliberate things here, both about keeping nodemailer out of the browser.
+  //
+  // The import is dynamic because this module is loaded in the client: a top-level import of the
+  // SMTP primitive drags nodemailer into the app shell, which is what broke every page once.
+  //
+  // The import.meta.env.SSR guard is what stops a chunk being emitted for it at all. Vite replaces
+  // that expression with a literal per build, so the whole block is eliminated from the client and
+  // nodemailer is never written to the public directory. An `isServer()` check reads the same but
+  // is a runtime call, so the bundler still has to emit the import behind it.
+  if (!import.meta.env.SSR) return;
+
+  const { sendEmail, getEmailEnvironmentVars } = await import('~stzUser/lib/mail.server');
   const env = getEmailEnvironmentVars();
   const source = deploymentSource();
   await sendEmail({

@@ -1,5 +1,5 @@
 import { test, expect } from './utils/console-buffer';
-import { sendEmail } from '../../lib/mail-utilities';
+import { sendEmail } from '../../lib/mail.server';
 
 test.describe('Mailpit Integration', () => {
   test('should send email to Mailpit and retrieve via API', async () => {

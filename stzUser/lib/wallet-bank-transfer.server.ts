@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { assertValidPurchaseConfiguration, clientEnv } from './env'
-import { sendEmail } from './mail-utilities'
+import { sendEmail } from './mail.server'
 import { BankTransferRequestSchema } from './wallet'
 
 export async function requestBankTransferForUser(

@@ -7,7 +7,7 @@ const { sendEmail } = vi.hoisted(() => {
   return { sendEmail: vi.fn() }
 })
 
-vi.mock('~stzUser/lib/mail-utilities', () => ({
+vi.mock('~stzUser/lib/mail.server', () => ({
   sendEmail,
 }))
 

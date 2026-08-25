@@ -26,6 +26,41 @@ export default defineConfig(({ command }) => ({
       }
       : undefined,
   },
+  // Client build only. Vite's resolver is eager: it walks a dynamic import to decide
+  // whether to emit a chunk, and walking into nodemailer makes it report `util` and
+  // `url` as externalized for the browser, 47 times a build. Nothing is emitted — the
+  // import.meta.env.SSR guard in logToServer sees to that, and the contact-form handler
+  // is stripped — so the warnings are noise, and noise that buries everything else in
+  // build and test output.
+  //
+  // They arrived with 0a64c5e, which moved the SMTP primitive behind a dynamic import to
+  // keep it out of the browser. That fix was right. A dynamic import is a chunk boundary,
+  // and this is the price of one.
+  //
+  // Scoped to the client environment on purpose. The SSR build must still resolve and
+  // bundle nodemailer, because that is where mail is actually sent.
+  //
+  // Warning: this tells the resolver to stop looking at the one library we most want
+  // kept out of the browser, so it can no longer warn us either. A leak that used to
+  // show as a build warning now shows as a browser error, because an externalized
+  // import survives as a bare `nodemailer` specifier no browser can resolve.
+  //
+  // The check, after any change to how mail.server.ts is reached:
+  //
+  //   grep -rl nodemailer dist/client || echo clean
+  //
+  // When nodemailer last reached the client bundle the app shell died with
+  // `Class extends value undefined`, past a green type check and a green unit suite.
+  // Only the built artifact showed it, which is why the check is on dist, not on source.
+  environments: {
+    client: {
+      build: {
+        rollupOptions: {
+          external: ['nodemailer'],
+        },
+      },
+    },
+  },
   build: {
     rollupOptions: {
       external: [

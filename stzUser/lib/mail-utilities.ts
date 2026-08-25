@@ -38,6 +38,21 @@ function escapeHtml(text: string) {
 export const sendContactMessage = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => v.parse(ContactMessageSchema, data))
   .handler(async ({ data }) => {
+    // A build-time guard, not a runtime check, and the difference is the whole point.
+    // Vite replaces import.meta.env.SSR with a literal per build, so in the client pass
+    // everything below becomes unreachable and the dynamic imports are never resolved.
+    // Without it Vite walks into mail.server and on into nodemailer, and reports `util`
+    // and `url` as externalized for the browser dozens of times per build — noise that
+    // is indistinguishable from the real thing, which is what a genuine leak of
+    // nodemailer into the client bundle looks like. That leak broke every page once.
+    //
+    // An isServer() call reads the same and cannot do this: it is a runtime test, so the
+    // bundler still has to emit the import behind it. The same guard, for the same
+    // reason, is in logToServer's sendNotifyEmail.
+    //
+    // The handler only ever runs on the server, so the throw is unreachable in practice.
+    if (!import.meta.env.SSR) throw new Error('sendContactMessage runs on the server')
+
     const { sendEmail, getEmailEnvironmentVars } = await import('./mail.server')
     const env = getEmailEnvironmentVars()
     const to = env.supportEmailAddress || env.from

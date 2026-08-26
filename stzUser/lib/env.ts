@@ -1,5 +1,10 @@
 // Environment variable projection and access
 
+// Static, deliberately. This import was dynamic to break a cycle: logToServer read clientEnv for
+// an email subject. The subject now takes the app name from getEmailEnvironmentVars instead, so
+// the arrow points one way, env to logger, and nothing here has to be deferred.
+import { logToServer, logWithThrottledNotification } from '~stzUser/lib/logToServer'
+
 // Helper function to check if we're on the server
 export const isServer = () => typeof window === 'undefined'
 
@@ -146,24 +151,18 @@ export function assertValidPurchaseConfiguration(): void {
  * Stripe fulfillment alerts use.
  *
  * Never throws and never blocks: a misconfigured deployment should serve a page that says so
- * rather than refuse to boot. logToServer is imported dynamically for the same reason
- * reportInjectionFailure does it — a static import would be a cycle (it imports clientEnv) and
- * would drag the mail and database graph into every module that reads env.
+ * rather than refuse to boot.
  */
 export function reportEnvProblems(problems: string[]): void {
   if (!isServer() || problems.length === 0) return
   try {
-    void import('~stzUser/lib/logToServer')
-      .then(({ logWithThrottledNotification }) =>
-        logWithThrottledNotification({
-          level: 'error',
-          source: 'Server',
-          // A stable throttle key; the varying detail rides in context, as the throttle expects.
-          message: 'Environment configuration is incomplete',
-          context: { problems },
-        }),
-      )
-      .catch(() => {})
+    void logWithThrottledNotification({
+      level: 'error',
+      source: 'Server',
+      // A stable throttle key; the varying detail rides in context, as the throttle expects.
+      message: 'Environment configuration is incomplete',
+      context: { problems },
+    }).catch(() => {})
   } catch {
     // reporting a broken configuration must never itself be the thing that breaks
   }
@@ -219,16 +218,14 @@ function isNodeLikeRuntime() {
 // a server-side alert (and optional email), not just a console throw only a devtools-open user
 // would see. Only real browsers reach requireInjectedEnv in the app, so the isNodeLikeRuntime
 // guard skips server/test runtimes — which also keeps the unit test from firing real telemetry.
-// logToServer is imported dynamically to avoid a static import cycle (it imports clientEnv) and
-// to keep it out of env.ts's eager graph. The whole thing is wrapped so telemetry can never mask
-// or delay the throw that immediately follows. The message is a stable throttle key; variable
-// detail rides in context.
+// The call is wrapped so telemetry can never mask or delay the throw that immediately follows.
+// It now runs synchronously as far as its first await, where the dynamic import used to defer the
+// whole of it — so the wrapping matters more than it did, not less. The message is a stable
+// throttle key; variable detail rides in context.
 function reportInjectionFailure(message: string, context: Record<string, unknown>): void {
   if (isNodeLikeRuntime()) return
   try {
-    void import('~stzUser/lib/logToServer')
-      .then(({ logToServer }) => logToServer({ data: { level: 'error', message, context, notify: true } }))
-      .catch(() => {})
+    void logToServer({ data: { level: 'error', message, context, notify: true } }).catch(() => {})
   } catch {
     // telemetry must never interfere with fail-loud
   }
@@ -252,12 +249,18 @@ function requireInjectedEnv<T>(value: unknown, getTemplate: () => T, label: stri
   return env as T
 }
 
+// The app's own name, and the one home of its default. Two consumers read it: computeClientEnv,
+// which projects it to the browser, and getEmailEnvironmentVars, which puts it in an alert
+// subject. A copied default would let those two disagree about what the app is called.
+export const DEFAULT_APP_NAME = 'TanStack Start with Better Auth'
+export const getAppName = () => process.env.APP_NAME || DEFAULT_APP_NAME
+
 // The single home of every client-env name and default. The server runs this from process.env;
 // the browser receives the result via window.__ENV (see __root). Tests run it too, since jsdom
 // is Node-like, so no test-setup injection is needed.
 export function computeClientEnv(): ClientEnv {
   return {
-    APP_NAME: process.env.APP_NAME || 'TanStack Start with Better Auth',
+    APP_NAME: getAppName(),
     SMTP_FROM_ADDRESS: process.env.SMTP_FROM_ADDRESS ?? null,
     SUPPORT_EMAIL_ADDRESS: process.env.SUPPORT_EMAIL_ADDRESS ?? null,
     COMPANY_NAME: process.env.COMPANY_NAME || 'Your Company',

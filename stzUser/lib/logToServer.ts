@@ -12,7 +12,9 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import * as v from 'valibot';
-import { clientEnv } from '~stzUser/lib/env';
+// Nothing here may import env.ts. env.ts imports this module statically, so an import back would
+// close a cycle — which is what the app name in the subject below used to do, before it started
+// coming from getEmailEnvironmentVars with the rest of the email's configuration.
 import { getDeviceType } from '~stzUtils/lib/getDeviceType';
 
 // Throttle constants — tune by editing.
@@ -88,60 +90,23 @@ export function resetThrottleState(): void {
 }
 
 /**
- * Which deployment sent this alert. Sourced from BETTER_AUTH_URL — the one env var we
- * already keep per-site precisely because determining the origin at run time was fraught.
- * The production host is app-specific, so it's named via the optional PRODUCTION_HOST env
- * (e.g. PRODUCTION_HOST=chesshurdles.com); when the deployment host matches, the label is
- * 'prod'. localhost/127 always reads 'dev'. Anything else — stage, a preview, or prod with
- * PRODUCTION_HOST unset — shows its raw host, which is already unambiguous and needs no
- * mapping to maintain. Returns the short label plus the full URL so the email can show both
- * (label in the subject, URL in the body).
+ * Hand the event to the mailer. Two deliberate things here, both about keeping nodemailer out of
+ * the browser.
+ *
+ * The import is dynamic because this module is loaded in the client: a top-level import of
+ * anything that reaches the SMTP primitive drags nodemailer into the app shell, which is what
+ * broke every page once.
+ *
+ * The import.meta.env.SSR guard is what stops a chunk being emitted for it at all. Vite replaces
+ * that expression with a literal per build, so the whole block is eliminated from the client and
+ * nodemailer is never written to the public directory. An `isServer()` check reads the same but
+ * is a runtime call, so the bundler still has to emit the import behind it.
  */
-export function deploymentSource(): { label: string; url: string } {
-  const url = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
-  let host: string;
-  try { host = new URL(url).host; } catch { host = url; }
-  const prodHost = process.env.PRODUCTION_HOST;
-  const label =
-    (prodHost && (host === prodHost || host === `www.${prodHost}`)) ? 'prod'
-    : host.startsWith('localhost') || host.startsWith('127.') ? 'dev'
-    : host; // stage / preview / unconfigured prod: the raw host is the clearest label there is
-  return { label, url };
-}
-
-/** Send a plain-text notify email. Server-only, like sendEmail itself. */
 async function sendNotifyEmail(event: LogEvent): Promise<void> {
-  // Two deliberate things here, both about keeping nodemailer out of the browser.
-  //
-  // The import is dynamic because this module is loaded in the client: a top-level import of the
-  // SMTP primitive drags nodemailer into the app shell, which is what broke every page once.
-  //
-  // The import.meta.env.SSR guard is what stops a chunk being emitted for it at all. Vite replaces
-  // that expression with a literal per build, so the whole block is eliminated from the client and
-  // nodemailer is never written to the public directory. An `isServer()` check reads the same but
-  // is a runtime call, so the bundler still has to emit the import behind it.
   if (!import.meta.env.SSR) return;
 
-  const { sendEmail, getEmailEnvironmentVars } = await import('~stzUser/lib/mail.server');
-  const env = getEmailEnvironmentVars();
-  const source = deploymentSource();
-  await sendEmail({
-      from: env.from,
-      to: env.supportEmailAddress || env.from,
-      // Deployment label rides in the subject so the source is clear at a glance in the inbox.
-      subject: `[${clientEnv.APP_NAME} · ${source.label}] ${event.message}`,
-      text: [
-        // Device leads (the question we actually ask); the raw UA is demoted to a forensic line at
-        // the bottom — it's the only carrier of browser+version, but no longer the device answer.
-        `Message: ${event.message}`,
-        event.device ? `Device: ${event.device}` : null,
-        `Level: ${event.level}`,
-        `Source: ${source.label} (${source.url})`,
-        event.context ? `Context: ${JSON.stringify(event.context)}` : null,
-        event.userAgent ? `User-Agent: ${event.userAgent}` : null,
-        `Timestamp: ${new Date().toISOString()}`,
-      ].filter(Boolean).join('\n'),
-    });
+  const { sendLogNotificationEmail } = await import('~stzUser/lib/notifyEmail.server');
+  await sendLogNotificationEmail(event);
 }
 
 /**

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer"
 import type { SendMailOptions } from "nodemailer"
-import { isServer, getEnvVar } from './env'
+import { isServer, getEnvVar, getAppName } from './env'
 
 /**
  * The SMTP primitive, and everything that reaches nodemailer.
@@ -64,5 +64,8 @@ export function getEmailEnvironmentVars() {
     from: getEnvVar('SMTP_FROM_ADDRESS'),
     companyName: getEnvVar('COMPANY_NAME'),
     supportEmailAddress: getEnvVar('SUPPORT_EMAIL_ADDRESS'),
+    // The app's name, for an alert subject. Unlike the three above it has a default, so it comes
+    // through getAppName rather than getEnvVar, which warns about anything unset.
+    appName: getAppName(),
   }
 }

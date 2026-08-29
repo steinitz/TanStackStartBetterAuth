@@ -1,3 +1,13 @@
+// Importing this module from client code is a build error, not a silent leak.
+// Earned 2026-08-29: a server-only helper sat as a bare export in a module the
+// browser downloads for its server-function stubs. A handler body is stripped
+// from that download and a plain `export function` is not, so the helper's body
+// travelled, bringing this file with it. Every page then died on 'DATABASE_URL
+// is not set' — a message that names the environment and hides the real fault,
+// which is server code running in a browser. This marker makes the plugin name
+// the importing module instead.
+import '@tanstack/react-start/server-only'
+
 import { createClient } from "@libsql/client";
 import { Kysely } from "kysely";
 import { LibsqlDialect } from "kysely-libsql";

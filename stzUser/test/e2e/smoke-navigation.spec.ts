@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { homeLinkName } from '~stzUser/constants';
 
 test.describe('Smoke Test Navigation', () => {
   test('should navigate to home page and verify basic elements', async ({ page }) => {
@@ -14,8 +15,11 @@ test.describe('Smoke Test Navigation', () => {
     // Verify main content area is present
     await expect(page.locator('main').first()).toBeVisible();
 
-    // Verify header section (logo) is present
-    await expect(page.locator('img[alt="logo"]')).toBeVisible();
+    // Verify the header is present, by the home link's own name rather than by the image
+    // inside it. The image is decorative, and a downstream app may take it away for a moment
+    // — ChessHurdles swaps it for a spinner while the home page loads — so the link is the
+    // part that is always there.
+    await expect(page.getByRole('link', { name: homeLinkName })).toBeVisible();
 
     // Verify navigation links are present
     await expect(page.locator('a[href="/contact"]')).toBeVisible();
@@ -34,14 +38,13 @@ test.describe('Smoke Test Navigation', () => {
     // Verify main content area is present
     await expect(page.locator('main').first()).toBeVisible();
 
-    // Verify header section (logo) is present
-    await expect(page.locator('img[alt="logo"]')).toBeVisible();
+    // Verify the header is present, by the home link's own name. This used to be asserted
+    // twice in this test — once through the image and once through the link — which were the
+    // same claim made two ways.
+    await expect(page.getByRole('link', { name: homeLinkName })).toBeVisible();
 
     // Verify navigation links are present
     await expect(page.locator('a[href="/contact"]')).toBeVisible();
-
-    // Verify navigation still works
-    await expect(page.getByRole('link', { name: 'logo' })).toBeVisible();
   });
 
   test('should navigate between pages successfully', async ({ page }) => {
@@ -53,8 +56,8 @@ test.describe('Smoke Test Navigation', () => {
     await page.getByRole('link', { name: 'Contact' }).click();
     await expect(page).toHaveURL('/contact');
 
-    // Navigate back to home page via logo link
-    await page.getByRole('link', { name: 'logo' }).click();
+    // Navigate back to home page via the logo link
+    await page.getByRole('link', { name: homeLinkName }).click();
     await expect(page).toHaveURL('/');
   });
 });

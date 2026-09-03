@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { UserBlock, navLinkStyle } from "~stzUser/components/Other/userBlock";
 import { Spacer } from "~stzUtils/components/Spacer";
 import { activeLinkStyle } from "~stzUtils/components/styles";
+import { homeLinkName } from "~stzUser/constants";
 
 export const Header = () => {
 
@@ -22,6 +23,9 @@ export const Header = () => {
           marginRight: '21px',
         }}
         to="/"
+        // The name is on the link, and the image is left decorative, so the link is announced
+        // once and by its destination. See homeLinkName for why it is not "logo".
+        aria-label={homeLinkName}
       >
         <img
           style={{
@@ -29,7 +33,7 @@ export const Header = () => {
             height: '55px',
           }}
           src="/logo.png"
-          alt="logo"
+          alt=""
         />
       </Link>
       <Spacer orientation={'horizontal'} space={1} />

@@ -1,4 +1,17 @@
-/* loading spinner class, for div */
+/* The app's one loading spinner.
+
+   `.spinner` on its own is the block form the auth pages centre in a form. Add
+   `.spinner-inline` to stand it beside a label, at the size of the surrounding text.
+
+   Every dimension derives from --spinner-size so a caller changes one number and the
+   circle stays a circle. The 39px default reproduces the original box exactly: a 31px
+   content height plus an 8px cap is 39px tall against 39px wide, which is what the old
+   "height + border top" note was doing by hand. */
+
+:root {
+  /* How long a wait must last before it is worth showing anything. */
+  --busy-delay: 150ms;
+}
 
 @keyframes spin {
   0% {
@@ -11,22 +24,59 @@
 }
 
 .spinner {
+  --spinner-size: 39px;
+  /* Read by `.spinner-inline` too, which has to restate the whole `animation` shorthand and
+     would otherwise carry a second copy of this number for someone to forget. */
+  --spin-duration: 8s;
   filter: brightness(200%);
-  display: flex;
-  justify-content: flex-end;
+  /* `block` rather than the element's own default, so the class works on a span as well as
+     a div. It was `flex` with a `justify-content` that had nothing to align — the element
+     has no children — and both were dropped 2026-09-05 after measuring the box identical. */
+  display: block;
   margin: 0 auto;
   background-color: var(--color-accent);
-  /*border: 10px solid var(--color-text-secondary);*/
-
-  border-top: 8px solid var(--color-link);
-  /*border: 10px solid var(--color-text-secondary);*/
-  /*border-top: 10px solid var(--color-link);*/
+  border-top: calc(var(--spinner-size) * 8 / 39) solid var(--color-link);
   border-radius: 50%;
-  height: 31px;
-  width: 39px;
-  /* height + border top */
-  animation: spin 1s linear infinite;
-  animation-duration: 8s;
+  height: calc(var(--spinner-size) * 31 / 39);
+  width: var(--spinner-size);
+  /* The slow revolution is deliberate, not a leftover. Written as one declaration because
+     the old pair — a `1s` shorthand silently overridden by `animation-duration: 8s` on the
+     next line — reads as a bug, and has been taken for one. */
+  animation: spin var(--spin-duration) linear infinite;
+}
+
+/* The same drawing, in the flow of a line rather than centred on its own. Must follow
+   `.spinner`: the two have equal specificity, so source order is what lets it win.
+
+   It also fades in after a delay, and every busy control gets that by rendering
+   `BusySpinner` — no call site opts in. Most waits are over well inside the delay, so the
+   ordinary case is that nothing appears at all rather than a spinner strobing for 40ms.
+
+   The delay has to be CSS rather than a timer: a JS timer cannot fire while the main thread
+   is blocked, which is exactly when a busy indicator is needed. An opacity animation runs on
+   the compositor and survives it. It is an ANIMATION rather than a transition because the
+   spinner is added to the page at the click, and a transition needs a previous value to move
+   away from — a brand new element has none.
+
+   The spin is restated because `animation` is a shorthand and replaces the whole list, but
+   the duration itself is not — it comes from `--spin-duration` on `.spinner`, so the two
+   cannot drift apart. */
+.spinner-inline {
+  --spinner-size: 1.15em;
+  display: inline-block;
+  margin: 0;
+  vertical-align: -0.15em;
+  animation: spin var(--spin-duration) linear infinite, busy-fade-in 120ms var(--busy-delay) both;
+}
+
+@keyframes busy-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Tooltip container */

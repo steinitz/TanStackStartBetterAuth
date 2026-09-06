@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
 import React from 'react'
-import { UserBlock } from '../../components/Other/userBlock'
+import { UserBlock, signOutTimeoutMs } from '../../components/Other/userBlock'
 
 const { navigate } = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -35,6 +35,21 @@ describe('UserBlock & WalletWidget', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
+
+  // The signed-in state both sign-out tests start from.
+  const renderSignedIn = () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { id: 'user-1', email: 'test@example.com' } }
+    } as any)
+    vi.mocked(useWallet).mockReturnValue({ wallet: null } as any)
+    return render(<UserBlock />)
+  }
+
+  // The account trigger — the control that stays on screen. `Disclosure` renders it inside
+  // <summary>, and that is the whole point of these two tests: the Sign Out row is inside a
+  // panel that closes on click, so a spinner there would replace something already gone.
+  const triggerSpinner = (container: HTMLElement) =>
+    container.querySelector('summary [data-busy-spinner]')
 
   it('should render user email and wallet status when logged in', () => {
     vi.mocked(useSession).mockReturnValue({
@@ -79,7 +94,7 @@ describe('UserBlock & WalletWidget', () => {
     expect(clickEvent.defaultPrevented).toBe(true)
     expect(signOut).toHaveBeenCalledWith({
       fetchOptions: {
-        timeout: 10_000,
+        timeout: signOutTimeoutMs,
       },
     })
     expect(navigate).not.toHaveBeenCalled()
@@ -129,5 +144,45 @@ describe('UserBlock & WalletWidget', () => {
       )
     })
     expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('shows a spinner on the account trigger for the whole sign-out', async () => {
+    let resolveSignOut!: (result: unknown) => void
+    vi.mocked(signOut).mockReturnValue(new Promise((resolve) => {
+      resolveSignOut = resolve
+    }) as any)
+
+    const { container, getByText } = renderSignedIn()
+
+    expect(triggerSpinner(container)).toBeNull()
+
+    getByText('Sign Out').click()
+
+    await waitFor(() => {
+      expect(triggerSpinner(container)).not.toBeNull()
+    })
+
+    resolveSignOut({ data: { success: true }, error: null })
+
+    await waitFor(() => {
+      expect(navigate).toHaveBeenCalledWith({ to: '/auth/signin' })
+    })
+    expect(triggerSpinner(container)).toBeNull()
+  })
+
+  it('starts one sign-out however many times the link is clicked', async () => {
+    // Three clicks in one tick, which is the case a useState flag cannot catch: each handler
+    // closes over the value from its own render, so the second and third would still see
+    // false. If this passes with the guard removed, it is not testing what it says.
+    vi.mocked(signOut).mockReturnValue(new Promise(() => {}) as any)
+
+    const { getByText } = renderSignedIn()
+    const signOutLink = getByText('Sign Out')
+
+    signOutLink.click()
+    signOutLink.click()
+    signOutLink.click()
+
+    expect(signOut).toHaveBeenCalledTimes(1)
   })
 })

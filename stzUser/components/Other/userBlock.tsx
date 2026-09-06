@@ -4,6 +4,8 @@ import { routeStrings } from "~/constants";
 import { activeLinkStyle } from "~stzUtils/components/styles";
 import { WalletWidget } from './WalletWidget'
 import { Disclosure } from '~stzUtils/components/Disclosure'
+import { BusySpinner } from '~stzUtils/components/BusySpinner'
+import { useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 
 
@@ -27,7 +29,7 @@ export const navLinkStyle = {
   color: 'var(--color-link)',
 }
 
-const signOutTimeoutMs = 10_000
+export const signOutTimeoutMs = 10_000
 const signOutFailureMessage = 'Sign-out could not be confirmed. Please try again.'
 
 /**
@@ -67,10 +69,22 @@ export function UserBlock() {
   const navigate = useNavigate()
   const { data: session, isPending } = useSession()
 
+  // Two pieces for one idea, and the ref is the load-bearing half. React hands each click
+  // handler the state from its own render, so a second click in the same tick still sees
+  // `isSigningOut` as false and fires a second request — the unit test dispatches three
+  // clicks and watches exactly that. The ref is read and written synchronously, so it is
+  // the guard; the state exists only to redraw.
+  const signOutInFlight = useRef(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
+
   const handleSignOut = async (event: MouseEvent<HTMLAnchorElement>) => {
     // This remains a Link to preserve the long-settled shared-header layout, but
     // its navigation must not outrun the request that makes that destination true.
     event.preventDefault()
+
+    if (signOutInFlight.current) return
+    signOutInFlight.current = true
+    setIsSigningOut(true)
 
     try {
       const { error } = await signOut({
@@ -91,6 +105,12 @@ export function UserBlock() {
       // for an unexpected rejection, including an aborted or failed network request.
       console.error('Sign-out failed:', error)
       alert(signOutFailureMessage)
+    } finally {
+      // Cleared on every path, success included. On success this component is about to be
+      // replaced by the signed-out header anyway; on either failure the user is still here
+      // and must be able to try again.
+      signOutInFlight.current = false
+      setIsSigningOut(false)
     }
   }
 
@@ -219,15 +239,26 @@ export function UserBlock() {
     <div style={containerStyle}>
       <Disclosure
         summary={
-          <i
-            className="fa-solid fa-user"
+          // The box belongs to the wrapper, not to what it holds, so the icon and the
+          // spinner cannot disagree about the width and the header cannot shift as one
+          // replaces the other.
+          //
+          // The spinner goes HERE rather than on the Sign Out row, and that is the whole
+          // decision in this control. The panel carries `closeOnPanelClick`, so the row is
+          // gone the instant it is pressed; a spinner on it would replace something the
+          // user can no longer see. This trigger is where their eye returns.
+          <span
             style={{
               color: 'var(--color-link)',
               width: userIconSize,
               display: 'inline-flex',
               justifyContent: 'center',
             }}
-          />
+          >
+            {isSigningOut
+              ? <BusySpinner size={userIconSize} label="Signing out" />
+              : <i className="fa-solid fa-user" />}
+          </span>
         }
         title="Account"
         // No Close: picking something or clicking away already dismisses this, and a

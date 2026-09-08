@@ -1,11 +1,12 @@
 import {createFileRoute, useRouter} from '@tanstack/react-router'
 import {PasswordInput} from "~stzUtils/components/InputFields";
-import {SyntheticEvent, useState} from "react";
+import {SyntheticEvent, useRef, useState} from "react";
 import {sharedFormSubmission} from "~stzUser/lib/form";
 import * as v from "valibot";
 import {resetPassword} from '~stzUser/lib/auth-client';
 import { routeStrings } from '~/constants';
 import { Spacer } from '~stzUtils/components/Spacer';
+import { BusyButton } from '~stzUtils/components/BusyButton';
 import { passwordValidation } from '~stzUser/lib/password-validation';
 
 // UI strings for component and testing
@@ -25,7 +26,9 @@ export const setNewPasswordSelectors = {
   passwordInput: 'input[name="password"]',
   confirmPasswordInput: 'input[name="confirmPassword"]',
   setPasswordButton: 'button[type="submit"]',
-  spinnerContainer: '.spinner',
+  // The busy state now lives on the submit button itself; BusySpinner marks it with this
+  // attribute rather than a class, so a spec asserts on the app instead of the stylesheet.
+  busySpinner: '[data-busy-spinner]',
   passwordUpdatedH1Text: setNewPasswordStrings.passwordUpdatedTitle,
 };
 
@@ -49,6 +52,12 @@ export const SetNewPassword = () => {
     }
   }
 
+  // The guard is the ref; `isSettingPassword` only draws. A `disabled` set from state takes
+  // a render to arrive and a second submit lands before it does, which for this control
+  // would mean two password writes against one token.
+  const settingPasswordRef = useRef(false)
+  const [isSettingPassword, setIsSettingPassword] = useState(false)
+
   const handleSetNewPassword = async (
     event: SyntheticEvent<HTMLFormElement>
   ) =>{
@@ -57,13 +66,24 @@ export const SetNewPassword = () => {
 
     const isValid = validateFormFields(fields as PasswordResetData)
 
-    if (isValid) {
+    // Validation failure is not a wait, so the spinner stays out for it.
+    if (!isValid) return
+    if (settingPasswordRef.current) return
+    settingPasswordRef.current = true
+    setIsSettingPassword(true)
+
+    try {
       const token = new URLSearchParams(window.location.search).get('token') || undefined
       await resetPassword({
         newPassword,
         token
       })
       router.navigate({to: routeStrings.signin})
+    } finally {
+      // Released on both paths. The success path navigates away, so it is invisible there;
+      // a rejected resetPassword leaves the user on this form needing the button back.
+      settingPasswordRef.current = false
+      setIsSettingPassword(false)
     }
   }
 
@@ -79,7 +99,13 @@ export const SetNewPassword = () => {
           />
           <Spacer />
           <div style={{textAlign: "right"}}>
-            <button type="submit">{setNewPasswordStrings.setPasswordButton}</button>
+            <BusyButton
+              type="submit"
+              busy={isSettingPassword}
+              busyLabel="Setting your password"
+            >
+              {setNewPasswordStrings.setPasswordButton}
+            </BusyButton>
           </div>
         </form>
       </section>

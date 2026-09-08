@@ -3,6 +3,7 @@ import { type SyntheticEvent, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { signUp, sendVerificationEmail } from '~stzUser/lib/auth-client'
 import { FormFieldError } from '~stzUtils/components/FormFieldError';
+import { BusyButton } from '~stzUtils/components/BusyButton';
 import { FullNameInput, PasswordInput } from '~stzUtils/components/InputFields';
 import { fieldsFromFormData } from "~stzUser/lib/form";
 import { Spacer } from "~stzUtils/components/Spacer";
@@ -145,7 +146,13 @@ export const SignUp = () => {
     }
   }
 
-  const handleSignUp = (event: SyntheticEvent<HTMLFormElement>) => {
+  // The guard is the ref; `isSigningUp` only draws. The button also carries the bot check's
+  // own `disabled`, and the two compose rather than replace each other — a `disabled` from
+  // state would not guard this anyway, since it takes a render to arrive.
+  const signUpInFlight = useRef(false)
+  const [isSigningUp, setIsSigningUp] = useState(false)
+
+  const handleSignUp = async (event: SyntheticEvent<HTMLFormElement>) => {
     // prevent default form submission behavior
     event.preventDefault();
     event.stopPropagation();
@@ -157,7 +164,24 @@ export const SignUp = () => {
     const isValid = validateFormFields(fields as SignupData)
     console.log('handleSignUp', { isValid })
 
-    if (isValid) doSignUp(fields as SignupData)
+    // Validation failure is not a wait, so the spinner must not light for the synchronous
+    // trip through valibot and go out again in the same frame.
+    if (!isValid) return
+    if (signUpInFlight.current) return
+    signUpInFlight.current = true
+    setIsSigningUp(true)
+
+    // Now awaited, where it used to be fired and forgotten. Nothing could indicate a wait
+    // the handler did not stay for.
+    try {
+      await doSignUp(fields as SignupData)
+    } finally {
+      // On success doSignUp sets `success`, which swaps this whole form for the Account
+      // Created panel, so the release is invisible. On a failure the form is still here and
+      // the user needs the button back.
+      signUpInFlight.current = false
+      setIsSigningUp(false)
+    }
   }
 
   return (
@@ -188,13 +212,15 @@ export const SignUp = () => {
             ref={turnstileRef}
             style={{ marginBottom: '1rem' }}
           />
-          <button
+          <BusyButton
             type="submit"
+            busy={isSigningUp}
+            busyLabel="Creating your account"
             disabled={!turnstileToken}
             title={!turnstileToken ? "Please complete the bot check" : ""}
           >
             Sign Up
-          </button>
+          </BusyButton>
         </form>
         :
         <form>

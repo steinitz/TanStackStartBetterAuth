@@ -1,9 +1,10 @@
 import * as v from 'valibot'
-import { type SyntheticEvent, useState } from 'react'
+import { type SyntheticEvent, useRef, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { signIn, sendVerificationEmail } from '~stzUser/lib/auth-client'
 import { PasswordInput } from "~stzUtils/components/InputFields";
 import { FormFieldError } from "~stzUtils/components/FormFieldError";
+import { BusyButton } from "~stzUtils/components/BusyButton";
 import { niceValidationIssues, sharedFormSubmission } from "~stzUser/lib/form";
 import { requiredPasswordValidation } from '~stzUser/lib/password-validation';
 
@@ -93,6 +94,12 @@ export const SignIn = () => {
     console.log({ data, error })
   }
 
+  // The guard is the ref; `isSigningIn` only draws. A `disabled` set from state takes a
+  // render to arrive, and a second submit lands before it does — same hole found three
+  // times already in this codebase, most recently in the sign-out this control copies.
+  const signInInFlight = useRef(false)
+  const [isSigningIn, setIsSigningIn] = useState(false)
+
   const handleSignIn = async (event: SyntheticEvent<HTMLFormElement>) => {
     const formFields = sharedFormSubmission(event);
     const fields: SignInData = {
@@ -101,8 +108,21 @@ export const SignIn = () => {
     };
     const isValid = validateFormFields(fields)
 
-    if (isValid) {
+    // Validation failure is not a wait. Claiming before it would light the spinner for the
+    // synchronous round trip through valibot and drop it again in the same frame.
+    if (!isValid) return
+    if (signInInFlight.current) return
+    signInInFlight.current = true
+    setIsSigningIn(true)
+
+    try {
       await doSignIn(fields)
+    } finally {
+      // Released on every path. A successful sign-in sets window.location.href, so this
+      // component is on its way out and the release is harmless; every failure leaves the
+      // user here, looking at the form, needing to press it again.
+      signInInFlight.current = false
+      setIsSigningIn(false)
     }
   }
 
@@ -126,7 +146,9 @@ export const SignIn = () => {
           <p style={{ maxWidth: '180px', lineHeight: 1.2, color: 'var(--color-error)' }}>
             {/*loginError ?? */' '}
           </p>
-          <button type="submit">Sign In</button>
+          <BusyButton type="submit" busy={isSigningIn} busyLabel="Signing in">
+            Sign In
+          </BusyButton>
         </div>
         <details>
           <summary>Can't sign in?</summary>

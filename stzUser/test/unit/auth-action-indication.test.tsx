@@ -121,7 +121,10 @@ describe('auth actions say they are happening', () => {
     })
 
     it('gives the button back when sign-in fails', async () => {
-      vi.mocked(signIn.email).mockResolvedValue({ data: null, error: null } as any)
+      // The error, not a bare resolve. Better Auth reports a bad password by resolving with
+      // an error rather than throwing, and an earlier version of this test passed `null`
+      // here — which is the success shape, so it asserted the success path by accident.
+      vi.mocked(signIn.email).mockResolvedValue({ data: null, error: { message: 'nope' } } as any)
       const { container } = render(<SignIn />)
 
       fill(container, validCredentials)
@@ -129,6 +132,23 @@ describe('auth actions say they are happening', () => {
 
       await waitFor(() => expect(signIn.email).toHaveBeenCalledTimes(1))
       await waitFor(() => expect(spinnerIn(container)).toBeNull())
+    })
+
+    it('keeps the spinner lit after a successful sign-in, because the page is still coming', async () => {
+      // doSignIn sets window.location.href, which starts a navigation and returns. Putting
+      // the label back here covers the longest wait on this form with the exact silence the
+      // button exists to remove; the arriving document is what takes the spinner away.
+      vi.mocked(signIn.email).mockResolvedValue({ data: { user: {} }, error: null } as any)
+      const { container } = render(<SignIn />)
+
+      fill(container, validCredentials)
+      submit(container)
+
+      await waitFor(() => expect(spinnerIn(container)).not.toBeNull())
+      await waitFor(() => expect(signIn.email).toHaveBeenCalledTimes(1))
+      // A macrotask past the resolve, which is long past where the old release ran.
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(spinnerIn(container)).not.toBeNull()
     })
   })
 

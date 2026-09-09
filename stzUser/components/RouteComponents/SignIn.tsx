@@ -92,6 +92,11 @@ export const SignIn = () => {
       }
     )
     console.log({ data, error })
+    // Whether she got in. The caller cannot find this out any other way: signIn.email
+    // resolves rather than throwing on a bad password, so an awaited call looks identical
+    // on both paths. What the caller does with it is the caller's business — this function
+    // signs in and knows nothing about any button.
+    return !error
   }
 
   // The guard is the ref; `isSigningIn` only draws. A `disabled` set from state takes a
@@ -115,15 +120,24 @@ export const SignIn = () => {
     signInInFlight.current = true
     setIsSigningIn(true)
 
+    let signedIn = false
     try {
-      await doSignIn(fields)
-    } finally {
-      // Released on every path. A successful sign-in sets window.location.href, so this
-      // component is on its way out and the release is harmless; every failure leaves the
-      // user here, looking at the form, needing to press it again.
-      signInInFlight.current = false
-      setIsSigningIn(false)
+      signedIn = await doSignIn(fields)
+    } catch (error) {
+      // signIn.email resolves rather than throwing, so this is the unexpected case only.
+      // Left as a failure so the button comes back instead of spinning for good.
+      console.error('Sign-in threw:', error)
     }
+
+    // Kept lit on success, deliberately. doSignIn has set window.location.href, which starts
+    // a navigation and then returns, so the home page is still a round trip away. Releasing
+    // here would put the label back over exactly the wait this button exists to show. The
+    // new document takes the spinner with the rest of the old page.
+    if (signedIn) return
+
+    // Every failure leaves her here, looking at the form, needing to press it again.
+    signInInFlight.current = false
+    setIsSigningIn(false)
   }
 
   return (

@@ -97,6 +97,18 @@ export async function ensureAdditionalTables(): Promise<void> {
       // Ignore if exists
     }
 
+    // 4. Add 'timezone_offset' to the user table: her offset from UTC in milliseconds, as her
+    // browser last reported it. The daily grant belongs to her local day, and a charged call —
+    // often made during server rendering — has no browser to ask. Null until the first wallet read.
+    try {
+      await db.schema
+        .alterTable('user')
+        .addColumn('timezone_offset', 'integer')
+        .execute();
+    } catch (e) {
+      // Ignore if exists
+    }
+
     console.log('✅ Additional foundation tables are ready');
   } catch (error) {
     console.error('❌ Error ensuring additional tables:', error);

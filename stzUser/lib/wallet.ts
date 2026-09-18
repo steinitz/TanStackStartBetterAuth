@@ -75,6 +75,14 @@ export const BankTransferRequestSchema = v.strictObject({
   ),
 })
 
+// A real offset from UTC, in milliseconds. It is remembered, and every charge dates the daily grant
+// by it, so a value no clock could produce would break every charged call she makes.
+const MAX_TIMEZONE_OFFSET_MS = 14 * 3_600_000
+
+export const TimezoneOffsetSchema = v.optional(
+  v.pipe(v.number(), v.integer(), v.minValue(-MAX_TIMEZONE_OFFSET_MS), v.maxValue(MAX_TIMEZONE_OFFSET_MS)),
+)
+
 const CheckPurchaseSchema = v.object({
   paymentIntentId: v.pipe(v.string(), v.nonEmpty()),
 })
@@ -87,14 +95,14 @@ export type { WalletStatus, WalletTransaction }
 export const getWalletStatus = createServerFn({
   method: 'GET',
 })
-  .inputValidator((data?: number) => data) // Accepts optional timezone offset
+  .inputValidator((data?: number) => v.parse(TimezoneOffsetSchema, data))
   .handler(async ({ data: timezoneOffset }) => {
     const { requireSessionUser } = await import('./server-auth')
     const { getWalletStatusInternal } = await import('./wallet.logic')
     const user = await requireSessionUser()
 
-    // Pass offset to internal logic (defaults to 0 if undefined, but validator expects number)
-    // Client should send 0 if unknown.
+    // The browser always sends its offset, and it is remembered for the charge. Without one, the
+    // offset she last reported is used.
     return getWalletStatusInternal(user.id, timezoneOffset)
   })
 

@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect, beforeEach, beforeAll, inject } from 'vitest'
+import { describe, it, expect, beforeEach, beforeAll, afterEach, inject, vi } from 'vitest'
 import { db } from '~stzUser/lib/database'
 import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal } from '~stzUser/lib/wallet.logic'
 import { removeCreditsInternal } from '~stzUser/lib/admin-credit.logic'
@@ -70,6 +70,25 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
     const refused = await consumeResourceInternal(testUserId, 'test_resource', before)
     expect(refused).toMatchObject({ success: false, credits: before - 1 })
+  })
+
+  // Her day is her local day, and a charge must agree with the wallet read about which day it is.
+  // The charge used the UTC day, so a Sydney player on either side of 10am local got two grants.
+  describe('one daily grant per local day', () => {
+    afterEach(() => { vi.useRealTimers() })
+
+    it('a charge after UTC midnight does not grant again on the same local day', async () => {
+      const SYDNEY = 10 * 3600 * 1000
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-09-17T21:00:00Z')) // 7:00am, 18 Sep, in Sydney
+      await getWalletStatusInternal(testUserId, SYDNEY)
+      vi.setSystemTime(new Date('2026-09-18T00:30:00Z')) // 10:30am, same local day
+      await consumeResourceInternal(testUserId, 'test_resource', 1)
+
+      const grants = await db.selectFrom('transactions').select('id')
+        .where('user_id', '=', testUserId).where('type', '=', 'daily_grant').execute()
+      expect(grants).toHaveLength(1)
+    })
   })
 
   it('should consume from credits after grant is exhausted', async () => {

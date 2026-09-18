@@ -15,6 +15,7 @@ import {
   BankTransferRequestSchema,
   ConsumeResourceSchema,
   MAX_CREDITS_PURCHASE,
+  TimezoneOffsetSchema,
 } from '~stzUser/lib/wallet'
 import { requestBankTransferForUser } from '~stzUser/lib/wallet-bank-transfer.server'
 import { MAX_RESOURCE_CONSUMPTION } from '~stzUser/lib/wallet.logic'
@@ -23,6 +24,18 @@ describe('wallet server input validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
+
+  // The offset is remembered and every charge dates the daily grant by it, so it must be a real one.
+  it.each([36_000_000, -18_000_000, 0, undefined])('accepts timezone offset %s', (offset) => {
+    expect(v.safeParse(TimezoneOffsetSchema, offset).success).toBe(true)
+  })
+
+  it.each([NaN, Infinity, 1.5, 15 * 3_600_000, -15 * 3_600_000, '36000000'])(
+    'rejects timezone offset %s at the server boundary',
+    (offset) => {
+      expect(v.safeParse(TimezoneOffsetSchema, offset).success).toBe(false)
+    },
+  )
 
   it('defaults consumption to one credit and trims the resource type', () => {
     expect(v.parse(ConsumeResourceSchema, { resourceType: ' analysis ' })).toEqual({

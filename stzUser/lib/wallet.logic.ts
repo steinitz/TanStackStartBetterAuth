@@ -79,30 +79,43 @@ function assertResourceType(resourceType: string) {
 }
 
 /**
- * Logic: Fetches wallet status for a specific user.
- * This also triggers the daily grant if it hasn't been applied yet.
- * This also triggers the daily grant if it hasn't been applied yet for the user's LOCAL day.
+ * Logic: Fetches wallet status for a specific user, applying the daily grant for her LOCAL day if
+ * it hasn't been applied yet.
+ *
+ * `timezoneOffset` is her browser's, and is remembered so that a charge — which has no browser to
+ * ask — decides "today" the same way. Without one, the remembered offset is used.
  */
-export async function getWalletStatusInternal(userId: string, timezoneOffset = 0) {
+export async function getWalletStatusInternal(userId: string, timezoneOffset?: number) {
   // 1. Ensure daily allowance is applied (lazy grant) with time-zone awareness
-  await applyDailyGrant(userId, timezoneOffset)
+  await applyDailyGrant(userId, timezoneOffset ?? await readTimezoneOffset(userId))
 
   // 2. Simply fetch credits from user record
   const user = await db
     .selectFrom('user')
-    .select(['credits', 'welcome_claimed'])
+    .select(['credits', 'welcome_claimed', 'timezone_offset'])
     .where('id', '=', userId)
     .executeTakeFirst()
+
+  // Written only when it has changed, so an ordinary balance read stays a read.
+  if (timezoneOffset !== undefined && user && user.timezone_offset !== timezoneOffset) {
+    await db.updateTable('user').set({ timezone_offset: timezoneOffset }).where('id', '=', userId).execute()
+  }
 
   return {
     credits: Number(user?.credits || 0),
     welcomeClaimed: Boolean(user?.welcome_claimed),
   }
 }
-/**
- * Logic: Ensures a user receives their daily credit grant.
- * Wrapped in a transaction to prevent race conditions (double grants).
- */
+/** Her offset from UTC in ms, as her browser last reported it; 0 before the first report. */
+async function readTimezoneOffset(userId: string): Promise<number> {
+  const user = await db
+    .selectFrom('user')
+    .select('timezone_offset')
+    .where('id', '=', userId)
+    .executeTakeFirst()
+  return Number(user?.timezone_offset ?? 0)
+}
+
 /**
  * Logic: Ensures a user receives their daily credit grant.
  * Wrapped in a transaction to prevent race conditions (double grants).
@@ -155,9 +168,9 @@ export async function consumeResourceInternal(userId: string, resourceType: stri
   assertPositiveWholeAmount(amount, MAX_RESOURCE_CONSUMPTION, 'Consumption amount')
   assertResourceType(resourceType)
 
-  // Consumption applies today's grant by server time; the user's own offset arrives with the
-  // next balance read. Worst case, a grant waits until then.
-  await applyDailyGrant(userId, 0)
+  // Today by her local day, as the wallet read decides it. The UTC day disagreed with it across
+  // UTC midnight, and each disagreement was a second grant.
+  await applyDailyGrant(userId, await readTimezoneOffset(userId))
 
   // The guarded update is the whole check. Reading the balance first would cost a round trip and
   // still race, which is why the guard exists.

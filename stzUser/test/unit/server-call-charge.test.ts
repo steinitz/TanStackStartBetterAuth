@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The wallet's own behaviour is proven against a real database in wallet.integration.test.ts.
@@ -37,6 +38,14 @@ describe('server call charge', () => {
   it('frees exactly the listed files', () => {
     for (const file of FREE_SERVER_FN_FILES) expect(isFreeServerFnFile(file)).toBe(true)
     expect(isFreeServerFnFile('src/lib/server/games.ts')).toBe(false)
+  })
+
+  // The list matches paths exactly, so a renamed file would be charged without a word.
+  it('names only files that exist and define server functions', () => {
+    for (const file of FREE_SERVER_FN_FILES) {
+      expect(existsSync(file), file).toBe(true)
+      expect(readFileSync(file, 'utf8'), file).toContain('createServerFn(')
+    }
   })
 
   it('charges nothing for a free file, and does not look up the session', async () => {

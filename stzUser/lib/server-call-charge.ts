@@ -26,7 +26,9 @@ export const FREE_SERVER_FN_FILES: readonly string[] = [
   // An admin at zero could not add credits, her own included. The admin check also runs on nearly
   // every signed-in page.
   'stzUser/lib/admin.ts',
-  // Managing her account, including deleting it.
+  // The admin's User Management screen, free for the same reason as admin.ts. Her own account —
+  // profile, password, deleting it — goes through Better Auth's API routes, which are not server
+  // functions, so this middleware never sees them.
   'stzUser/lib/users-client.ts',
   // The contact form, so someone out of credits can still reach Support.
   'stzUser/lib/mail-utilities.ts',

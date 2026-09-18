@@ -145,57 +145,59 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
 
 /**
  * Logic: Consumes a resource (variable credits) for a specific user.
+ *
+ * Returns the balance either way — after the deduction, or as it stands on refusal — so a caller
+ * can show it without asking again. Every server call is charged through here, so its round trips
+ * are paid on every call.
  */
 export async function consumeResourceInternal(userId: string, resourceType: string, amount: number = 1) {
   // Validate before applyDailyGrant: rejected calls must not mint credits or touch the ledger.
   assertPositiveWholeAmount(amount, MAX_RESOURCE_CONSUMPTION, 'Consumption amount')
   assertResourceType(resourceType)
 
-  // 1. Ensure daily allowance is applied (assume 0 offset for consumption side-effects unless we want to thread it through)
-  // For safety, let's just default to server time (offset 0) for consumption triggers, 
-  // or we could require it. For now, default 0 is safe (worst case they miss a grant until next load).
+  // Consumption applies today's grant by server time; the user's own offset arrives with the
+  // next balance read. Worst case, a grant waits until then.
   await applyDailyGrant(userId, 0)
 
-  // 2. Fetch current balance
-  const status = await getWalletStatusInternal(userId)
+  // The guarded update is the whole check. Reading the balance first would cost a round trip and
+  // still race, which is why the guard exists.
+  const creditsAfter = await db.transaction().execute(async (trx) => {
+    const deducted = await trx
+      .updateTable('user')
+      .set((eb) => ({
+        credits: eb('credits', '-', amount),
+      }))
+      .where('id', '=', userId)
+      .where('credits', '>=', amount) // Hard safeguard against negative balance
+      .returning('credits')
+      .executeTakeFirst()
 
-  if (status.credits >= amount) {
-    // 3. Consume credits
-    const updateResult = await db.transaction().execute(async (trx) => {
-      // Update user balance ONLY if they still have enough credits
-      const res = await trx
-        .updateTable('user')
-        .set((eb) => ({
-          credits: eb('credits', '-', amount),
-        }))
-        .where('id', '=', userId)
-        .where('credits', '>=', amount) // Hard safeguard against negative balance
-        .executeTakeFirst()
+    if (!deducted) return null
 
-      // If update was successful, record the ledger entry
-      if (Number(res.numUpdatedRows) > 0) {
-        await trx
-          .insertInto('transactions')
-          .values({
-            id: crypto.randomUUID(),
-            user_id: userId,
-            amount: -amount,
-            type: 'consumption',
-            description: `Resource consumption: ${resourceType} (${amount} credits)`,
-            created_at: new Date().toISOString(),
-          })
-          .execute()
-        return true
-      }
-      return false
-    })
+    await trx
+      .insertInto('transactions')
+      .values({
+        id: crypto.randomUUID(),
+        user_id: userId,
+        amount: -amount,
+        type: 'consumption',
+        description: `Resource consumption: ${resourceType} (${amount} credits)`,
+        created_at: new Date().toISOString(),
+      })
+      .execute()
+    return Number(deducted.credits)
+  })
 
-    if (updateResult) {
-      return { success: true, message: `Consumed ${amount} credits` }
-    }
+  if (creditsAfter !== null) {
+    return { success: true, message: `Consumed ${amount} credits`, credits: creditsAfter }
   }
 
-  return { success: false, message: 'Insufficient credits' }
+  const user = await db
+    .selectFrom('user')
+    .select('credits')
+    .where('id', '=', userId)
+    .executeTakeFirst()
+  return { success: false, message: 'Insufficient credits', credits: Number(user?.credits || 0) }
 }
 
 /**

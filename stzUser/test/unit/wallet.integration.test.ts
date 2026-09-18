@@ -62,6 +62,16 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     expect(res4.message).toContain('Insufficient')
   })
 
+  it('returns the balance after a deduction, and as it stands on a refusal', async () => {
+    const { credits: before } = await getWalletStatusInternal(testUserId)
+
+    const spent = await consumeResourceInternal(testUserId, 'test_resource', 1)
+    expect(spent).toMatchObject({ success: true, credits: before - 1 })
+
+    const refused = await consumeResourceInternal(testUserId, 'test_resource', before)
+    expect(refused).toMatchObject({ success: false, credits: before - 1 })
+  })
+
   it('should consume from credits after grant is exhausted', async () => {
     // 1. Exhaust grant (100)
     for (let i = 0; i < 100; i++) {

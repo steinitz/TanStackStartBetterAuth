@@ -24,9 +24,9 @@ test.describe('Wallet Visibility and Reactivity', () => {
       timeout: 15_000,
     })
 
-    await expect(walletBadge(page)).toContainText(
-      `${e2eEnv.DAILY_GRANT_CREDITS} Credits`,
-    )
+    // Every server call a signed-in user makes costs a credit, so the home page may already have
+    // spent some. The balance is read at the admin lookup below, where every call is free.
+    await expect(walletBadge(page)).toContainText(/\d+ Credits/)
 
     // A document navigation closes the menu; every read after this one re-opens.
     await page.goto('/admin')
@@ -37,25 +37,27 @@ test.describe('Wallet Visibility and Reactivity', () => {
     await page.getByLabel('Please enter a user ID').fill(userId)
     await page.getByRole('button', { name: 'Look up user' }).click()
     await expect(page.getByText(`User ID: ${userId}`)).toBeVisible()
-    await expect(page.getByText(/Credit balance:/)).toContainText(
-      `${e2eEnv.DAILY_GRANT_CREDITS} credits`,
+    const before = Number(
+      (await page.getByText(/Credit balance:/).innerText()).match(/(\d+) credits/)?.[1],
     )
+    expect(before).toBeGreaterThan(0)
+    await expectWalletCredits(page, `${before} Credits`)
 
     await page.locator('#admin-add-amount').fill('10')
     await page.locator('#admin-add-description').fill('E2E add adjustment')
     await page.getByRole('button', { name: 'Add credits' }).click()
     await expect(page.getByText(/Credits added:/)).toContainText(
-      `${e2eEnv.DAILY_GRANT_CREDITS} → ${e2eEnv.DAILY_GRANT_CREDITS + 10}`,
+      `${before} → ${before + 10}`,
     )
-    await expectWalletCredits(page, `${e2eEnv.DAILY_GRANT_CREDITS + 10} Credits`)
+    await expectWalletCredits(page, `${before + 10} Credits`)
 
     await page.locator('#admin-remove-amount').fill('1')
     await page.locator('#admin-remove-description').fill('E2E remove adjustment')
     await page.getByRole('button', { name: 'Remove credits' }).click()
     await expect(page.getByText(/Credits removed:/)).toContainText(
-      `${e2eEnv.DAILY_GRANT_CREDITS + 10} → ${e2eEnv.DAILY_GRANT_CREDITS + 9}`,
+      `${before + 10} → ${before + 9}`,
     )
-    await expectWalletCredits(page, `${e2eEnv.DAILY_GRANT_CREDITS + 9} Credits`)
+    await expectWalletCredits(page, `${before + 9} Credits`)
 
     await expect(page.getByText(/Purge all/)).toContainText(
       '0 Stripe purchase rows',
@@ -68,7 +70,8 @@ test.describe('Wallet Visibility and Reactivity', () => {
     await expectWalletCredits(page, '0 Credits')
 
     // A later ordinary wallet read legitimately creates a fresh daily grant because purge
-    // removed today's evidence. The old adjustment rows stay gone.
+    // removed today's evidence. The old adjustment rows stay gone. Exact, because the Credits
+    // page makes no charged call.
     await page.goto('/auth/credits')
     await expectWalletCredits(page, `${e2eEnv.DAILY_GRANT_CREDITS} Credits`)
     await expect(page.getByText('Daily credit grant')).toBeVisible()

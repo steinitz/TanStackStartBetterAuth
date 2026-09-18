@@ -4,8 +4,11 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { useSession } from './auth-client'
 import { getTransactions, getWalletStatus } from './wallet'
+import { WALLET_EVENTS, type AnnouncedBalance } from './wallet-client'
+import type { WalletStatus } from './wallet-contracts'
 
 const walletQueryDefaults = {
   retry: false,
@@ -109,6 +112,18 @@ export async function refreshWalletQueries(queryClient: QueryClient, userId: str
   })
 }
 
+/**
+ * Writes a balance a charged server call brought home into that user's wallet status, so the
+ * display keeps up without another call. The status queries differ only by timezone offset, so
+ * each of that user's is written.
+ */
+export function applyAnnouncedBalance(queryClient: QueryClient, { userId, credits }: AnnouncedBalance) {
+  queryClient.setQueriesData<WalletStatus>(
+    { queryKey: [...walletKeys.user(userId), 'status'] },
+    (status) => (status ? { ...status, credits } : status),
+  )
+}
+
 function createRefreshWallet(queryClient: QueryClient, userId: string | undefined) {
   return async () => {
     if (!userId) return
@@ -134,6 +149,13 @@ export function useWallet() {
   const queryClient = useQueryClient()
   const query = useQuery(walletStatusQueryOptions(userId, getBrowserTimezoneOffset()))
   const refreshWallet = createRefreshWallet(queryClient, userId)
+
+  useEffect(() => {
+    const onBalance = (event: Event) =>
+      applyAnnouncedBalance(queryClient, (event as CustomEvent<AnnouncedBalance>).detail)
+    window.addEventListener(WALLET_EVENTS.BALANCE, onBalance)
+    return () => window.removeEventListener(WALLET_EVENTS.BALANCE, onBalance)
+  }, [queryClient])
 
   return {
     ...query,

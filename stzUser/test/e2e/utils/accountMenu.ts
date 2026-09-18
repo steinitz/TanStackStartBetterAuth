@@ -61,6 +61,20 @@ export async function closeAccountMenu(page: Page): Promise<void> {
 }
 
 /**
+ * The balance as a number, for a spec that must read it rather than assume it: every server
+ * call a signed-in user makes costs a credit, so the pages on the way may already have spent
+ * some. Read it on a page whose own calls are free, or the reading races them.
+ */
+export async function readWalletCredits(page: Page): Promise<number> {
+  await openAccountMenu(page)
+  const text = await walletBadge(page).innerText()
+  await closeAccountMenu(page)
+  const credits = text.match(/(\d+)\s+Credits/)?.[1]
+  if (credits === undefined) throw new Error(`No balance in the wallet badge: "${text}"`)
+  return Number(credits)
+}
+
+/**
  * The common case: open, read the balance, close. `expected` is matched as a substring,
  * so callers pass the whole phrase they mean — "5 Credits", not "5".
  */

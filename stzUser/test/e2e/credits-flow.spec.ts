@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createAuthenticatedUser } from './utils/testAuthUtils';
 import { readE2eEnvFromProcess } from './config/e2e-env';
-import { expectWalletCredits, openAccountMenu, walletBadge } from './utils/accountMenu';
+import { expectWalletCredits, openAccountMenu, readWalletCredits, walletBadge } from './utils/accountMenu';
 import { creditsSelectors, creditsStrings } from '~stzUser/components/RouteComponents/Credits';
 
 const e2eEnv = readE2eEnvFromProcess();
@@ -17,13 +17,17 @@ test.describe('Credits Flow', () => {
     await openAccountMenu(page);
     await expect(page.locator('p', { hasText: uniqueEmail })).toBeVisible({ timeout: 15000 });
 
-    await expect(walletBadge(page)).toContainText(`${e2eEnv.DAILY_GRANT_CREDITS} Credits`);
     // Picking an item dismisses the panel, so nothing is left covering the page it opens.
     await walletBadge(page).click();
 
     // 3. Verify we are on the Credits page
     await expect(page).toHaveURL(/\/auth\/credits/);
     await expect(page.locator('h1')).toContainText('Credits');
+
+    // The home page may already have spent credits — every signed-in server call costs one — so
+    // the grant is found in the ledger, and the balance is read here, where every call is free.
+    await expect(page.getByText('Daily credit grant')).toBeVisible();
+    const before = await readWalletCredits(page);
 
     // 4. Claim Welcome Grant
     const claimButton = page.getByRole('button', { name: creditsSelectors.claimWelcomeGrantButton });
@@ -44,7 +48,7 @@ test.describe('Credits Flow', () => {
     await claimButton.click();
 
     // Verify balance updated
-    await expectWalletCredits(page, `${e2eEnv.DAILY_GRANT_CREDITS + e2eEnv.WELCOME_GRANT_CREDITS} Credits`);
+    await expectWalletCredits(page, `${before + e2eEnv.WELCOME_GRANT_CREDITS} Credits`);
     await expect(page.getByText('One-time Welcome Grant')).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.body.dataset.creditsFlowDocument)).toBe('before-claim');
 

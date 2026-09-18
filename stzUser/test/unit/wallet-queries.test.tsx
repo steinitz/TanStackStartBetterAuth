@@ -14,6 +14,7 @@ vi.mock('~stzUser/lib/wallet', () => ({
 
 import { useSession } from '~stzUser/lib/auth-client'
 import { getTransactions, getWalletStatus } from '~stzUser/lib/wallet'
+import { announceWalletBalance } from '~stzUser/lib/wallet-client'
 import {
   refreshWalletQueries,
   transactionsQueryOptions,
@@ -77,6 +78,22 @@ describe('wallet queries', () => {
     expect(getWalletStatus).not.toHaveBeenCalled()
     expect(result.current.wallet).toBeNull()
     expect(result.current.credits).toBeNull()
+  })
+
+  it('takes a balance a server call announces for its own user, and ignores anyone else\'s', async () => {
+    vi.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-1' } } } as any)
+    vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useWallet(), { wrapper: wrapperFor(queryClient) })
+    await waitFor(() => expect(result.current.credits).toBe(10))
+
+    // The cache is written at once; observers hear of it a tick later.
+    act(() => announceWalletBalance({ userId: 'user-2', credits: 3 }))
+    expect(queryClient.getQueryData(walletKeys.status('user-1', 0))).toMatchObject({ credits: 10 })
+
+    act(() => announceWalletBalance({ userId: 'user-1', credits: 9 }))
+    await waitFor(() => expect(result.current.credits).toBe(9))
+    expect(getWalletStatus).toHaveBeenCalledTimes(1)
   })
 
   it('can hold the ledger read until wallet status is current', () => {

@@ -61,9 +61,9 @@ export async function closeAccountMenu(page: Page): Promise<void> {
 }
 
 /**
- * The balance as a number, for a spec that must read it rather than assume it: every server
- * call a signed-in user makes costs a credit, so the pages on the way may already have spent
- * some. Read it on a page whose own calls are free, or the reading races them.
+ * The balance as a number, for a spec that must read it rather than assume it: the pages on the
+ * way may already have spent credits, on whatever the app's price table charges for. Read it on a
+ * page whose own calls are free, or the reading races them.
  */
 export async function readWalletCredits(page: Page): Promise<number> {
   await openAccountMenu(page)

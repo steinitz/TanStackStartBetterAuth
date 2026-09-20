@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, beforeAll, afterEach, inject, vi } from 'vitest'
 import { db } from '~stzUser/lib/database'
-import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal } from '~stzUser/lib/wallet.logic'
+import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal, takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
 import { removeCreditsInternal } from '~stzUser/lib/admin-credit.logic'
 import { auth } from '~stzUser/lib/auth'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
@@ -60,6 +60,64 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     const res4 = await consumeResourceInternal(testUserId, 'test_resource')
     expect(res4.success).toBe(false)
     expect(res4.message).toContain('Insufficient')
+  })
+
+  // What an event costs, taken from whatever is left. The middleware charges through this, so
+  // these three cases are the whole of "the balance stops at zero".
+  describe('taking an event price', () => {
+    it('takes the whole price when she can afford it, and records it', async () => {
+      const { credits: before } = await getWalletStatusInternal(testUserId)
+
+      const charge = await takeCreditsUpTo(testUserId, 'save_game', 5, { refuseAtZero: false })
+
+      expect(charge).toMatchObject({ refused: false, taken: 5, credits: before - 5 })
+      const row = await db
+        .selectFrom('transactions')
+        .select(['amount', 'description'])
+        .where('user_id', '=', testUserId)
+        .orderBy('created_at', 'desc')
+        .executeTakeFirst()
+      expect(row).toMatchObject({ amount: -5, description: 'Resource consumption: save_game (5 credits)' })
+    })
+
+    it('takes what is left when the price is more than the balance', async () => {
+      const { credits: before } = await getWalletStatusInternal(testUserId)
+      await takeCreditsUpTo(testUserId, 'save_game', before - 3, { refuseAtZero: false })
+
+      const charge = await takeCreditsUpTo(testUserId, 'save_game', 5, { refuseAtZero: false })
+
+      // Three left and a price of five: she pays the three, and the row says three.
+      expect(charge).toMatchObject({ refused: false, taken: 3, credits: 0 })
+      const row = await db
+        .selectFrom('transactions')
+        .select('amount')
+        .where('user_id', '=', testUserId)
+        .orderBy('created_at', 'desc')
+        .executeTakeFirst()
+      expect(row).toMatchObject({ amount: -3 })
+    })
+
+    it('refuses at zero only what is refusable, and writes no row either way', async () => {
+      const { credits: before } = await getWalletStatusInternal(testUserId)
+      await takeCreditsUpTo(testUserId, 'save_game', before, { refuseAtZero: false })
+      const rowsAtZero = await db
+        .selectFrom('transactions')
+        .select('id')
+        .where('user_id', '=', testUserId)
+        .execute()
+
+      const run = await takeCreditsUpTo(testUserId, 'analysis_run', 8, { refuseAtZero: true })
+      const save = await takeCreditsUpTo(testUserId, 'save_game', 5, { refuseAtZero: false })
+
+      expect(run).toMatchObject({ refused: true, taken: 0, credits: 0 })
+      expect(save).toMatchObject({ refused: false, taken: 0, credits: 0 })
+      const rowsAfter = await db
+        .selectFrom('transactions')
+        .select('id')
+        .where('user_id', '=', testUserId)
+        .execute()
+      expect(rowsAfter).toHaveLength(rowsAtZero.length)
+    })
   })
 
   it('returns the balance after a deduction, and as it stands on a refusal', async () => {

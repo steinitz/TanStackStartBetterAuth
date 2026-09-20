@@ -1,87 +1,126 @@
-import { existsSync, readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The wallet's own behaviour is proven against a real database in wallet.integration.test.ts.
 // Here it stands in, so these tests are about the middleware's decisions.
 vi.mock('~stzUser/lib/server-auth', () => ({ getOptionalSessionUser: vi.fn() }))
-vi.mock('~stzUser/lib/wallet.logic', () => ({ consumeResourceInternal: vi.fn() }))
+vi.mock('~stzUser/lib/wallet.logic', () => ({ takeCreditsUpTo: vi.fn() }))
 
 import { getOptionalSessionUser } from '~stzUser/lib/server-auth'
-import { consumeResourceInternal } from '~stzUser/lib/wallet.logic'
+import { takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet-client'
 import {
-  FREE_SERVER_FN_FILES,
   OUT_OF_CREDITS,
-  isFreeServerFnFile,
-  serverCallCharge,
+  createServerCallCharge,
+  type ServerFnPriceTable,
 } from '~stzUser/lib/server-call-charge'
 
+const GAMES = 'src/lib/server/games.ts'
+
+const table: ServerFnPriceTable = [
+  { file: GAMES, name: 'saveGame', price: 5, label: 'save_game' },
+  { file: GAMES, name: 'startRun', price: 8, label: 'analysis_run', refusedAtZero: true },
+]
+
 type Halves = {
-  server: (options: unknown) => Promise<unknown>
+  server: (options: unknown) => Promise<{ sendContext?: unknown }>
   client: (options: unknown) => Promise<unknown>
 }
-const { server, client } = serverCallCharge.options as unknown as Halves
 
-function runServerHalf(filename: string) {
-  const next = vi.fn(async (context?: unknown) => ({ nextCalledWith: context }))
-  const run = server({ next, serverFnMeta: { id: 'x', name: 'getThing', filename } })
-  return { next, run }
+// What the charge before the work and the charge after it look like from outside: the order in
+// which the two happened. A test that wants a different charge sets `charge` before running.
+const order: string[] = []
+let charge = { refused: false, taken: 5, credits: 41 }
+
+/** Runs the server half for one server function, optionally with work that throws. */
+function runServerHalf(name: string, file = GAMES, work?: () => void) {
+  const next = vi.fn(async (context?: { sendContext?: unknown }) => {
+    order.push('work')
+    work?.()
+    return { sendContext: context?.sendContext, result: 'done' }
+  })
+  const { server } = createServerCallCharge(table).options as unknown as Halves
+  return { next, run: server({ next, serverFnMeta: { id: 'x', name, filename: file } }) }
 }
 
 describe('server call charge', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    order.length = 0
+    charge = { refused: false, taken: 5, credits: 41 }
     vi.mocked(getOptionalSessionUser).mockResolvedValue({ id: 'user-1' } as never)
-    vi.mocked(consumeResourceInternal).mockResolvedValue({ success: true, message: '', credits: 41 })
+    vi.mocked(takeCreditsUpTo).mockImplementation(async () => {
+      order.push('charge')
+      return charge
+    })
   })
 
-  it('frees exactly the listed files', () => {
-    for (const file of FREE_SERVER_FN_FILES) expect(isFreeServerFnFile(file)).toBe(true)
-    expect(isFreeServerFnFile('src/lib/server/games.ts')).toBe(false)
-  })
-
-  // The list matches paths exactly, so a renamed file would be charged without a word.
-  it('names only files that exist and define server functions', () => {
-    for (const file of FREE_SERVER_FN_FILES) {
-      expect(existsSync(file), file).toBe(true)
-      expect(readFileSync(file, 'utf8'), file).toContain('createServerFn(')
-    }
-  })
-
-  it('charges nothing for a free file, and does not look up the session', async () => {
-    const { next, run } = runServerHalf('stzUser/lib/wallet.ts')
+  it('charges nothing for a function the table does not price, and does not look up the session', async () => {
+    const { next, run } = runServerHalf('getThing')
     await run
     expect(getOptionalSessionUser).not.toHaveBeenCalled()
-    expect(consumeResourceInternal).not.toHaveBeenCalled()
+    expect(takeCreditsUpTo).not.toHaveBeenCalled()
     expect(next).toHaveBeenCalledWith({ sendContext: { balance: undefined } })
+  })
+
+  // A price names a file and an export. Renaming either would make a priced event free, silently,
+  // so each app tests its own table against its own source.
+  it('prices a function by its file as well as its name', async () => {
+    const { run } = runServerHalf('saveGame', 'src/lib/server/other.ts')
+    await run
+    expect(takeCreditsUpTo).not.toHaveBeenCalled()
   })
 
   it('lets a signed-out call through free', async () => {
     vi.mocked(getOptionalSessionUser).mockResolvedValue(null)
-    const { next, run } = runServerHalf('src/lib/server/games.ts')
+    const { run } = runServerHalf('saveGame')
     await run
-    expect(consumeResourceInternal).not.toHaveBeenCalled()
-    expect(next).toHaveBeenCalledWith({ sendContext: { balance: undefined } })
+    expect(takeCreditsUpTo).not.toHaveBeenCalled()
   })
 
-  it('charges a signed-in call one credit, named for the function, and sends the balance home', async () => {
-    const { next, run } = runServerHalf('src/lib/server/games.ts')
+  it('charges a save after the work, so work that throws is never paid for', async () => {
+    const { run } = runServerHalf('saveGame')
+    const settled = await run
+    expect(order).toEqual(['work', 'charge'])
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'save_game', 5, { refuseAtZero: false })
+    expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
+  })
+
+  it('does not charge a save whose work throws', async () => {
+    const { run } = runServerHalf('saveGame', GAMES, () => {
+      throw new Error('the database said no')
+    })
+    await expect(run).rejects.toThrow('the database said no')
+    expect(takeCreditsUpTo).not.toHaveBeenCalled()
+  })
+
+  it('charges a run before the work, so a refusal arrives instead of it', async () => {
+    const { next, run } = runServerHalf('startRun')
     await run
-    expect(consumeResourceInternal).toHaveBeenCalledWith('user-1', 'server_call:getThing', 1)
+    expect(order).toEqual(['charge', 'work'])
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'analysis_run', 8, { refuseAtZero: true })
     expect(next).toHaveBeenCalledWith({ sendContext: { balance: { userId: 'user-1', credits: 41 } } })
   })
 
-  it('refuses the call at zero, before the work runs', async () => {
-    vi.mocked(consumeResourceInternal).mockResolvedValue({ success: false, message: 'Insufficient credits', credits: 0 })
-    const { next, run } = runServerHalf('src/lib/server/games.ts')
+  it('refuses a run at zero, before the work runs', async () => {
+    charge = { refused: true, taken: 0, credits: 0 }
+    const { next, run } = runServerHalf('startRun')
     await expect(run).rejects.toThrow(new RegExp(`^${OUT_OF_CREDITS}`))
     expect(next).not.toHaveBeenCalled()
+  })
+
+  it('lets a save through at zero, and sends the unchanged balance home', async () => {
+    charge = { refused: false, taken: 0, credits: 0 }
+    const { run } = runServerHalf('saveGame')
+    const settled = await run
+    expect(order).toEqual(['work', 'charge'])
+    expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 0 } })
   })
 
   it('announces a balance that comes home to the page', async () => {
     const heard = vi.fn()
     window.addEventListener(WALLET_EVENTS.BALANCE, (event) => heard((event as CustomEvent).detail))
     const balance = { userId: 'user-1', credits: 41 }
+    const { client } = createServerCallCharge(table).options as unknown as Halves
     await client({ next: async () => ({ context: { balance } }) })
     expect(heard).toHaveBeenCalledWith(balance)
   })

@@ -24,8 +24,9 @@ test.describe('Credits Flow', () => {
     await expect(page).toHaveURL(/\/auth\/credits/);
     await expect(page.locator('h1')).toContainText('Credits');
 
-    // The home page may already have spent credits — every signed-in server call costs one — so
-    // the grant is found in the ledger, and the balance is read here, where every call is free.
+    // The pages on the way may already have spent credits, in an app whose price table charges for
+    // something they do, so the grant is found in the ledger and the balance is read here rather
+    // than assumed.
     await expect(page.getByText('Daily credit grant')).toBeVisible();
     const before = await readWalletCredits(page);
 

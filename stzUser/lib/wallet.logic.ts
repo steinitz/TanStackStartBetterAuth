@@ -214,6 +214,79 @@ export async function consumeResourceInternal(userId: string, resourceType: stri
 }
 
 /**
+ * Takes up to `price` credits for one thing she did, and stops at zero.
+ *
+ * A price is what an event costs, not what she must have: with 3 credits left, a save priced 5
+ * takes the 3. The ledger records what was taken, so the row and the balance always agree.
+ *
+ * `refuseAtZero` marks the events that start new work — an analysis run, an AI comment. Those are
+ * refused when there is nothing left, and their caller charges before doing the work so that the
+ * refusal arrives first. A save or a read is never refused: it runs, and pays what it can.
+ *
+ * Nothing is taken and no row is written at zero. A row for nothing is not a record of anything,
+ * and `assertPositiveWholeAmount` would refuse to write it anyway.
+ */
+export async function takeCreditsUpTo(
+  userId: string,
+  resourceType: string,
+  price: number,
+  { refuseAtZero }: { refuseAtZero: boolean },
+): Promise<{ refused: boolean; taken: number; credits: number }> {
+  // Validate before applyDailyGrant: a rejected call must not mint credits or touch the ledger.
+  assertPositiveWholeAmount(price, MAX_RESOURCE_CONSUMPTION, 'Price')
+  assertResourceType(resourceType)
+
+  // Today by her local day, as the wallet read decides it. The UTC day disagreed with it across
+  // UTC midnight, and each disagreement was a second grant.
+  await applyDailyGrant(userId, await readTimezoneOffset(userId))
+
+  // How much is taken depends on the balance, so unlike consumeResourceInternal this has to read
+  // it. The update then guards on the value it read rather than on a floor, so a charge that
+  // arrives in between makes this attempt match no row and try again with the new balance.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const settled = await db.transaction().execute(async (trx) => {
+      const before = Number(
+        (await trx.selectFrom('user').select('credits').where('id', '=', userId).executeTakeFirst())
+          ?.credits ?? 0,
+      )
+      if (before <= 0) return { refused: refuseAtZero, taken: 0, credits: 0 }
+
+      const taken = Math.min(before, price)
+      const deducted = await trx
+        .updateTable('user')
+        .set({ credits: before - taken })
+        .where('id', '=', userId)
+        .where('credits', '=', before)
+        .returning('credits')
+        .executeTakeFirst()
+
+      if (!deducted) return null
+
+      await trx
+        .insertInto('transactions')
+        .values({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          amount: -taken,
+          type: 'consumption',
+          description: `Resource consumption: ${resourceType} (${taken} credits)`,
+          created_at: new Date().toISOString(),
+        })
+        .execute()
+
+      return { refused: false, taken, credits: Number(deducted.credits) }
+    })
+
+    if (settled) return settled
+  }
+
+  // Three attempts all lost the race, which takes three charges landing between this one's read
+  // and its write. Let the work through free rather than refuse her for our own contention.
+  const user = await db.selectFrom('user').select('credits').where('id', '=', userId).executeTakeFirst()
+  return { refused: false, taken: 0, credits: Number(user?.credits ?? 0) }
+}
+
+/**
  * Logic: Grants credits to a specific user.
  * Updates both the ledger and the cached balance.
  */

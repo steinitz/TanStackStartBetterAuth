@@ -13,6 +13,7 @@
  */
 import { createMiddleware } from '@tanstack/react-start'
 import { announceWalletBalance, type AnnouncedBalance } from './wallet-client'
+import { OUT_OF_CREDITS } from './wallet-contracts'
 
 /** What one event costs, and where the charge finds it. */
 export type ServerFnPrice = {
@@ -36,8 +37,8 @@ export type ServerFnPrice = {
 
 export type ServerFnPriceTable = readonly ServerFnPrice[]
 
-/** How a refused call's error message begins. Callers match on it to say why the call failed. */
-export const OUT_OF_CREDITS = 'Out of credits'
+// Lives in wallet-contracts.ts, which a browser component can import without meeting this file.
+export { OUT_OF_CREDITS } from './wallet-contracts'
 
 const priceKey = (file: string, name: string) => `${file}#${name}`
 

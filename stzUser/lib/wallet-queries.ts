@@ -124,6 +124,24 @@ export function applyAnnouncedBalance(queryClient: QueryClient, { userId, credit
   )
 }
 
+/**
+ * Whether the balance she was last told is known to be zero, for a refusal that makes no server
+ * call of its own.
+ *
+ * A zero learned before her day began is not known: today's grant is owed, and the next charge
+ * applies it before taking anything. A page left open overnight would otherwise refuse her the
+ * morning's grant. Her day is her browser's, the same local day the server counts the grant in.
+ * A balance not yet read is not zero either.
+ */
+export function isKnownOutOfCredits(
+  credits: number | null | undefined,
+  learnedAt: number,
+  now: number,
+): boolean {
+  if (credits == null || credits > 0) return false
+  return learnedAt >= new Date(now).setHours(0, 0, 0, 0)
+}
+
 function createRefreshWallet(queryClient: QueryClient, userId: string | undefined) {
   return async () => {
     if (!userId) return
@@ -161,6 +179,9 @@ export function useWallet() {
     ...query,
     wallet: query.data ?? null,
     credits: query.data?.credits ?? null,
+    // A function, read when she acts rather than when the page rendered: the page can sit open
+    // across her midnight.
+    isOutOfCredits: () => isKnownOutOfCredits(query.data?.credits, query.dataUpdatedAt, Date.now()),
     refreshWallet,
   }
 }

@@ -16,6 +16,7 @@ import { useSession } from '~stzUser/lib/auth-client'
 import { getTransactions, getWalletStatus } from '~stzUser/lib/wallet'
 import { announceWalletBalance } from '~stzUser/lib/wallet-client'
 import {
+  isKnownOutOfCredits,
   refreshWalletQueries,
   transactionsQueryOptions,
   useRefreshWallet,
@@ -94,6 +95,19 @@ describe('wallet queries', () => {
     act(() => announceWalletBalance({ userId: 'user-1', credits: 9 }))
     await waitFor(() => expect(result.current.credits).toBe(9))
     expect(getWalletStatus).toHaveBeenCalledTimes(1)
+  })
+
+  it('knows she is out of credits once a charge announces a zero', async () => {
+    vi.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-1' } } } as any)
+    vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useWallet(), { wrapper: wrapperFor(queryClient) })
+    await waitFor(() => expect(result.current.credits).toBe(10))
+    expect(result.current.isOutOfCredits()).toBe(false)
+
+    act(() => announceWalletBalance({ userId: 'user-1', credits: 0 }))
+    await waitFor(() => expect(result.current.credits).toBe(0))
+    expect(result.current.isOutOfCredits()).toBe(true)
   })
 
   it('can hold the ledger read until wallet status is current', () => {
@@ -302,5 +316,26 @@ describe('wallet queries', () => {
     })
 
     unsubscribe()
+  })
+})
+
+describe('isKnownOutOfCredits', () => {
+  // Local times, so the start of her day is the same whatever zone the suite runs in.
+  const morning = new Date(2026, 8, 22, 9, 0).getTime()
+  const earlierToday = new Date(2026, 8, 22, 0, 5).getTime()
+  const lateLastNight = new Date(2026, 8, 21, 23, 55).getTime()
+
+  it('knows a zero learned today', () => {
+    expect(isKnownOutOfCredits(0, earlierToday, morning)).toBe(true)
+  })
+
+  it('does not trust a zero learned before her day began, because today\'s grant is owed', () => {
+    expect(isKnownOutOfCredits(0, lateLastNight, morning)).toBe(false)
+  })
+
+  it('is not out of credits with any left, or with a balance not yet read', () => {
+    expect(isKnownOutOfCredits(3, earlierToday, morning)).toBe(false)
+    expect(isKnownOutOfCredits(null, earlierToday, morning)).toBe(false)
+    expect(isKnownOutOfCredits(undefined, 0, morning)).toBe(false)
   })
 })

@@ -77,7 +77,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
         .where('user_id', '=', testUserId)
         .orderBy('created_at', 'desc')
         .executeTakeFirst()
-      expect(row).toMatchObject({ amount: -5, description: 'Resource consumption: save_game (5 credits)' })
+      expect(row).toMatchObject({ amount: -5, description: 'save_game (5 credits)' })
     })
 
     it('takes what is left when the price is more than the balance', async () => {

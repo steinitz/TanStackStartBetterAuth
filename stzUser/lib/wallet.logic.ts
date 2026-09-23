@@ -194,7 +194,7 @@ export async function consumeResourceInternal(userId: string, resourceType: stri
         user_id: userId,
         amount: -amount,
         type: 'consumption',
-        description: `Resource consumption: ${resourceType} (${amount} credits)`,
+        description: `${resourceType} (${amount} credits)`,
         created_at: new Date().toISOString(),
       })
       .execute()
@@ -269,7 +269,7 @@ export async function takeCreditsUpTo(
           user_id: userId,
           amount: -taken,
           type: 'consumption',
-          description: `Resource consumption: ${resourceType} (${taken} credits)`,
+          description: `${resourceType} (${taken} credits)`,
           created_at: new Date().toISOString(),
         })
         .execute()

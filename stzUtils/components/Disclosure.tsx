@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, type CSSProperties } from 'react';
 
 /**
  * A native <details> whose panel floats over the page instead of pushing it down,
@@ -32,6 +32,28 @@ const markerReset = `
   content: '';
 }
 `;
+
+/** Under the summary: the usual place, close to what she tapped. */
+const belowPanel: CSSProperties = {
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  marginTop: '4px',
+};
+
+/**
+ * In the middle of the screen, whatever she has scrolled to. Fixed, so it centres on the
+ * screen only while no ancestor has a transform, a filter or containment: any of those
+ * captures a fixed element and centres it on that ancestor instead.
+ */
+const centeredPanel: CSSProperties = {
+  position: 'fixed',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  maxHeight: '80vh',
+  overflowY: 'auto',
+};
 
 type DisclosureProps = {
   /** The always-visible control. Rendered inside <summary>. */
@@ -71,6 +93,13 @@ type DisclosureProps = {
    * status on the play page — would be maddening if it shut on every click.
    */
   closeOnPanelClick?: boolean;
+  /**
+   * Where the panel opens. `below` is the default. `center` is for a panel that must be
+   * readable from anywhere on the page: below its summary it can open under the fold, and
+   * above it, off the top of a page she has scrolled down. ChessHurdles' hurdle comment was
+   * the first, with its summary just under a board that fills a portrait iPad.
+   */
+  placement?: 'below' | 'center';
   children: React.ReactNode;
 };
 
@@ -84,6 +113,7 @@ export function Disclosure({
   onOpenChange,
   showClose = true,
   closeOnPanelClick = false,
+  placement = 'below',
   children,
 }: DisclosureProps) {
   const [ownOpen, setOwnOpen] = useState(false);
@@ -148,10 +178,7 @@ export function Disclosure({
       <div
         onClick={closeOnPanelClick ? close : undefined}
         style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          marginTop: '4px',
+          ...(placement === 'center' ? centeredPanel : belowPanel),
           zIndex: 1,
           ...panelStyle,
         }}

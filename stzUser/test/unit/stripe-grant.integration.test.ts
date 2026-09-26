@@ -61,7 +61,10 @@ describe.sequential('Stripe purchase grant (idempotent)', () => {
 
     expect(result).toEqual({ granted: true })
     expect(await creditsOf(testUserId)).toBe(before + 10)
-    expect(await ledgerRowsForPi(pi.id)).toHaveLength(1)
+    const rows = await ledgerRowsForPi(pi.id)
+    expect(rows).toHaveLength(1)
+    // The amount is the row's own column, so the description does not repeat it.
+    expect(rows[0]).toMatchObject({ amount: 10, description: 'Credit purchase' })
   })
 
   it('is a duplicate no-op when the same PaymentIntent is replayed', async () => {

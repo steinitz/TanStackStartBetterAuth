@@ -498,7 +498,7 @@ export async function grantPurchaseCredits(paymentIntent: PurchasePaymentIntent)
       userId as string,
       creditsRequested,
       'purchase',
-      `Credit purchase (${creditsRequested} credits)`,
+      'Credit purchase',
       paymentIntent.id,
     )
   })

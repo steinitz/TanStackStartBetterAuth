@@ -120,6 +120,68 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     })
   })
 
+  // An event she may do dozens of times a day: each charge is taken, and her history keeps one
+  // row for the day.
+  describe('gathering a day of charges into one row', () => {
+    const PRACTISED = 'Puzzles practised'
+    const gathered = { refuseAtZero: false, oneRowPerDay: true }
+
+    // Her day by her offset, which for a new test user is none, so it began at UTC midnight.
+    const startOfHerDay = () => new Date(new Date().toISOString().split('T')[0]).toISOString()
+
+    const rowsOf = (description: string) =>
+      db
+        .selectFrom('transactions')
+        .select(['amount', 'created_at'])
+        .where('user_id', '=', testUserId)
+        .where('description', '=', description)
+        .execute()
+
+    const restamp = (createdAt: string) =>
+      db
+        .updateTable('transactions')
+        .set({ created_at: createdAt })
+        .where('user_id', '=', testUserId)
+        .where('description', '=', PRACTISED)
+        .execute()
+
+    it('adds a second charge on her day to the first row, and moves its time to now', async () => {
+      const { credits: before } = await getWalletStatusInternal(testUserId)
+      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      // Stamped at the very start of her day, so the move to now shows.
+      await restamp(startOfHerDay())
+
+      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+
+      const rows = await rowsOf(PRACTISED)
+      expect(rows).toHaveLength(1)
+      expect(rows[0].amount).toBe(-2)
+      expect(rows[0].created_at > startOfHerDay()).toBe(true)
+      // Only the row is shared: both charges were taken.
+      expect((await getWalletStatusInternal(testUserId)).credits).toBe(before - 2)
+    })
+
+    it('starts a new row once her day has turned', async () => {
+      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      await restamp(new Date(new Date(startOfHerDay()).getTime() - 1).toISOString())
+
+      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+
+      expect((await rowsOf(PRACTISED)).map((row) => row.amount)).toEqual([-1, -1])
+    })
+
+    it('keeps a row per charge for a price not marked, and apart for another label', async () => {
+      await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseAtZero: false })
+      await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseAtZero: false })
+      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      await takeCreditsUpTo(testUserId, 'Lessons practised', 1, gathered)
+
+      expect(await rowsOf('Game saved')).toHaveLength(2)
+      expect(await rowsOf(PRACTISED)).toHaveLength(1)
+      expect(await rowsOf('Lessons practised')).toHaveLength(1)
+    })
+  })
+
   it('returns the balance after a deduction, and as it stands on a refusal', async () => {
     const { credits: before } = await getWalletStatusInternal(testUserId)
 

@@ -36,6 +36,12 @@ export type ServerFnPrice = {
    * are charged after the work succeeds, so a call that fails costs her nothing.
    */
   refusedAtZero?: boolean
+  /**
+   * True for an event she may do dozens of times a day, such as practising, so that her history
+   * keeps one line for the day rather than dozens. Each charge still happens, and adds to that
+   * day's row. The day is hers, as the daily grant counts it.
+   */
+  oneRowPerDay?: boolean
 }
 
 export type ServerFnPriceTable = readonly ServerFnPrice[]
@@ -97,6 +103,7 @@ async function takeCredits(userId: string, price: ServerFnPrice) {
   const { takeCreditsUpTo } = await import('./wallet.logic')
   const charge = await takeCreditsUpTo(userId, price.label, price.price, {
     refuseAtZero: price.refusedAtZero === true,
+    oneRowPerDay: price.oneRowPerDay === true,
   })
   if (charge.refused) throw new Error(`${OUT_OF_CREDITS}. Buy more on the Credits page.`)
 

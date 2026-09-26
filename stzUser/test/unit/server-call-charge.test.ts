@@ -19,6 +19,7 @@ const GAMES = 'src/lib/server/games.ts'
 const table: ServerFnPriceTable = [
   { file: GAMES, name: 'saveGame', price: 5, label: 'Game saved' },
   { file: GAMES, name: 'startRun', price: 8, label: 'Game analysed', refusedAtZero: true },
+  { file: GAMES, name: 'practise', price: 1, label: 'Puzzles practised', oneRowPerDay: true },
 ]
 
 type Halves = {
@@ -81,7 +82,7 @@ describe('server call charge', () => {
     const { run } = runServerHalf('saveGame')
     const settled = await run
     expect(order).toEqual(['work', 'charge'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseAtZero: false })
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseAtZero: false, oneRowPerDay: false })
     expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
   })
 
@@ -97,7 +98,7 @@ describe('server call charge', () => {
     const { next, run } = runServerHalf('startRun')
     await run
     expect(order).toEqual(['charge', 'work'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseAtZero: true })
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseAtZero: true, oneRowPerDay: false })
     expect(next).toHaveBeenCalledWith({ sendContext: { balance: { userId: 'user-1', credits: 41 } } })
   })
 
@@ -106,6 +107,15 @@ describe('server call charge', () => {
     const { next, run } = runServerHalf('startRun')
     await expect(run).rejects.toThrow(new RegExp(`^${OUT_OF_CREDITS}`))
     expect(next).not.toHaveBeenCalled()
+  })
+
+  it('passes a price marked one row a day on to the wallet', async () => {
+    const { run } = runServerHalf('practise')
+    await run
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Puzzles practised', 1, {
+      refuseAtZero: false,
+      oneRowPerDay: true,
+    })
   })
 
   it('lets a save through at zero, and sends the unchanged balance home', async () => {

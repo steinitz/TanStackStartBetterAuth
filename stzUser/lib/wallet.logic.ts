@@ -117,12 +117,12 @@ async function readTimezoneOffset(userId: string): Promise<number> {
 }
 
 /**
- * Logic: Ensures a user receives their daily credit grant.
- * Wrapped in a transaction to prevent race conditions (double grants).
+ * Her local day: its date, and the moment it began in UTC, as an ISO string that compares with
+ * `created_at`. The daily grant and a charge gathered into one row a day both count by it.
  *
  * @param timezoneOffset - Offset in milliseconds from UTC (e.g. +11h = +39600000)
  */
-export async function applyDailyGrant(userId: string, timezoneOffset: number = 0) {
+function herLocalDay(timezoneOffset: number) {
   // Calculate "Local Today"
   // Server Time (UTC) + Offset = Local Time
   // e.g. 23:00 UTC + 2h = 01:00 Local (Next Day)
@@ -130,12 +130,24 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
   const localNow = new Date(serverNow + timezoneOffset) // Fake date object representing local time
   const localToday = localNow.toISOString().split('T')[0] // 'YYYY-MM-DD'
 
-  // FIX: We need to check if a grant occurred within the "Local Day" window converted to UTC.
   // 1. Determine Local Start of Day in UTC milliseconds.
   // Note: new Date('YYYY-MM-DD') returns UTC midnight.
   const localStartOfDayMs = new Date(localToday).getTime() - timezoneOffset
   // 2. Convert to ISO string for DB comparison
   const localStartOfDayUTC = new Date(localStartOfDayMs).toISOString()
+
+  return { localToday, localStartOfDayUTC }
+}
+
+/**
+ * Logic: Ensures a user receives their daily credit grant.
+ * Wrapped in a transaction to prevent race conditions (double grants).
+ *
+ * @param timezoneOffset - Offset in milliseconds from UTC (e.g. +11h = +39600000)
+ */
+export async function applyDailyGrant(userId: string, timezoneOffset: number = 0) {
+  // FIX: We need to check if a grant occurred within the "Local Day" window converted to UTC.
+  const { localToday, localStartOfDayUTC } = herLocalDay(timezoneOffset)
 
   await db.transaction().execute(async (trx) => {
     // Re-check inside transaction for maximum safety
@@ -225,12 +237,15 @@ export async function consumeResourceInternal(userId: string, resourceType: stri
  *
  * Nothing is taken and no row is written at zero. A row for nothing is not a record of anything,
  * and `assertPositiveWholeAmount` would refuse to write it anyway.
+ *
+ * `oneRowPerDay` gathers an event's charges into one ledger row for her local day. The charge is
+ * still taken each time, so a closed tab loses nothing; only the row is shared.
  */
 export async function takeCreditsUpTo(
   userId: string,
   resourceType: string,
   price: number,
-  { refuseAtZero }: { refuseAtZero: boolean },
+  { refuseAtZero, oneRowPerDay = false }: { refuseAtZero: boolean; oneRowPerDay?: boolean },
 ): Promise<{ refused: boolean; taken: number; credits: number }> {
   // Validate before applyDailyGrant: a rejected call must not mint credits or touch the ledger.
   assertPositiveWholeAmount(price, MAX_RESOURCE_CONSUMPTION, 'Price')
@@ -238,7 +253,9 @@ export async function takeCreditsUpTo(
 
   // Today by her local day, as the wallet read decides it. The UTC day disagreed with it across
   // UTC midnight, and each disagreement was a second grant.
-  await applyDailyGrant(userId, await readTimezoneOffset(userId))
+  const timezoneOffset = await readTimezoneOffset(userId)
+  await applyDailyGrant(userId, timezoneOffset)
+  const { localStartOfDayUTC } = herLocalDay(timezoneOffset)
 
   // How much is taken depends on the balance, so unlike consumeResourceInternal this has to read
   // it. The update then guards on the value it read rather than on a floor, so a charge that
@@ -262,17 +279,40 @@ export async function takeCreditsUpTo(
 
       if (!deducted) return null
 
-      await trx
-        .insertInto('transactions')
-        .values({
-          id: crypto.randomUUID(),
-          user_id: userId,
-          amount: -taken,
-          type: 'consumption',
-          description: resourceType,
-          created_at: new Date().toISOString(),
-        })
-        .execute()
+      const now = new Date().toISOString()
+      // The description is the label alone, so today's row of this kind is found by equality.
+      const todaysRow = oneRowPerDay
+        ? await trx
+            .selectFrom('transactions')
+            .select('id')
+            .where('user_id', '=', userId)
+            .where('type', '=', 'consumption')
+            .where('description', '=', resourceType)
+            .where('created_at', '>=', localStartOfDayUTC)
+            .executeTakeFirst()
+        : undefined
+
+      if (todaysRow) {
+        // Its time moves to this charge: her history is newest first, and a row still stamped
+        // with the morning's first charge would sit below everything she did since.
+        await trx
+          .updateTable('transactions')
+          .set((eb) => ({ amount: eb('amount', '-', taken), created_at: now }))
+          .where('id', '=', todaysRow.id)
+          .execute()
+      } else {
+        await trx
+          .insertInto('transactions')
+          .values({
+            id: crypto.randomUUID(),
+            user_id: userId,
+            amount: -taken,
+            type: 'consumption',
+            description: resourceType,
+            created_at: now,
+          })
+          .execute()
+      }
 
       return { refused: false, taken, credits: Number(deducted.credits) }
     })

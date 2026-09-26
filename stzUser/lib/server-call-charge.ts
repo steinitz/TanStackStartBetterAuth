@@ -23,7 +23,10 @@ export type ServerFnPrice = {
   name: string
   /** Credits. The balance stops at zero, so a price is what the event costs, not a toll she must afford. */
   price: number
-  /** What her Credits page calls this, in the ledger row. */
+  /**
+   * What her Credits page calls this: the ledger row's whole description, since the row's amount
+   * already says what was taken. Plain words, as she would say them — "Game saved".
+   */
   label: string
   /**
    * True for an event that starts new work, such as an analysis run. Those are refused when the

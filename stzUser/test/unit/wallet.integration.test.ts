@@ -68,7 +68,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     it('takes the whole price when she can afford it, and records it', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
 
-      const charge = await takeCreditsUpTo(testUserId, 'save_game', 5, { refuseAtZero: false })
+      const charge = await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseAtZero: false })
 
       expect(charge).toMatchObject({ refused: false, taken: 5, credits: before - 5 })
       const row = await db
@@ -77,14 +77,14 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
         .where('user_id', '=', testUserId)
         .orderBy('created_at', 'desc')
         .executeTakeFirst()
-      expect(row).toMatchObject({ amount: -5, description: 'save_game (5 credits)' })
+      expect(row).toMatchObject({ amount: -5, description: 'Game saved' })
     })
 
     it('takes what is left when the price is more than the balance', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, 'save_game', before - 3, { refuseAtZero: false })
+      await takeCreditsUpTo(testUserId, 'Game saved', before - 3, { refuseAtZero: false })
 
-      const charge = await takeCreditsUpTo(testUserId, 'save_game', 5, { refuseAtZero: false })
+      const charge = await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseAtZero: false })
 
       // Three left and a price of five: she pays the three, and the row says three.
       expect(charge).toMatchObject({ refused: false, taken: 3, credits: 0 })
@@ -99,15 +99,15 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
     it('refuses at zero only what is refusable, and writes no row either way', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, 'save_game', before, { refuseAtZero: false })
+      await takeCreditsUpTo(testUserId, 'Game saved', before, { refuseAtZero: false })
       const rowsAtZero = await db
         .selectFrom('transactions')
         .select('id')
         .where('user_id', '=', testUserId)
         .execute()
 
-      const run = await takeCreditsUpTo(testUserId, 'analysis_run', 8, { refuseAtZero: true })
-      const save = await takeCreditsUpTo(testUserId, 'save_game', 5, { refuseAtZero: false })
+      const run = await takeCreditsUpTo(testUserId, 'Game analysed', 8, { refuseAtZero: true })
+      const save = await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseAtZero: false })
 
       expect(run).toMatchObject({ refused: true, taken: 0, credits: 0 })
       expect(save).toMatchObject({ refused: false, taken: 0, credits: 0 })

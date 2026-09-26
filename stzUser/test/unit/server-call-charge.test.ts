@@ -17,8 +17,8 @@ import {
 const GAMES = 'src/lib/server/games.ts'
 
 const table: ServerFnPriceTable = [
-  { file: GAMES, name: 'saveGame', price: 5, label: 'save_game' },
-  { file: GAMES, name: 'startRun', price: 8, label: 'analysis_run', refusedAtZero: true },
+  { file: GAMES, name: 'saveGame', price: 5, label: 'Game saved' },
+  { file: GAMES, name: 'startRun', price: 8, label: 'Game analysed', refusedAtZero: true },
 ]
 
 type Halves = {
@@ -81,7 +81,7 @@ describe('server call charge', () => {
     const { run } = runServerHalf('saveGame')
     const settled = await run
     expect(order).toEqual(['work', 'charge'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'save_game', 5, { refuseAtZero: false })
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseAtZero: false })
     expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
   })
 
@@ -97,7 +97,7 @@ describe('server call charge', () => {
     const { next, run } = runServerHalf('startRun')
     await run
     expect(order).toEqual(['charge', 'work'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'analysis_run', 8, { refuseAtZero: true })
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseAtZero: true })
     expect(next).toHaveBeenCalledWith({ sendContext: { balance: { userId: 'user-1', credits: 41 } } })
   })
 

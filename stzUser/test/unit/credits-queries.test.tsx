@@ -221,4 +221,19 @@ describe('TransactionLedger', () => {
     expect(view.getByText('Card purchase')).toBeInTheDocument()
     expect(view.getByText('+10')).toBeInTheDocument()
   })
+
+  it('calls a type what the app calls it, and any other type by its stored name', () => {
+    const grant: WalletTransaction = { ...transaction, id: 'transaction-2', type: 'daily_grant' }
+    const view = render(
+      <TransactionLedger
+        transactions={[transaction, grant]}
+        isPending={false}
+        isError={false}
+        typeNames={{ purchase: 'Bought' }}
+      />,
+    )
+    expect(view.getByText('Bought')).toBeInTheDocument()
+    expect(view.queryByText('purchase')).not.toBeInTheDocument()
+    expect(view.getByText('daily grant')).toBeInTheDocument()
+  })
 })

@@ -5,12 +5,18 @@ type TransactionLedgerProps = {
   transactions: WalletTransaction[] | undefined
   isPending: boolean
   isError: boolean
+  /**
+   * The app's own word for a type in the Type column, where it has one: ChessHurdles calls a
+   * charge "Training". A type left out shows its stored name in words.
+   */
+  typeNames?: Partial<Record<WalletTransaction['type'], string>>
 }
 
 export function TransactionLedger({
   transactions,
   isPending,
   isError,
+  typeNames,
 }: TransactionLedgerProps) {
   if (isPending) return <p>Loading transactions...</p>
 
@@ -43,7 +49,7 @@ export function TransactionLedger({
                 {new Date(transaction.created_at).toLocaleDateString()}
               </td>
               <td style={{ padding: '0.5rem', textTransform: 'capitalize' }}>
-                {transaction.type.replace('_', ' ')}
+                {typeNames?.[transaction.type] ?? transaction.type.replace(/_/g, ' ')}
               </td>
               <td style={{
                 padding: '0.5rem',

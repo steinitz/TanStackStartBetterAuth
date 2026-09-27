@@ -196,9 +196,11 @@ export async function takeCreditsUpTo(
   await applyDailyGrant(userId, timezoneOffset)
   const { localStartOfDayUTC } = herLocalDay(timezoneOffset)
 
-  // How much is taken depends on the balance, so this has to read it. The update then guards on
-  // the value it read rather than on a floor, so a charge that arrives in between makes this
-  // attempt match no row and try again with the new balance.
+  // How much is taken depends on the balance, so this has to read it, and the update guards on
+  // the value it read. On SQLite the guard is never what stops a second charge: measured
+  // 2026-09-27, one that overlaps this transaction fails with SQLITE_BUSY, and the call it was
+  // charging for fails with it. Nothing is taken twice. Left unhandled on purpose until an error
+  // report shows it happening — Steve. The fix then is to begin this as a write transaction.
   for (let attempt = 0; attempt < 3; attempt++) {
     const settled = await db.transaction().execute(async (trx) => {
       const before = Number(

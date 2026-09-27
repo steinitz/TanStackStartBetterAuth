@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, beforeAll, afterEach, inject, vi } from 'vitest'
 import { db } from '~stzUser/lib/database'
-import { getWalletStatusInternal, grantCreditsInternal, consumeResourceInternal, claimWelcomeGrantInternal, takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
+import { getWalletStatusInternal, grantCreditsInternal, claimWelcomeGrantInternal, takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
 import { removeCreditsInternal } from '~stzUser/lib/admin-credit.logic'
 import { auth } from '~stzUser/lib/auth'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
@@ -39,27 +39,12 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     expect(status.credits).toBe(100)
   })
 
-  it('should consume resources from daily grant', async () => {
-    // Consume 1
-    const res1 = await consumeResourceInternal(testUserId, 'test_resource')
-    expect(res1.success).toBe(true)
-    expect(res1.message).toContain('Consumed 1 credits')
+  // Her first act of a day may be a charged one, before anything has read her wallet. The charge
+  // grants the day first, so it takes from today's credits rather than finding none.
+  it('grants the day before taking, when a charge is the first thing she does', async () => {
+    const charge = await takeCreditsUpTo(testUserId, 'Game saved', 1, { refuseAtZero: true })
 
-    let status = await getWalletStatusInternal(testUserId)
-    expect(status.credits).toBe(99)
-
-    // Consume 99 more (total 100)
-    for (let i = 0; i < 99; i++) {
-      await consumeResourceInternal(testUserId, 'test_resource')
-    }
-
-    status = await getWalletStatusInternal(testUserId)
-    expect(status.credits).toBe(0)
-
-    // Try to consume 4th without credits
-    const res4 = await consumeResourceInternal(testUserId, 'test_resource')
-    expect(res4.success).toBe(false)
-    expect(res4.message).toContain('Insufficient')
+    expect(charge).toMatchObject({ refused: false, taken: 1, credits: 99 })
   })
 
   // What an event costs, taken from whatever is left. The middleware charges through this, so
@@ -182,16 +167,6 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     })
   })
 
-  it('returns the balance after a deduction, and as it stands on a refusal', async () => {
-    const { credits: before } = await getWalletStatusInternal(testUserId)
-
-    const spent = await consumeResourceInternal(testUserId, 'test_resource', 1)
-    expect(spent).toMatchObject({ success: true, credits: before - 1 })
-
-    const refused = await consumeResourceInternal(testUserId, 'test_resource', before)
-    expect(refused).toMatchObject({ success: false, credits: before - 1 })
-  })
-
   // Her day is her local day, and a charge must agree with the wallet read about which day it is.
   // The charge used the UTC day, so a Sydney player on either side of 10am local got two grants.
   describe('one daily grant per local day', () => {
@@ -203,33 +178,12 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
       vi.setSystemTime(new Date('2026-09-17T21:00:00Z')) // 7:00am, 18 Sep, in Sydney
       await getWalletStatusInternal(testUserId, SYDNEY)
       vi.setSystemTime(new Date('2026-09-18T00:30:00Z')) // 10:30am, same local day
-      await consumeResourceInternal(testUserId, 'test_resource', 1)
+      await takeCreditsUpTo(testUserId, 'Game saved', 1, { refuseAtZero: false })
 
       const grants = await db.selectFrom('transactions').select('id')
         .where('user_id', '=', testUserId).where('type', '=', 'daily_grant').execute()
       expect(grants).toHaveLength(1)
     })
-  })
-
-  it('should consume from credits after grant is exhausted', async () => {
-    // 1. Exhaust grant (100)
-    for (let i = 0; i < 100; i++) {
-      await consumeResourceInternal(testUserId, 'test_resource')
-    }
-
-    // 2. Grant credits
-    await grantCreditsInternal(testUserId, 10, 'purchase', 'Test Purchase')
-
-    let status = await getWalletStatusInternal(testUserId)
-    expect(status.credits).toBe(10)
-
-    // 3. Consume 4th action (should hit credits)
-    const res4 = await consumeResourceInternal(testUserId, 'test_resource')
-    expect(res4.success).toBe(true)
-    expect(res4.message).toContain('Consumed 1 credits')
-
-    status = await getWalletStatusInternal(testUserId)
-    expect(status.credits).toBe(9)
   })
 
   it('should handle granting credits correctly', async () => {
@@ -239,19 +193,6 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     const status = await getWalletStatusInternal(testUserId)
     // 100 initial + 50 - 10 = 140
     expect(status.credits).toBe(140)
-  })
-
-  it('should support consuming multiple credits at once', async () => {
-    // 1. Grant extra credits
-    await grantCreditsInternal(testUserId, 10, 'purchase', 'Bonus')
-
-    // 2. Consume 5 credits (3 daily + 10 bonus = 13 total)
-    const res = await consumeResourceInternal(testUserId, 'bulk_action', 5)
-    expect(res.success).toBe(true)
-    expect(res.message).toContain('Consumed 5 credits')
-
-    const status = await getWalletStatusInternal(testUserId)
-    expect(status.credits).toBe(105)
   })
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -283,34 +224,6 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     // 3. Verify exactly 100 credits were granted, not 500
     const status = await getWalletStatusInternal(raceUserId)
     expect(status.credits).toBe(100)
-  })
-
-  it('should prevent negative balance during concurrent consumption', async () => {
-    // 1. Give user exactly 1 credit
-    // (Note: they already have 3 from the first action, so we use that)
-    const statusBefore = await getWalletStatusInternal(testUserId)
-    const currentCredits = statusBefore.credits
-
-    // We want to try to spend more than they have concurrently
-    // Let's try to spend 'currentCredits + 2' credits using concurrent requests of 1 each
-    const requests: Promise<{ success: boolean; message: string }>[] = []
-    for (let i = 0; i < currentCredits + 2; i++) {
-      const stagger = i * 10
-      requests.push((async () => {
-        if (stagger > 0) await sleep(stagger)
-        return consumeResourceInternal(testUserId, 'race_resource', 1)
-      })())
-    }
-
-    const results = await Promise.all(requests)
-
-    // 2. Count successes
-    const successes = results.filter(r => r.success).length
-    expect(successes).toBe(currentCredits)
-
-    // 3. Verify balance is exactly 0, not negative
-    const statusAfter = await getWalletStatusInternal(testUserId)
-    expect(statusAfter.credits).toBe(0)
   })
 
   it('should handle the one-time welcome grant', async () => {

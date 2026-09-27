@@ -13,9 +13,9 @@ import { auth } from '~stzUser/lib/auth'
 import { db, libsqlClient } from '~stzUser/lib/database'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
 import {
-  consumeResourceInternal,
   getWalletStatusInternal,
   grantCreditsInternal,
+  takeCreditsUpTo,
 } from '~stzUser/lib/wallet.logic'
 import { testConstants } from '~stzUser/test/constants'
 
@@ -79,16 +79,16 @@ describe.sequential('admin credit accounting integration', () => {
       .execute()
   }
 
-  it('rejects invalid direct consumption before daily grant, balance, or ledger mutation', async () => {
+  it('rejects an invalid charge before daily grant, balance, or ledger mutation', async () => {
     const user = await createUser('invalid-consumption')
 
-    for (const amount of [-1, 0, 1.5, NaN, Infinity, 1_000_001]) {
+    for (const price of [-1, 0, 1.5, NaN, Infinity, 1_000_001]) {
       await expect(
-        consumeResourceInternal(user.id, 'analysis', amount),
+        takeCreditsUpTo(user.id, 'analysis', price, { refuseAtZero: false }),
       ).rejects.toThrow(/positive whole number/)
     }
     await expect(
-      consumeResourceInternal(user.id, ' ', 1),
+      takeCreditsUpTo(user.id, ' ', 1, { refuseAtZero: false }),
     ).rejects.toThrow(/resourceType/)
 
     expect(await storedCredits(user.id)).toBe(0)

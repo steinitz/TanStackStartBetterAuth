@@ -13,12 +13,10 @@ vi.mock('~stzUser/lib/mail.server', () => ({
 
 import {
   BankTransferRequestSchema,
-  ConsumeResourceSchema,
   MAX_CREDITS_PURCHASE,
   TimezoneOffsetSchema,
 } from '~stzUser/lib/wallet'
 import { requestBankTransferForUser } from '~stzUser/lib/wallet-bank-transfer.server'
-import { MAX_RESOURCE_CONSUMPTION } from '~stzUser/lib/wallet.logic'
 
 describe('wallet server input validation', () => {
   beforeEach(() => {
@@ -36,38 +34,6 @@ describe('wallet server input validation', () => {
       expect(v.safeParse(TimezoneOffsetSchema, offset).success).toBe(false)
     },
   )
-
-  it('defaults consumption to one credit and trims the resource type', () => {
-    expect(v.parse(ConsumeResourceSchema, { resourceType: ' analysis ' })).toEqual({
-      resourceType: 'analysis',
-      amount: 1,
-    })
-  })
-
-  it.each([
-    NaN,
-    Infinity,
-    -1,
-    0,
-    1.5,
-    MAX_RESOURCE_CONSUMPTION + 1,
-  ])('rejects consumption amount %s at the server boundary', (amount) => {
-    expect(v.safeParse(ConsumeResourceSchema, {
-      resourceType: 'analysis',
-      amount,
-    }).success).toBe(false)
-  })
-
-  it.each([
-    '',
-    '   ',
-    'x'.repeat(101),
-  ])('rejects resource type %j at the server boundary', (resourceType) => {
-    expect(v.safeParse(ConsumeResourceSchema, {
-      resourceType,
-      amount: 1,
-    }).success).toBe(false)
-  })
 
   it.each([
     NaN,

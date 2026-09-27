@@ -6,10 +6,6 @@ import {
   MAX_RESOURCE_TYPE_LENGTH,
 } from '~stzUser/lib/wallet-contracts'
 
-export {
-  MAX_RESOURCE_CONSUMPTION,
-  MAX_RESOURCE_TYPE_LENGTH,
-} from '~stzUser/lib/wallet-contracts'
 export type { WalletStatus } from '~stzUser/lib/wallet-contracts'
 
 /**
@@ -169,63 +165,6 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
 }
 
 /**
- * Logic: Consumes a resource (variable credits) for a specific user.
- *
- * Returns the balance either way — after the deduction, or as it stands on refusal — so a caller
- * can show it without asking again. Every server call is charged through here, so its round trips
- * are paid on every call.
- */
-export async function consumeResourceInternal(userId: string, resourceType: string, amount: number = 1) {
-  // Validate before applyDailyGrant: rejected calls must not mint credits or touch the ledger.
-  assertPositiveWholeAmount(amount, MAX_RESOURCE_CONSUMPTION, 'Consumption amount')
-  assertResourceType(resourceType)
-
-  // Today by her local day, as the wallet read decides it. The UTC day disagreed with it across
-  // UTC midnight, and each disagreement was a second grant.
-  await applyDailyGrant(userId, await readTimezoneOffset(userId))
-
-  // The guarded update is the whole check. Reading the balance first would cost a round trip and
-  // still race, which is why the guard exists.
-  const creditsAfter = await db.transaction().execute(async (trx) => {
-    const deducted = await trx
-      .updateTable('user')
-      .set((eb) => ({
-        credits: eb('credits', '-', amount),
-      }))
-      .where('id', '=', userId)
-      .where('credits', '>=', amount) // Hard safeguard against negative balance
-      .returning('credits')
-      .executeTakeFirst()
-
-    if (!deducted) return null
-
-    await trx
-      .insertInto('transactions')
-      .values({
-        id: crypto.randomUUID(),
-        user_id: userId,
-        amount: -amount,
-        type: 'consumption',
-        description: resourceType,
-        created_at: new Date().toISOString(),
-      })
-      .execute()
-    return Number(deducted.credits)
-  })
-
-  if (creditsAfter !== null) {
-    return { success: true, message: `Consumed ${amount} credits`, credits: creditsAfter }
-  }
-
-  const user = await db
-    .selectFrom('user')
-    .select('credits')
-    .where('id', '=', userId)
-    .executeTakeFirst()
-  return { success: false, message: 'Insufficient credits', credits: Number(user?.credits || 0) }
-}
-
-/**
  * Takes up to `price` credits for one thing she did, and stops at zero.
  *
  * A price is what an event costs, not what she must have: with 3 credits left, a save priced 5
@@ -257,9 +196,9 @@ export async function takeCreditsUpTo(
   await applyDailyGrant(userId, timezoneOffset)
   const { localStartOfDayUTC } = herLocalDay(timezoneOffset)
 
-  // How much is taken depends on the balance, so unlike consumeResourceInternal this has to read
-  // it. The update then guards on the value it read rather than on a floor, so a charge that
-  // arrives in between makes this attempt match no row and try again with the new balance.
+  // How much is taken depends on the balance, so this has to read it. The update then guards on
+  // the value it read rather than on a floor, so a charge that arrives in between makes this
+  // attempt match no row and try again with the new balance.
   for (let attempt = 0; attempt < 3; attempt++) {
     const settled = await db.transaction().execute(async (trx) => {
       const before = Number(

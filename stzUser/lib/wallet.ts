@@ -3,8 +3,6 @@ import * as v from 'valibot'
 import {
   type WalletStatus,
   type WalletTransaction,
-  MAX_RESOURCE_CONSUMPTION,
-  MAX_RESOURCE_TYPE_LENGTH,
 } from './wallet-contracts'
 import { clientEnv } from './env'
 
@@ -31,31 +29,6 @@ export const CreatePaymentIntentSchema = v.object({
   idempotencyKey: v.pipe(
     v.string('idempotencyKey must be a string'),
     v.regex(UUID_RE, 'idempotencyKey must be a UUID'),
-  ),
-})
-
-export const ConsumeResourceSchema = v.strictObject({
-  resourceType: v.pipe(
-    v.string('resourceType must be a string'),
-    v.trim(),
-    v.nonEmpty('resourceType is required'),
-    v.maxLength(
-      MAX_RESOURCE_TYPE_LENGTH,
-      `resourceType must be no longer than ${MAX_RESOURCE_TYPE_LENGTH} characters`,
-    ),
-  ),
-  amount: v.optional(
-    v.pipe(
-      v.number('amount must be a number'),
-      v.finite('amount must be finite'),
-      v.integer('amount must be a whole number'),
-      v.minValue(1, 'amount must be positive'),
-      v.maxValue(
-        MAX_RESOURCE_CONSUMPTION,
-        `amount must be no greater than ${MAX_RESOURCE_CONSUMPTION}`,
-      ),
-    ),
-    1,
   ),
 })
 
@@ -104,21 +77,6 @@ export const getWalletStatus = createServerFn({
     // The browser always sends its offset, and it is remembered for the charge. Without one, the
     // offset she last reported is used.
     return getWalletStatusInternal(user.id, timezoneOffset)
-  })
-
-/**
- * Server function to consume a resource for the current user.
- */
-export const useConsumeResource = createServerFn({
-  method: 'POST',
-})
-  .inputValidator((data: unknown) => v.parse(ConsumeResourceSchema, data))
-  .handler(async ({ data }) => {
-    const { requireSessionUser } = await import('./server-auth')
-    const { consumeResourceInternal } = await import('./wallet.logic')
-    const user = await requireSessionUser()
-
-    return consumeResourceInternal(user.id, data.resourceType, data.amount ?? 1)
   })
 
 /**

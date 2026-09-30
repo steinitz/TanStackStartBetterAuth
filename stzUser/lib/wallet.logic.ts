@@ -170,9 +170,11 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
  * A price is what an event costs, not what she must have: with 3 credits left, a save priced 5
  * takes the 3. The ledger records what was taken, so the row and the balance always agree.
  *
- * `refuseAtZero` marks the events that start new work — an analysis run, an AI comment. Those are
- * refused when there is nothing left, and their caller charges before doing the work so that the
- * refusal arrives first. A save or a read is never refused: it runs, and pays what it can.
+ * `refuseBelowPrice` marks the events that start new work — an analysis run, an AI comment. Those
+ * are refused when the balance is below the price, so they are taken whole or not at all, and
+ * their caller charges before doing the work so that the refusal arrives first. With 5 left, a run
+ * priced 8 is refused and takes nothing. A save or a read is never refused: it runs, and pays what
+ * it can.
  *
  * Nothing is taken and no row is written at zero. A row for nothing is not a record of anything,
  * and `assertPositiveWholeAmount` would refuse to write it anyway.
@@ -184,7 +186,7 @@ export async function takeCreditsUpTo(
   userId: string,
   resourceType: string,
   price: number,
-  { refuseAtZero, oneRowPerDay = false }: { refuseAtZero: boolean; oneRowPerDay?: boolean },
+  { refuseBelowPrice, oneRowPerDay = false }: { refuseBelowPrice: boolean; oneRowPerDay?: boolean },
 ): Promise<{ refused: boolean; taken: number; credits: number }> {
   // Validate before applyDailyGrant: a rejected call must not mint credits or touch the ledger.
   assertPositiveWholeAmount(price, MAX_RESOURCE_CONSUMPTION, 'Price')
@@ -207,7 +209,9 @@ export async function takeCreditsUpTo(
         (await trx.selectFrom('user').select('credits').where('id', '=', userId).executeTakeFirst())
           ?.credits ?? 0,
       )
-      if (before <= 0) return { refused: refuseAtZero, taken: 0, credits: 0 }
+      // Refused with her balance as it stands, so the refusal can say what she has.
+      if (refuseBelowPrice && before < price) return { refused: true, taken: 0, credits: Math.max(before, 0) }
+      if (before <= 0) return { refused: false, taken: 0, credits: 0 }
 
       const taken = Math.min(before, price)
       const deducted = await trx

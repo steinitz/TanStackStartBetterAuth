@@ -13,7 +13,7 @@
  */
 import { createMiddleware } from '@tanstack/react-start'
 import { announceWalletBalance, type AnnouncedBalance } from './wallet-client'
-import { OUT_OF_CREDITS } from './wallet-contracts'
+import { NOT_ENOUGH_CREDITS } from './wallet-contracts'
 
 /** What one event costs, and where the charge finds it. */
 export type ServerFnPrice = {
@@ -21,7 +21,10 @@ export type ServerFnPrice = {
   file: string
   /** Its exported name. */
   name: string
-  /** Credits. The balance stops at zero, so a price is what the event costs, not a toll she must afford. */
+  /**
+   * Credits. For a save or a read the balance stops at zero, so the price is what the event costs,
+   * not a toll she must afford. For an event refused below its price, it is both.
+   */
   price: number
   /**
    * What her Credits page calls this: the ledger row's whole description, since the row's amount
@@ -30,12 +33,13 @@ export type ServerFnPrice = {
   label: string
   /**
    * True for an event that starts new work, such as an analysis run. Those are refused when the
-   * balance is zero, and charged before the work runs so the refusal arrives instead of it.
+   * balance is below the price, and charged the whole price before the work runs, so the refusal
+   * arrives instead of it. New work she cannot pay for in full is not given away.
    *
    * Left out for a save or a read, which are never refused: they run, and pay what is left. They
    * are charged after the work succeeds, so a call that fails costs her nothing.
    */
-  refusedAtZero?: boolean
+  refusedBelowPrice?: boolean
   /**
    * True for an event she may do dozens of times a day, such as practising, so that her history
    * keeps one line for the day rather than dozens. Each charge still happens, and adds to that
@@ -47,7 +51,7 @@ export type ServerFnPrice = {
 export type ServerFnPriceTable = readonly ServerFnPrice[]
 
 // Lives in wallet-contracts.ts, which a browser component can import without meeting this file.
-export { OUT_OF_CREDITS } from './wallet-contracts'
+export { NOT_ENOUGH_CREDITS, isNotEnoughCredits } from './wallet-contracts'
 
 const priceKey = (file: string, name: string) => `${file}#${name}`
 
@@ -85,7 +89,7 @@ export function createServerCallCharge(table: ServerFnPriceTable) {
       const user = await getOptionalSessionUser()
       if (!user) return next({ sendContext: sends(undefined) })
 
-      if (price.refusedAtZero) {
+      if (price.refusedBelowPrice) {
         return next({ sendContext: sends(await takeCredits(user.id, price)) })
       }
 
@@ -98,14 +102,18 @@ export function createServerCallCharge(table: ServerFnPriceTable) {
     })
 }
 
-/** Takes one event's price, and throws when a refusable event finds the balance at zero. */
+/** Takes one event's price, and throws when a refusable event finds the balance below it. */
 async function takeCredits(userId: string, price: ServerFnPrice) {
   const { takeCreditsUpTo } = await import('./wallet.logic')
   const charge = await takeCreditsUpTo(userId, price.label, price.price, {
-    refuseAtZero: price.refusedAtZero === true,
+    refuseBelowPrice: price.refusedBelowPrice === true,
     oneRowPerDay: price.oneRowPerDay === true,
   })
-  if (charge.refused) throw new Error(`${OUT_OF_CREDITS}. Buy more on the Credits page.`)
+  if (charge.refused) {
+    throw new Error(
+      `${NOT_ENOUGH_CREDITS}: this costs ${price.price} and you have ${charge.credits}. Buy more on the Credits page.`,
+    )
+  }
 
   const balance: AnnouncedBalance = { userId, credits: charge.credits }
   return balance

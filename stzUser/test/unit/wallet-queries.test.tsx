@@ -16,7 +16,7 @@ import { useSession } from '~stzUser/lib/auth-client'
 import { getTransactions, getWalletStatus } from '~stzUser/lib/wallet'
 import { announceWalletBalance } from '~stzUser/lib/wallet-client'
 import {
-  isKnownOutOfCredits,
+  isKnownShortOf,
   refreshWalletQueries,
   transactionsQueryOptions,
   useRefreshWallet,
@@ -108,6 +108,20 @@ describe('wallet queries', () => {
     act(() => announceWalletBalance({ userId: 'user-1', credits: 0 }))
     await waitFor(() => expect(result.current.credits).toBe(0))
     expect(result.current.isOutOfCredits()).toBe(true)
+  })
+
+  it('knows what she cannot afford once a charge announces her balance', async () => {
+    vi.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-1' } } } as any)
+    vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useWallet(), { wrapper: wrapperFor(queryClient) })
+    await waitFor(() => expect(result.current.credits).toBe(10))
+
+    act(() => announceWalletBalance({ userId: 'user-1', credits: 5 }))
+    await waitFor(() => expect(result.current.credits).toBe(5))
+    expect(result.current.cannotAfford(8)).toBe(true)
+    expect(result.current.cannotAfford(5)).toBe(false)
+    expect(result.current.isOutOfCredits()).toBe(false)
   })
 
   it('can hold the ledger read until wallet status is current', () => {
@@ -319,23 +333,26 @@ describe('wallet queries', () => {
   })
 })
 
-describe('isKnownOutOfCredits', () => {
+describe('isKnownShortOf', () => {
   // Local times, so the start of her day is the same whatever zone the suite runs in.
   const morning = new Date(2026, 8, 22, 9, 0).getTime()
   const earlierToday = new Date(2026, 8, 22, 0, 5).getTime()
   const lateLastNight = new Date(2026, 8, 21, 23, 55).getTime()
 
-  it('knows a zero learned today', () => {
-    expect(isKnownOutOfCredits(0, earlierToday, morning)).toBe(true)
+  it('knows a balance below the price, learned today', () => {
+    expect(isKnownShortOf(1, 0, earlierToday, morning)).toBe(true)
+    expect(isKnownShortOf(8, 5, earlierToday, morning)).toBe(true)
   })
 
-  it('does not trust a zero learned before her day began, because today\'s grant is owed', () => {
-    expect(isKnownOutOfCredits(0, lateLastNight, morning)).toBe(false)
+  it('does not trust a balance learned before her day began, because today\'s grant is owed', () => {
+    expect(isKnownShortOf(1, 0, lateLastNight, morning)).toBe(false)
+    expect(isKnownShortOf(8, 5, lateLastNight, morning)).toBe(false)
   })
 
-  it('is not out of credits with any left, or with a balance not yet read', () => {
-    expect(isKnownOutOfCredits(3, earlierToday, morning)).toBe(false)
-    expect(isKnownOutOfCredits(null, earlierToday, morning)).toBe(false)
-    expect(isKnownOutOfCredits(undefined, 0, morning)).toBe(false)
+  it('is not short with enough, exactly enough, or a balance not yet read', () => {
+    expect(isKnownShortOf(1, 3, earlierToday, morning)).toBe(false)
+    expect(isKnownShortOf(8, 8, earlierToday, morning)).toBe(false)
+    expect(isKnownShortOf(1, null, earlierToday, morning)).toBe(false)
+    expect(isKnownShortOf(1, undefined, 0, morning)).toBe(false)
   })
 })

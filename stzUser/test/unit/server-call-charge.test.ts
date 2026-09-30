@@ -9,7 +9,7 @@ import { getOptionalSessionUser } from '~stzUser/lib/server-auth'
 import { takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet-client'
 import {
-  OUT_OF_CREDITS,
+  NOT_ENOUGH_CREDITS,
   createServerCallCharge,
   type ServerFnPriceTable,
 } from '~stzUser/lib/server-call-charge'
@@ -18,7 +18,7 @@ const GAMES = 'src/lib/server/games.ts'
 
 const table: ServerFnPriceTable = [
   { file: GAMES, name: 'saveGame', price: 5, label: 'Game saved' },
-  { file: GAMES, name: 'startRun', price: 8, label: 'Game analysed', refusedAtZero: true },
+  { file: GAMES, name: 'startRun', price: 8, label: 'Game analysed', refusedBelowPrice: true },
   { file: GAMES, name: 'practise', price: 1, label: 'Puzzles practised', oneRowPerDay: true },
 ]
 
@@ -82,7 +82,7 @@ describe('server call charge', () => {
     const { run } = runServerHalf('saveGame')
     const settled = await run
     expect(order).toEqual(['work', 'charge'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseAtZero: false, oneRowPerDay: false })
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseBelowPrice: false, oneRowPerDay: false })
     expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
   })
 
@@ -98,14 +98,14 @@ describe('server call charge', () => {
     const { next, run } = runServerHalf('startRun')
     await run
     expect(order).toEqual(['charge', 'work'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseAtZero: true, oneRowPerDay: false })
+    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseBelowPrice: true, oneRowPerDay: false })
     expect(next).toHaveBeenCalledWith({ sendContext: { balance: { userId: 'user-1', credits: 41 } } })
   })
 
-  it('refuses a run at zero, before the work runs', async () => {
-    charge = { refused: true, taken: 0, credits: 0 }
+  it('refuses a run she cannot pay for in full, before the work runs, and says what she has', async () => {
+    charge = { refused: true, taken: 0, credits: 5 }
     const { next, run } = runServerHalf('startRun')
-    await expect(run).rejects.toThrow(new RegExp(`^${OUT_OF_CREDITS}`))
+    await expect(run).rejects.toThrow(new RegExp(`^${NOT_ENOUGH_CREDITS}: this costs 8 and you have 5`))
     expect(next).not.toHaveBeenCalled()
   })
 
@@ -113,7 +113,7 @@ describe('server call charge', () => {
     const { run } = runServerHalf('practise')
     await run
     expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Puzzles practised', 1, {
-      refuseAtZero: false,
+      refuseBelowPrice: false,
       oneRowPerDay: true,
     })
   })

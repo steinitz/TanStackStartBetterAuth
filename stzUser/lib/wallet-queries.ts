@@ -125,20 +125,22 @@ export function applyAnnouncedBalance(queryClient: QueryClient, { userId, credit
 }
 
 /**
- * Whether the balance she was last told is known to be zero, for a refusal that makes no server
- * call of its own.
+ * Whether the balance she was last told is known to be below a price, for a refusal that makes no
+ * server call of its own. The same rule the charge refuses by, asked before the call so nothing is
+ * spent finding out.
  *
- * A zero learned before her day began is not known: today's grant is owed, and the next charge
+ * A balance learned before her day began is not known: today's grant is owed, and the next charge
  * applies it before taking anything. A page left open overnight would otherwise refuse her the
  * morning's grant. Her day is her browser's, the same local day the server counts the grant in.
- * A balance not yet read is not zero either.
+ * A balance not yet read is not short either; the server decides.
  */
-export function isKnownOutOfCredits(
+export function isKnownShortOf(
+  price: number,
   credits: number | null | undefined,
   learnedAt: number,
   now: number,
 ): boolean {
-  if (credits == null || credits > 0) return false
+  if (credits == null || credits >= price) return false
   return learnedAt >= new Date(now).setHours(0, 0, 0, 0)
 }
 
@@ -179,9 +181,12 @@ export function useWallet() {
     ...query,
     wallet: query.data ?? null,
     credits: query.data?.credits ?? null,
-    // A function, read when she acts rather than when the page rendered: the page can sit open
-    // across her midnight.
-    isOutOfCredits: () => isKnownOutOfCredits(query.data?.credits, query.dataUpdatedAt, Date.now()),
+    // Functions, read when she acts rather than when the page rendered: the page can sit open
+    // across her midnight. cannotAfford is for something with a price; isOutOfCredits for what
+    // has none of its own but should not start from nothing, such as a new game.
+    cannotAfford: (price: number) =>
+      isKnownShortOf(price, query.data?.credits, query.dataUpdatedAt, Date.now()),
+    isOutOfCredits: () => isKnownShortOf(1, query.data?.credits, query.dataUpdatedAt, Date.now()),
     refreshWallet,
   }
 }

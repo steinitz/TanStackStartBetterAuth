@@ -67,6 +67,44 @@ describe('UserBlock & WalletWidget', () => {
     expect(getByText(/50 Credits/i)).toBeDefined()
   })
 
+  // The app's warning before she runs out: the trigger she always sees, and the readout inside.
+  describe('running low', () => {
+    const renderWithCredits = (credits: number, lowCreditsWarning?: number) => {
+      vi.mocked(useSession).mockReturnValue({
+        data: { user: { id: 'user-1', email: 'test@example.com' } }
+      } as any)
+      vi.mocked(useWallet).mockReturnValue({ wallet: { credits, welcomeClaimed: false } } as any)
+      return render(<UserBlock lowCreditsWarning={lowCreditsWarning} />)
+    }
+    const triggerIcon = (container: HTMLElement) => container.querySelector('summary i')
+    const readout = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll('span')).find((span) => /Credits/.test(span.textContent ?? ''))
+
+    it('turns the icon into an orange fuel pump, and the credits orange, below the threshold', () => {
+      const { container } = renderWithCredits(21, 34)
+
+      expect(triggerIcon(container)?.className).toContain('fa-gas-pump')
+      expect((triggerIcon(container)?.parentElement as HTMLElement).style.color).toBe('var(--color-warning)')
+      expect(readout(container)?.style.color).toBe('var(--color-warning)')
+    })
+
+    it('keeps its name, Account, so a screen reader and the tests still find it', () => {
+      const { container } = renderWithCredits(21, 34)
+
+      expect(container.querySelector('summary')?.getAttribute('aria-label')).toBe('Account')
+    })
+
+    it('stays the user icon at the threshold and above, and when the app sets none', () => {
+      for (const [credits, threshold] of [[34, 34], [100, 34], [0, undefined]] as const) {
+        const { container, unmount } = renderWithCredits(credits, threshold)
+
+        expect(triggerIcon(container)?.className).toContain('fa-user')
+        expect(readout(container)?.style.color).toBe('')
+        unmount()
+      }
+    })
+  })
+
   it('should render Sign In link when logged out', () => {
     vi.mocked(useSession).mockReturnValue({ data: null } as any)
     vi.mocked(useWallet).mockReturnValue({ wallet: null } as any)

@@ -1,7 +1,10 @@
+import type { CSSProperties } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useWallet } from '~stzUser/lib/wallet-queries'
 
-export function WalletWidget({ style = {} }) {
+// warn: she is running low, so the readout wears the warning orange. See UserBlock's
+// lowCreditsWarning, which decides it.
+export function WalletWidget({ style = {}, warn = false }: { style?: CSSProperties; warn?: boolean }) {
   const { wallet } = useWallet()
   const navigate = useNavigate()
 
@@ -19,6 +22,7 @@ export function WalletWidget({ style = {} }) {
         cursor: 'pointer',
         display: 'inline-flex',
         alignItems: 'center',
+        color: warn ? 'var(--color-warning)' : undefined,
         ...style
       }}
     >

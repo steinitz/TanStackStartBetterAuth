@@ -3,6 +3,7 @@ import { signOut, useSession } from '~stzUser/lib/auth-client'
 import { routeStrings } from "~/constants";
 import { activeLinkStyle } from "~stzUtils/components/styles";
 import { WalletWidget } from './WalletWidget'
+import { useWallet } from '~stzUser/lib/wallet-queries'
 import { Disclosure } from '~stzUtils/components/Disclosure'
 import { BusySpinner } from '~stzUtils/components/BusySpinner'
 import { useRef, useState } from 'react'
@@ -65,9 +66,24 @@ const userIconSize = '1.4rem'
  */
 const menuDirection: 'column' | 'row' = 'column'
 
-export function UserBlock() {
+type UserBlockProps = {
+  /**
+   * The balance below which she is warned: the account icon becomes a fuel pump in the warning
+   * orange, and the credits readout in its menu turns the same orange. The app's number, since
+   * only the app knows what its things cost; left out, nothing warns.
+   *
+   * On the icon rather than a line under the header, whose spacing is finely tuned and would
+   * jump — Steve, 2026-09-30. The icon's box is fixed, so the swap moves nothing.
+   */
+  lowCreditsWarning?: number
+}
+
+export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
   const navigate = useNavigate()
   const { data: session, isPending } = useSession()
+  const { wallet } = useWallet()
+  const isRunningLow =
+    lowCreditsWarning !== undefined && wallet != null && wallet.credits < lowCreditsWarning
 
   // Two pieces for one idea, and the ref is the load-bearing half. React hands each click
   // handler the state from its own render, so a second click in the same tick still sees
@@ -204,7 +220,7 @@ export function UserBlock() {
               >
                 {session.user.email}
               </p>
-              <WalletWidget style={{
+              <WalletWidget warn={isRunningLow} style={{
                 whiteSpace: 'nowrap',
               }} />
             </div>
@@ -249,7 +265,7 @@ export function UserBlock() {
           // user can no longer see. This trigger is where their eye returns.
           <span
             style={{
-              color: 'var(--color-link)',
+              color: isRunningLow ? 'var(--color-warning)' : 'var(--color-link)',
               width: userIconSize,
               display: 'inline-flex',
               justifyContent: 'center',
@@ -257,7 +273,11 @@ export function UserBlock() {
           >
             {isSigningOut
               ? <BusySpinner size={userIconSize} label="Signing out" />
-              : <i className="fa-solid fa-user" />}
+              : isRunningLow
+                // Its own title, for the hover. The trigger keeps its name, Account, which is
+                // how a screen reader and the tests find it whatever the balance.
+                ? <i className="fa-solid fa-gas-pump" title="Running low on credits" />
+                : <i className="fa-solid fa-user" />}
           </span>
         }
         title="Account"

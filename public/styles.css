@@ -28,14 +28,16 @@
   /* Read by `.spinner-inline` too, which has to restate the whole `animation` shorthand and
      would otherwise carry a second copy of this number for someone to forget. */
   --spin-duration: 8s;
-  filter: brightness(200%);
   /* `block` rather than the element's own default, so the class works on a span as well as
      a div. It was `flex` with a `justify-content` that had nothing to align — the element
      has no children — and both were dropped 2026-09-05 after measuring the box identical. */
   display: block;
   margin: 0 auto;
-  background-color: var(--color-accent);
-  border-top: calc(var(--spinner-size) * 8 / 39) solid var(--color-link);
+  /* `currentColor`, the colour of whatever holds it, so a busy control reads as its own text
+     turning into a spinner: the button's text colour in a button, plain text elsewhere — Steve,
+     2026-10-01. The theme's link colour at double brightness came out an alien green, on a
+     faint disc that is gone too: the arc alone. */
+  border-top: calc(var(--spinner-size) * 8 / 39) solid currentColor;
   border-radius: 50%;
   height: calc(var(--spinner-size) * 31 / 39);
   width: var(--spinner-size);

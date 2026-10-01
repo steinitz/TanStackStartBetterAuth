@@ -3,7 +3,7 @@ import { RefundsLink } from './Links'
 
 export const Terms = () => {
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem' }}>
       <h1>Terms of Service</h1>
 
       <section style={{ marginTop: '2rem' }}>

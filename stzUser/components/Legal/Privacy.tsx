@@ -3,7 +3,7 @@ import { ContactLink } from './Links'
 
 export const Privacy = () => {
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem' }}>
       <h1>Privacy Policy</h1>
 
       <section style={{ marginTop: '2rem' }}>

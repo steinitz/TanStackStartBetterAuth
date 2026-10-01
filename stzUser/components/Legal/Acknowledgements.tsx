@@ -3,7 +3,7 @@ import { clientEnv } from '~stzUser/lib/env'
 
 export const Acknowledgements = () => {
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem' }}>
       <h1>Acknowledgements</h1>
 
       <section style={{ marginTop: '2rem' }}>

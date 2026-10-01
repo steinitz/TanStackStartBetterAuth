@@ -4,7 +4,7 @@ import { ContactLink } from './Links'
 
 export const About = () => {
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem' }}>
       <h1>About {clientEnv.APP_NAME}</h1>
 
       <section style={{ marginTop: '2rem' }}>

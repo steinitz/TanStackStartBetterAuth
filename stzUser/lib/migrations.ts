@@ -3,6 +3,20 @@ import { getMigrations } from "better-auth/db/migration"
 import { authOptions } from "./auth"
 
 /**
+ * Adds a column, or finds it already there. SQLite has no ADD COLUMN IF NOT EXISTS, so every
+ * start after the first fails each add with "duplicate column name", and that error alone means
+ * the column exists. Anything else is rethrown: a swallowed failure here lets the server start
+ * on a schema the code does not match, and the first sign is a charge failing much later.
+ */
+export async function addColumnIfMissing(add: () => Promise<unknown>): Promise<void> {
+  try {
+    await add()
+  } catch (e) {
+    if (!/duplicate column name/i.test(e instanceof Error ? e.message : String(e))) throw e
+  }
+}
+
+/**
  * Ensures all additional foundation tables exist in the database.
  * This follows the "Slim Sync" pattern: declarative and safe to run on every startup.
  */
@@ -40,14 +54,12 @@ export async function ensureAdditionalTables(): Promise<void> {
       .execute();
 
     // Ensure 'type' column exists (for existing tables)
-    try {
-      await db.schema
+    await addColumnIfMissing(() =>
+      db.schema
         .alterTable('transactions')
         .addColumn('type', 'text', (col) => col.notNull().defaultTo('consumption'))
-        .execute();
-    } catch (e) {
-      // Ignore if exists
-    }
+        .execute()
+    )
 
     // Create index for user lookup
     await db.schema
@@ -58,12 +70,12 @@ export async function ensureAdditionalTables(): Promise<void> {
       .execute();
 
     // Add stripe_payment_intent_id column for webhook idempotency (dedupe on the payment).
-    try {
-      await db.schema
+    await addColumnIfMissing(() =>
+      db.schema
         .alterTable('transactions')
         .addColumn('stripe_payment_intent_id', 'text')
         .execute()
-    } catch (e) { /* ignore if exists */ }
+    )
 
     // Unique index on stripe_payment_intent_id (partial, NULLs allowed — SQLite treats
     // NULLs as distinct, so many un-Stripe rows coexist while each real PI id is unique).
@@ -78,36 +90,30 @@ export async function ensureAdditionalTables(): Promise<void> {
     } catch (e) { /* ignore if exists */ }
 
     // 2. Add 'credits' column to user table
-    try {
-      await db.schema
+    await addColumnIfMissing(() =>
+      db.schema
         .alterTable('user')
         .addColumn('credits', 'integer', (col) => col.notNull().defaultTo(0))
-        .execute();
-    } catch (e) {
-      // Ignore if exists
-    }
+        .execute()
+    )
 
     // 3. Add 'welcome_claimed' column to user table
-    try {
-      await db.schema
+    await addColumnIfMissing(() =>
+      db.schema
         .alterTable('user')
         .addColumn('welcome_claimed', 'integer', (col) => col.notNull().defaultTo(0))
-        .execute();
-    } catch (e) {
-      // Ignore if exists
-    }
+        .execute()
+    )
 
     // 4. Add 'timezone_offset' to the user table: her offset from UTC in milliseconds, as her
     // browser last reported it. The daily grant belongs to her local day, and a charged call —
     // often made during server rendering — has no browser to ask. Null until the first wallet read.
-    try {
-      await db.schema
+    await addColumnIfMissing(() =>
+      db.schema
         .alterTable('user')
         .addColumn('timezone_offset', 'integer')
-        .execute();
-    } catch (e) {
-      // Ignore if exists
-    }
+        .execute()
+    )
 
     console.log('✅ Additional foundation tables are ready');
   } catch (error) {

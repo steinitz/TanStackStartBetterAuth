@@ -26,45 +26,49 @@ export function TransactionLedger({
 
   if (!transactions?.length) return <p>No transactions found.</p>
 
+  // Scrolls inside its own box rather than growing the page: a ledger gains a row for every
+  // charge — Steve, 2026-10-06. 27rem is the height ChessHurdles' game lists scroll at.
   return (
-    <TableViewport>
-      <table style={{
-        borderCollapse: 'collapse',
-        boxSizing: 'border-box',
-        whiteSpace: 'normal',
-        width: '100%',
-      }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid var(--color-bg-secondary)' }}>
-            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Date</th>
-            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Type</th>
-            <th style={{ textAlign: 'right', padding: '0.5rem' }}>Amount</th>
-            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions?.map((transaction) => (
-            <tr key={transaction.id} style={{ borderBottom: '1px solid var(--color-bg-secondary)' }}>
-              <td style={{ padding: '0.5rem' }}>
-                {new Date(transaction.created_at).toLocaleDateString()}
-              </td>
-              <td style={{ padding: '0.5rem', textTransform: 'capitalize' }}>
-                {typeNames?.[transaction.type] ?? transaction.type.replace(/_/g, ' ')}
-              </td>
-              <td style={{
-                padding: '0.5rem',
-                textAlign: 'right',
-                color: transaction.amount > 0 ? 'var(--color-success)' : 'inherit'
-              }}>
-                {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount}
-              </td>
-              <td style={{ overflowWrap: 'break-word', padding: '0.5rem' }}>
-                {transaction.description}
-              </td>
+    <div style={{ maxHeight: '27rem', overflowY: 'auto' }}>
+      <TableViewport>
+        <table style={{
+          borderCollapse: 'collapse',
+          boxSizing: 'border-box',
+          whiteSpace: 'normal',
+          width: '100%',
+        }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid var(--color-bg-secondary)' }}>
+              <th style={{ textAlign: 'left', padding: '0.5rem' }}>Date</th>
+              <th style={{ textAlign: 'left', padding: '0.5rem' }}>Type</th>
+              <th style={{ textAlign: 'right', padding: '0.5rem' }}>Amount</th>
+              <th style={{ textAlign: 'left', padding: '0.5rem' }}>Description</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableViewport>
+          </thead>
+          <tbody>
+            {transactions?.map((transaction) => (
+              <tr key={transaction.id} style={{ borderBottom: '1px solid var(--color-bg-secondary)' }}>
+                <td style={{ padding: '0.5rem' }}>
+                  {new Date(transaction.created_at).toLocaleDateString()}
+                </td>
+                <td style={{ padding: '0.5rem', textTransform: 'capitalize' }}>
+                  {typeNames?.[transaction.type] ?? transaction.type.replace(/_/g, ' ')}
+                </td>
+                <td style={{
+                  padding: '0.5rem',
+                  textAlign: 'right',
+                  color: transaction.amount > 0 ? 'var(--color-success)' : 'inherit'
+                }}>
+                  {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount}
+                </td>
+                <td style={{ overflowWrap: 'break-word', padding: '0.5rem' }}>
+                  {transaction.description}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableViewport>
+    </div>
   )
 }

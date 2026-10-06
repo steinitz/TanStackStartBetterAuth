@@ -5,6 +5,7 @@ import {
   AboutLink,
   AcknowledgementsLink,
   ContactLink,
+  PricingLink,
   PrivacyLink,
   RefundsLink,
   TermsLink
@@ -51,7 +52,7 @@ const footerStyles = `
 .site-footer-legal-links {
   display: flex;
   gap: 1rem;
-  /* A safety valve below the breakpoint: these three keep their shared line
+  /* A safety valve below the breakpoint: these four keep their shared line
      while it fits, and fold rather than squeeze on the narrowest phones. */
   flex-wrap: wrap;
 }
@@ -104,6 +105,8 @@ export const Footer = () => {
       {/* Row 2: Legal, Copyright, Admin */}
       <div className="site-footer-row site-footer-row-legal">
         <div className="site-footer-legal-links">
+          {/* Pricing first: nobody should have to dig for what things cost — Steve, 2026-10-06. */}
+          <PricingLink style={footerLinkStyle} />
           <TermsLink style={footerLinkStyle} />
           <RefundsLink style={footerLinkStyle} />
           <PrivacyLink style={footerLinkStyle} />

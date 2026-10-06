@@ -9,13 +9,15 @@ const legalLinkStyle: React.CSSProperties = {
   color: 'var(--color-link)',
 }
 
-export const TermsLink = ({ label = 'Terms of Service', style = {} }) => (
+// The short names are the footer's, where the four share one line on a phone — Steve, 2026-10-06.
+// A sentence passes its own, as Terms does for the Refund Policy.
+export const TermsLink = ({ label = 'Terms', style = {} }) => (
   <Link to="/legal/terms" style={{ ...legalLinkStyle, ...style }}>
     {label}
   </Link>
 )
 
-export const PrivacyLink = ({ label = 'Privacy Policy', style = {} }) => (
+export const PrivacyLink = ({ label = 'Privacy', style = {} }) => (
   <Link to="/legal/privacy" style={{ ...legalLinkStyle, ...style }}>
     {label}
   </Link>
@@ -27,8 +29,14 @@ export const ContactLink = ({ label = clientEnv.SUPPORT_LINK_TEXT, style = {} })
   </Link>
 )
 
-export const RefundsLink = ({ label = 'Refund Policy', style = {} }) => (
+export const RefundsLink = ({ label = 'Refunds', style = {} }) => (
   <Link to={clientEnv.REFUND_POLICY_URL || '/legal/refunds'} style={{ ...legalLinkStyle, ...style }}>
+    {label}
+  </Link>
+)
+
+export const PricingLink = ({ label = 'Pricing', style = {} }) => (
+  <Link to="/legal/pricing" style={{ ...legalLinkStyle, ...style }}>
     {label}
   </Link>
 )

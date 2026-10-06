@@ -52,17 +52,17 @@ describe('Footer', () => {
       data: { isAdmin: true, source: 'role' },
     } as any)
 
-    const { getByText } = render(<Footer />)
+    const { getByText, container } = render(<Footer />)
 
     // Row 1
     expect(getByText('Contact our Support Team')).toBeDefined()
     expect(getByText('Acknowledgements')).toBeDefined()
     expect(getByText('About')).toBeDefined()
 
-    // Row 2
-    expect(getByText('Terms of Service')).toBeDefined()
-    expect(getByText('Privacy Policy')).toBeDefined()
-    expect(getByText(/Refund Policy/i)).toBeDefined()
+    // Row 2, Pricing first
+    const legalLinks = [...container.querySelectorAll('.site-footer-legal-links a')]
+    expect(legalLinks.map((link) => link.textContent)).toEqual(['Pricing', 'Terms', 'Refunds', 'Privacy'])
+    expect(legalLinks[0].getAttribute('href')).toBe('/legal/pricing')
 
     // Dynamic Copyright
     const currentYear = new Date().getFullYear()

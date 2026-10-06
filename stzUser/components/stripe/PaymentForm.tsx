@@ -220,6 +220,9 @@ export function PaymentForm({ onCreditsGranted }: { onCreditsGranted?: () => voi
 
   const amount = Number(creditsRequested || 0)
   const totalCost = (amount * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
+  // Stated beside the price, so a player on the fence sees how little she can start with while the
+  // box opens at the default — Steve, 2026-10-06.
+  const minimumCost = (clientEnv.MIN_CREDITS_PURCHASE * clientEnv.CREDIT_PRICE_AUD).toFixed(2)
   const belowMin = !creditsRequested || amount < clientEnv.MIN_CREDITS_PURCHASE
 
   const handleCreateIntent = async () => {
@@ -272,9 +275,10 @@ export function PaymentForm({ onCreditsGranted }: { onCreditsGranted?: () => voi
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <p>
-        {/* No toFixed: it was three places for a tenth-of-a-cent price, and it renders a one-cent
-            price as "0.010". The number formats itself correctly at any price. */}
-        Purchase credits by card (AUD${clientEnv.CREDIT_PRICE_AUD} per credit).
+        {/* No toFixed on the per-credit price: it was three places for a tenth-of-a-cent price, and
+            it renders a one-cent price as "0.010". The number formats itself correctly at any price.
+            The minimum is dollars, so it has cents, as the total does. */}
+        Purchase credits by card (AUD${clientEnv.CREDIT_PRICE_AUD} per credit, ${minimumCost} minimum).
       </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>

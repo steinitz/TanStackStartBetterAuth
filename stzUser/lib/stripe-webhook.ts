@@ -81,6 +81,7 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
       await notifyStripeFulfillmentFailure({
         reason: err.message,
         eventId: event.id,
+        livemode: event.livemode,
         paymentIntentId: paymentIntent.id,
         userId: paymentIntent.metadata?.userId,
         amount: paymentIntent.amount,

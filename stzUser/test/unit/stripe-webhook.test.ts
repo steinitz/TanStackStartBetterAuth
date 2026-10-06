@@ -53,7 +53,7 @@ const succeededPI = {
 }
 
 const eventPayload = (type: string, object: unknown, id = 'evt_chunkB_1') =>
-  JSON.stringify({ id, object: 'event', type, data: { object } })
+  JSON.stringify({ id, object: 'event', type, livemode: false, data: { object } })
 
 const signedRequest = (payload: string, header?: string) =>
   new Request('http://localhost/api/stripe-webhook', {
@@ -129,6 +129,7 @@ describe('handleStripeWebhook (boundary)', () => {
     expect(mockNotify.mock.calls[0][0]).toMatchObject({
       reason: 'amount mismatch',
       eventId: 'evt_chunkB_1',
+      livemode: false,
       paymentIntentId: 'pi_chunkB_1',
     })
   })

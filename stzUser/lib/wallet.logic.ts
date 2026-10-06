@@ -461,6 +461,9 @@ export async function grantPurchaseCredits(paymentIntent: PurchasePaymentIntent)
 export async function notifyStripeFulfillmentFailure(details: {
   reason: string
   eventId?: string
+  // A sandbox event reaching a live deployment reads false here: a wrong-mode delivery, not a
+  // customer.
+  livemode?: boolean
   paymentIntentId?: string
   userId?: string | null
   amount?: number | null
@@ -475,6 +478,7 @@ export async function notifyStripeFulfillmentFailure(details: {
       message: `Stripe fulfillment failed: ${details.reason}`,
       context: {
         eventId: details.eventId,
+        livemode: details.livemode,
         paymentIntentId: details.paymentIntentId,
         userId: details.userId,
         amount: details.amount,

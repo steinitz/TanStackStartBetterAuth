@@ -33,6 +33,7 @@ describe('notifyStripeFulfillmentFailure', () => {
       notifyStripeFulfillmentFailure({
         reason: 'amount mismatch',
         eventId: 'evt_123',
+        livemode: false,
         paymentIntentId: 'pi_123',
         userId: 'user_abc',
         amount: 999,
@@ -51,6 +52,7 @@ describe('notifyStripeFulfillmentFailure', () => {
     expect(arg.message).toContain('amount mismatch')
     expect(arg.context).toMatchObject({
       eventId: 'evt_123',
+      livemode: false,
       paymentIntentId: 'pi_123',
       userId: 'user_abc',
       amount: 999,

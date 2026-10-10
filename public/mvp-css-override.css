@@ -32,6 +32,9 @@ a,
 a:visited {
   color: var(--color-link);
   text-decoration-color: var(--color-link);
+  /* Not mvp's bold: the underline and the colour already say "link" — Steve, 2026-10-10. A link
+     drawn as a chip, an <i> or <b> inside it, keeps its own weight. */
+  font-weight: normal;
 }
 
 button[type="reset"] {

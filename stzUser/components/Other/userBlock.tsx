@@ -50,9 +50,22 @@ const signOutFailureMessage = 'Sign-out could not be confirmed. Please try again
  */
 const collapseUserBlock = true
 
-// Matches HelpDisclosure's control, so the two round things in a header row are the
-// same size. Also what the pending state reserves.
-const userIconSize = '1.4rem'
+// The account icon's size, as a font size: a Font Awesome glyph is a letter, and sizes like
+// one. 1.3rem, chosen by eye beside a header's info icon of the same size — Steve, 2026-10-10.
+// It was a 1.4rem box around a glyph left at the inherited 1rem.
+const userIconSize = '1.3rem'
+
+// The icon's slot. 1.25em is Font Awesome's fixed width, fa-fw's, so the user icon, the wider fuel
+// pump and the sign-out spinner all take the same space and the row never shifts between them;
+// in em, so it follows the font size. Also what the pending state reserves. The 2px down is
+// optical: a solid circle centred on a line of words looks high — Steve, 2026-10-10.
+const userIconSlotStyle = {
+  fontSize: userIconSize,
+  width: '1.25em',
+  display: 'inline-flex',
+  justifyContent: 'center',
+  transform: 'translateY(2px)',
+} as const
 
 /**
  * How the menu panel lays its items out. A column, because a 408px row cannot fit a
@@ -148,7 +161,7 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
           // Reserve exactly what is about to arrive, so the header cannot jump as the
           // session resolves. The open layout reserves a full-width bar for the same
           // reason; collapsed, the thing arriving is one icon.
-          <span style={{ display: 'inline-block', width: userIconSize }} />
+          <span style={userIconSlotStyle} />
         ) : (
           <div style={{
             width: '100%',
@@ -265,10 +278,8 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
           // user can no longer see. This trigger is where their eye returns.
           <span
             style={{
+              ...userIconSlotStyle,
               color: isRunningLow ? 'var(--color-warning)' : 'var(--color-link)',
-              width: userIconSize,
-              display: 'inline-flex',
-              justifyContent: 'center',
             }}
           >
             {isSigningOut

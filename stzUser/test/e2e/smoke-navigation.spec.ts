@@ -9,8 +9,8 @@ test.describe('Smoke Test Navigation', () => {
     // Verify page loads successfully via stable footer element
     await expect(
       page.locator('footer'), 
-      "This test relies on the word 'copyright' in the / page.  At the time of writing 'copyright' is in the footer.  You can modify smoke-navigation.spec.ts to change this"
-    ).toContainText(/copyright/i);
+      "This test relies on the copyright sign, ©, in the footer. Since 2026-10-10 the footer reads \"© 2025-2026 STZDev\", without the word 'Copyright'. You can modify smoke-navigation.spec.ts to change this"
+    ).toContainText('©');
 
     // Verify main content area is present
     await expect(page.locator('main').first()).toBeVisible();
@@ -32,8 +32,8 @@ test.describe('Smoke Test Navigation', () => {
     // Verify page loads successfully via stable footer element
     await expect(
       page.locator('footer'), 
-      "This test relies on the word 'copyright' in the / page.  At the time of writing 'copyright' is in the footer.  You can modify smoke-navigation.spec.ts to change this"
-    ).toContainText(/copyright/i);
+      "This test relies on the copyright sign, ©, in the footer. Since 2026-10-10 the footer reads \"© 2025-2026 STZDev\", without the word 'Copyright'. You can modify smoke-navigation.spec.ts to change this"
+    ).toContainText('©');
 
     // Verify main content area is present
     await expect(page.locator('main').first()).toBeVisible();

@@ -66,7 +66,7 @@ describe('Footer', () => {
 
     // Dynamic Copyright
     const currentYear = new Date().getFullYear()
-    expect(getByText(new RegExp(`Copyright © 2024-${currentYear} Test Company`, 'i'))).toBeDefined()
+    expect(getByText(`© 2024-${currentYear} Test Company`)).toBeDefined()
 
     // Admin should see Admin Tools
     expect(getByText('Admin Tools')).toBeDefined()
@@ -101,6 +101,6 @@ describe('Footer', () => {
     vi.mocked(clientEnv).COPYRIGHT_START_YEAR = currentYear.toString()
 
     const { getByText } = render(<Footer />)
-    expect(getByText(new RegExp(`Copyright © ${currentYear} Test Company`, 'i'))).toBeDefined()
+    expect(getByText(`© ${currentYear} Test Company`)).toBeDefined()
   })
 })

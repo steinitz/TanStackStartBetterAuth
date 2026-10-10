@@ -40,12 +40,8 @@ const footerStyles = `
   align-items: center;
 }
 
-.site-footer-row-site { font-size: 0.85rem; }
-
-.site-footer-row-legal {
-  font-size: 0.75rem;
-  opacity: 0.8;
-}
+/* Both rows at the page's own 1rem and full text colour: the legal row was 0.75rem and faded to
+   grey, the site row 0.85rem — Steve, 2026-10-10. The rows differ by place, not by whispering. */
 
 .site-footer-site-links { display: flex; gap: 1.5rem; }
 
@@ -113,7 +109,9 @@ export const Footer = () => {
         </div>
 
         <div className="site-footer-copyright">
-          <span>Copyright © {copyrightYear} {clientEnv.COMPANY_NAME}. All Rights Reserved.</span>
+          {/* The © says copyright, and "All Rights Reserved" does no legal work since Berne —
+              Steve, 2026-10-10. */}
+          <span>© {copyrightYear} {clientEnv.COMPANY_NAME}</span>
           {isAdmin && (
             <Link to="/admin" style={{ color: 'inherit', textDecoration: 'underline' }}>
               Admin Tools

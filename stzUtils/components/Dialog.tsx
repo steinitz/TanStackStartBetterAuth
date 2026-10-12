@@ -100,7 +100,7 @@ export const Dialog = ({
               // this padding assumes an <h3> on top and buttons on the bottom
               padding: "0.5% 2% 1.5% 2%",
               border: "2px solid #000",
-              borderRadius: "10px",
+              borderRadius: "var(--border-radius)",
               minWidth: "200px",
               // Back-to-the-wall scrolling. The parent is position:fixed, so a
               // dialog taller than the screen overflows a centred box in both

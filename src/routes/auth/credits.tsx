@@ -124,7 +124,7 @@ function TransactionsPage() {
         border: '1px solid var(--color-bg-secondary)',
         boxSizing: 'border-box',
         padding: 'clamp(1rem, 4vw, 2rem)',
-        borderRadius: '12px',
+        borderRadius: 'var(--border-radius)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0rem',
@@ -252,7 +252,7 @@ function TransactionsPage() {
         <div style={{
           backgroundColor: 'var(--color-bg-secondary)',
           padding: '1rem',
-          borderRadius: '4px',
+          borderRadius: 'var(--border-radius)',
           fontFamily: 'monospace'
         }}>
           <p><strong>BSB:</strong> {clientEnv.BANK_TRANSFER_BSB}</p>

@@ -167,7 +167,7 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
             width: '100%',
             height: '24px',
             backgroundColor: 'var(--color-text)',
-            borderRadius: '4px',
+            borderRadius: 'var(--border-radius)',
             opacity: 0.1
           }} />
         )}
@@ -322,7 +322,7 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
           whiteSpace: 'normal',
           overflowWrap: 'break-word',
           padding: '1rem',
-          borderRadius: '12px',
+          borderRadius: 'var(--border-radius)',
           border: '1px solid var(--color-bg-secondary)',
           backgroundColor: 'var(--color-bg)',
         }}

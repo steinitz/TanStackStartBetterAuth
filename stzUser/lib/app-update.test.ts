@@ -121,3 +121,19 @@ describe('updateIfStale', () => {
     expect(JSON.parse(sessionStorage.getItem('stz.appUpdate')!)).toMatchObject({ build: 'a', acknowledged: true })
   })
 })
+
+describe('isUnhandledServerError', () => {
+  it('recognises the answer a missing server function sends', async () => {
+    const { isUnhandledServerError } = await import('./app-update-middleware')
+    expect(isUnhandledServerError({ status: 500, unhandled: true, message: 'HTTPError' })).toBe(true)
+  })
+
+  it('leaves ordinary answers alone, including ones that carry a status', async () => {
+    const { isUnhandledServerError } = await import('./app-update-middleware')
+    expect(isUnhandledServerError({ status: 500, message: 'HTTPError' })).toBe(false)
+    expect(isUnhandledServerError({ unhandled: true })).toBe(false)
+    expect(isUnhandledServerError([{ id: 1 }])).toBe(false)
+    expect(isUnhandledServerError(null)).toBe(false)
+    expect(isUnhandledServerError('HTTPError')).toBe(false)
+  })
+})

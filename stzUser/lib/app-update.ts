@@ -119,7 +119,13 @@ export async function updateIfStale({ failed }: { failed: boolean }): Promise<bo
  */
 function showUpdatingDialog(failed: boolean) {
   const dialog = document.createElement('dialog')
-  dialog.style.padding = '1.25rem'
+  // The theme's colours: a native dialog's own are white, whatever the theme.
+  Object.assign(dialog.style, {
+    padding: '1.25rem',
+    backgroundColor: 'var(--color-bg)',
+    color: 'var(--color-text)',
+    border: '1px solid var(--color-text)',
+  })
   const line = (text: string) => {
     const span = document.createElement('span')
     span.textContent = text

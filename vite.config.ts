@@ -4,6 +4,7 @@ import tsConfigPaths from 'vite-tsconfig-paths'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import netlify from '@netlify/vite-plugin-tanstack-start'
 import viteReact from '@vitejs/plugin-react-swc'
+import { buildVersion } from './stzUser/lib/build-version'
 
 export default defineConfig(({ command }) => ({
   server: {
@@ -16,7 +17,8 @@ export default defineConfig(({ command }) => ({
     tsConfigPaths(),
     tanstackStart(),
     netlify(),
-    viteReact()
+    viteReact(),
+    buildVersion(),
   ],
   resolve: {
     alias: command === 'build'

@@ -5,7 +5,9 @@
 // on this one fills the table with its own events — see the middleware's own comment.
 import { createStart } from '@tanstack/react-start'
 import { createServerCallCharge } from '~stzUser/lib/server-call-charge'
+import { createAppUpdateCheck } from '~stzUser/lib/app-update-middleware'
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [createServerCallCharge([])],
+  // The update check first, so it wraps the charge and sees its failures too.
+  functionMiddleware: [createAppUpdateCheck(), createServerCallCharge([])],
 }))

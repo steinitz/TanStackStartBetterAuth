@@ -11,6 +11,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { clientEnv } from '~/lib/env.app'
 
 import { MainLayout } from '~/components/MainLayout'
+import { AppUpdate } from '~stzUser/components/Other/AppUpdate'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -81,6 +82,8 @@ function RootDocument({ children }: { children: ReactNode }) {
           }}
         />
         <MainLayout>{children}</MainLayout>
+        {/* Outside MainLayout: it belongs to the document, and survives navigation. */}
+        <AppUpdate />
         <Scripts />
       </body>
     </html>

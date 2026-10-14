@@ -7,6 +7,15 @@ import { FormFieldError } from "~stzUtils/components/FormFieldError";
 import { BusyButton } from "~stzUtils/components/BusyButton";
 import { niceValidationIssues, sharedFormSubmission } from "~stzUser/lib/form";
 import { requiredPasswordValidation } from '~stzUser/lib/password-validation';
+import { isPageStale } from '~stzUser/lib/app-update';
+import { sendReport } from '~stzUser/lib/pending-reports';
+
+/**
+ * A sign-in still waiting this long is reported, once. Steve's sign-in hung about two minutes on
+ * 2026-10-13, after a deploy; the report says whether the page was stale, which is the question.
+ * See planning doc pd-3e5lmh, a page from before a deploy.
+ */
+const SLOW_SIGN_IN_MS = 10_000
 
 // TypeScript - sugggested by Valibot docs and comes in handy later
 type SignInData = {
@@ -121,6 +130,18 @@ export const SignIn = () => {
     setIsSigningIn(true)
 
     let signedIn = false
+    // Read when it fires, so it says which wait it caught: the sign-in itself, or the home page
+    // loading after it. Left running on success, since the page going takes it along.
+    const slowSignIn = setTimeout(async () => {
+      sendReport({
+        message: 'signIn.slow',
+        context: {
+          waitedMs: SLOW_SIGN_IN_MS,
+          phase: signedIn ? 'loading home after sign-in' : 'waiting for sign-in',
+          pageStale: await isPageStale(),
+        },
+      })
+    }, SLOW_SIGN_IN_MS)
     try {
       signedIn = await doSignIn(fields)
     } catch (error) {
@@ -136,6 +157,7 @@ export const SignIn = () => {
     if (signedIn) return
 
     // Every failure leaves her here, looking at the form, needing to press it again.
+    clearTimeout(slowSignIn)
     signInInFlight.current = false
     setIsSigningIn(false)
   }

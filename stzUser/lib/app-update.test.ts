@@ -64,6 +64,17 @@ describe('updateIfStale', () => {
     expect(await updateIfStale({ failed: true })).toBe(false)
   })
 
+  it('leaves its report for the new page, naming both builds', async () => {
+    serve('b')
+    const { updateIfStale } = await load()
+
+    await updateIfStale({ failed: true, report: { message: 'app.update.staleCall', context: { fn: 'getUserGames' } } })
+    expect(JSON.parse(sessionStorage.getItem('stz.pendingReports')!)).toEqual([{
+      message: 'app.update.staleCall',
+      context: { fn: 'getUserGames', runningBuild: 'a', servedBuild: 'b', path: '/' },
+    }])
+  })
+
   it('says only "Updating" when the tab woke, since nothing failed', async () => {
     serve('b')
     const { updateIfStale } = await load()

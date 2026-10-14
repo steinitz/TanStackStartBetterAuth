@@ -8,10 +8,13 @@ import {
   UPDATE_REQUIRED,
   watchForUpdates,
 } from '~stzUser/lib/app-update'
+import { sendPendingReports } from '~stzUser/lib/pending-reports'
 
 // Subscribing is also when the watch starts: after hydration, in the browser only, and once,
-// since the root renders this once. See planning doc pd-3e5lmh.
+// since the root renders this once. It is also when the reports an older page left are sent.
+// See planning doc pd-3e5lmh.
 const subscribe = (onChange: () => void) => {
+  void sendPendingReports()
   const stopWatching = watchForUpdates()
   const unsubscribe = subscribeToUpdateNote(onChange)
   return () => {

@@ -15,6 +15,7 @@
  */
 import { BUILD_VERSION_FILE } from './build-version'
 import { clientEnv } from './env'
+import { queueReport, type PendingReport } from './pending-reports'
 
 /** Names no action: the page cannot say in her words what failed — Steve, 2026-10-14. */
 export const UPDATE_REQUIRED = 'Error: Update required'
@@ -98,13 +99,31 @@ async function fetchServedBuild(): Promise<string | null> {
   }
 }
 
-/** Reloads the page when the server names a newer build. True when the reload is under way. */
-export async function updateIfStale({ failed }: { failed: boolean }): Promise<boolean> {
+/** Whether the server now serves another build; null when either is unknown. */
+export async function isPageStale(): Promise<boolean | null> {
+  const running = runningBuild()
+  if (running === null) return null
+  const served = await fetchServedBuild()
+  return served === null ? null : served !== running
+}
+
+/**
+ * Reloads the page when the server names a newer build. True when the reload is under way.
+ *
+ * A report, when given, is sent by the new page: Steve is emailed once per page per build, since
+ * this reloads into a build once. Sent from here it might not arrive, from a page that is going.
+ */
+export async function updateIfStale(
+  { failed, report }: { failed: boolean; report?: PendingReport },
+): Promise<boolean> {
   const running = runningBuild()
   if (running === null) return false
   const served = await fetchServedBuild()
   if (!shouldReload(running, served, getUpdateNote()) || served === null) return false
   if (!setUpdateNote({ build: served, reloadedAt: Date.now(), failed, acknowledged: false })) return false
+  if (report) {
+    queueReport({ ...report, context: { ...report.context, runningBuild: running, servedBuild: served, path: location.pathname } })
+  }
 
   showUpdatingDialog(failed)
   // A task later, so whatever the app does on the failure, keeping a game it could not save, say,
@@ -147,7 +166,7 @@ export function watchForUpdates() {
   }
   // Vite raises this when a route's chunk will not load, which is what a deploy does to an old page.
   const onPreloadError = () => {
-    void updateIfStale({ failed: true })
+    void updateIfStale({ failed: true, report: { message: 'app.update.staleChunk', context: {} } })
   }
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('vite:preloadError', onPreloadError)

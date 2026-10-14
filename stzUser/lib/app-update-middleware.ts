@@ -24,20 +24,27 @@ export function isUnhandledServerError(value: unknown): value is { status: numbe
 }
 
 export function createAppUpdateCheck() {
-  return createMiddleware({ type: 'function' }).client(async ({ next }) => {
+  return createMiddleware({ type: 'function' }).client(async (options) => {
+    const { next } = options
     // During server rendering this half runs in the server process, which has no page to reload.
     const inBrowser = typeof window !== 'undefined'
+    // Which call failed, for the report Steve is emailed when it was a stale page's.
+    const fn = (options as { serverFnMeta?: { name?: string } }).serverFnMeta?.name ?? 'unknown'
+    const updateIfStaleAfter = (error: string) => {
+      if (inBrowser) void updateIfStale({ failed: true, report: { message: 'app.update.staleCall', context: { fn, error } } })
+    }
+
     let result: Awaited<ReturnType<typeof next>>
     try {
       result = await next()
     } catch (error) {
-      if (inBrowser) void updateIfStale({ failed: true })
+      updateIfStaleAfter(error instanceof Error ? error.message : String(error))
       throw error
     }
 
     const answer = (result as { result?: unknown }).result
     if (isUnhandledServerError(answer)) {
-      if (inBrowser) void updateIfStale({ failed: true })
+      updateIfStaleAfter(`${answer.status} ${answer.message ?? ''}`.trim())
       // Thrown, so the caller's failure handling runs instead of the error object being read as data.
       throw new Error(`Server call failed: ${answer.status} ${answer.message ?? ''}`.trim())
     }

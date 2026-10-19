@@ -3,13 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // The wallet's own behaviour is proven against a real database in wallet.integration.test.ts.
 // Here it stands in, so these tests are about the middleware's decisions.
 vi.mock('~stzUser/lib/server-auth', () => ({ getOptionalSessionUser: vi.fn() }))
-vi.mock('~stzUser/lib/wallet.logic', () => ({ takeCreditsUpTo: vi.fn() }))
+vi.mock('~stzUser/lib/wallet.logic', () => ({ chargeEvent: vi.fn(), getWalletStatusInternal: vi.fn() }))
+vi.mock('~stzUser/lib/logToServer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~stzUser/lib/logToServer')>()),
+  logWithThrottledNotification: vi.fn(),
+}))
 
 import { getOptionalSessionUser } from '~stzUser/lib/server-auth'
-import { takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
+import { getWalletStatusInternal, chargeEvent } from '~stzUser/lib/wallet.logic'
+import { logWithThrottledNotification } from '~stzUser/lib/logToServer'
 import { WALLET_EVENTS } from '~stzUser/lib/wallet-client'
 import {
   NOT_ENOUGH_CREDITS,
+  chargeOf,
   createServerCallCharge,
   type ServerFnPriceTable,
 } from '~stzUser/lib/server-call-charge'
@@ -27,17 +33,19 @@ type Halves = {
   client: (options: unknown) => Promise<unknown>
 }
 
-// What the charge before the work and the charge after it look like from outside: the order in
-// which the two happened. A test that wants a different charge sets `charge` before running.
+// What the check before the work, the work and the charge after it look like from outside: the
+// order in which they happened. A test that wants a different charge, or a different balance at
+// the check, sets `charge` or `balance` before running.
 const order: string[] = []
 let charge = { refused: false, taken: 5, credits: 41 }
+let balance = 41
 
-/** Runs the server half for one server function, optionally with work that throws. */
-function runServerHalf(name: string, file = GAMES, work?: () => void) {
-  const next = vi.fn(async (context?: { sendContext?: unknown }) => {
+/** Runs the server half for one server function, with work that may read its context or throw. */
+function runServerHalf(name: string, file = GAMES, work?: (context: unknown) => void) {
+  const next = vi.fn(async (passed?: { context?: unknown; sendContext?: unknown }) => {
     order.push('work')
-    work?.()
-    return { sendContext: context?.sendContext, result: 'done' }
+    work?.(passed?.context)
+    return { sendContext: passed?.sendContext, result: 'done' }
   })
   const { server } = createServerCallCharge(table).options as unknown as Halves
   return { next, run: server({ next, serverFnMeta: { id: 'x', name, filename: file } }) }
@@ -48,8 +56,13 @@ describe('server call charge', () => {
     vi.clearAllMocks()
     order.length = 0
     charge = { refused: false, taken: 5, credits: 41 }
+    balance = 41
     vi.mocked(getOptionalSessionUser).mockResolvedValue({ id: 'user-1' } as never)
-    vi.mocked(takeCreditsUpTo).mockImplementation(async () => {
+    vi.mocked(getWalletStatusInternal).mockImplementation(async () => {
+      order.push('check')
+      return { credits: balance, welcomeClaimed: true }
+    })
+    vi.mocked(chargeEvent).mockImplementation(async () => {
       order.push('charge')
       return charge
     })
@@ -59,8 +72,8 @@ describe('server call charge', () => {
     const { next, run } = runServerHalf('getThing')
     await run
     expect(getOptionalSessionUser).not.toHaveBeenCalled()
-    expect(takeCreditsUpTo).not.toHaveBeenCalled()
-    expect(next).toHaveBeenCalledWith({ sendContext: { balance: undefined } })
+    expect(chargeEvent).not.toHaveBeenCalled()
+    expect(next).toHaveBeenCalledWith({ context: { charge: expect.any(Object) }, sendContext: { balance: undefined } })
   })
 
   // A price names a file and an export. Renaming either would make a priced event free, silently,
@@ -68,21 +81,21 @@ describe('server call charge', () => {
   it('prices a function by its file as well as its name', async () => {
     const { run } = runServerHalf('saveGame', 'src/lib/server/other.ts')
     await run
-    expect(takeCreditsUpTo).not.toHaveBeenCalled()
+    expect(chargeEvent).not.toHaveBeenCalled()
   })
 
   it('lets a signed-out call through free', async () => {
     vi.mocked(getOptionalSessionUser).mockResolvedValue(null)
     const { run } = runServerHalf('saveGame')
     await run
-    expect(takeCreditsUpTo).not.toHaveBeenCalled()
+    expect(chargeEvent).not.toHaveBeenCalled()
   })
 
   it('charges a save after the work, so work that throws is never paid for', async () => {
     const { run } = runServerHalf('saveGame')
     const settled = await run
     expect(order).toEqual(['work', 'charge'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseBelowPrice: false, oneRowPerDay: false })
+    expect(chargeEvent).toHaveBeenCalledWith('user-1', 'Game saved', 5, { refuseBelowPrice: false, oneRowPerDay: false })
     expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
   })
 
@@ -91,39 +104,89 @@ describe('server call charge', () => {
       throw new Error('the database said no')
     })
     await expect(run).rejects.toThrow('the database said no')
-    expect(takeCreditsUpTo).not.toHaveBeenCalled()
+    expect(chargeEvent).not.toHaveBeenCalled()
   })
 
-  it('charges a run before the work, so a refusal arrives instead of it', async () => {
-    const { next, run } = runServerHalf('startRun')
-    await run
-    expect(order).toEqual(['charge', 'work'])
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseBelowPrice: true, oneRowPerDay: false })
-    expect(next).toHaveBeenCalledWith({ sendContext: { balance: { userId: 'user-1', credits: 41 } } })
+  it('checks a run before the work and charges it after, never refusing once the work is done', async () => {
+    const { run } = runServerHalf('startRun')
+    const settled = await run
+    expect(order).toEqual(['check', 'work', 'charge'])
+    expect(getWalletStatusInternal).toHaveBeenCalledWith('user-1')
+    expect(chargeEvent).toHaveBeenCalledWith('user-1', 'Game analysed', 8, { refuseBelowPrice: false, oneRowPerDay: false })
+    expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
   })
 
-  it('refuses a run she cannot pay for in full, before the work runs, and says what she has', async () => {
-    charge = { refused: true, taken: 0, credits: 5 }
+  it('refuses a run she cannot pay for in full, before the work runs, taking nothing, and says what she has', async () => {
+    balance = 5
     const { next, run } = runServerHalf('startRun')
     await expect(run).rejects.toThrow(new RegExp(`^${NOT_ENOUGH_CREDITS}: this costs 8 and you have 5`))
     expect(next).not.toHaveBeenCalled()
+    expect(chargeEvent).not.toHaveBeenCalled()
+  })
+
+  it('does not charge a run whose work throws', async () => {
+    const { run } = runServerHalf('startRun', GAMES, () => {
+      throw new Error('the model said no')
+    })
+    await expect(run).rejects.toThrow('the model said no')
+    expect(order).toEqual(['check', 'work'])
+    expect(chargeEvent).not.toHaveBeenCalled()
+  })
+
+  // Two calls overlapping on a low balance both pass the check; the second takes what is left.
+  it('reports a run that comes up short at checkout, and still sends the balance home', async () => {
+    charge = { refused: false, taken: 3, credits: 0 }
+    const { run } = runServerHalf('startRun')
+    const settled = await run
+    expect(logWithThrottledNotification).toHaveBeenCalledWith({
+      level: 'warn',
+      source: 'Server',
+      message: 'charge.short',
+      context: { userId: 'user-1', label: 'Game analysed', price: 8, taken: 3, credits: 0 },
+    })
+    expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 0 } })
+  })
+
+  it('does not report a run charged in full', async () => {
+    charge = { refused: false, taken: 8, credits: 33 }
+    await runServerHalf('startRun').run
+    expect(logWithThrottledNotification).not.toHaveBeenCalled()
+  })
+
+  it('charges the price a call sets in place of the table\'s, checked against the table\'s', async () => {
+    balance = 8
+    const { run } = runServerHalf('startRun', GAMES, (context) => chargeOf(context).setPrice(11))
+    await run
+    expect(order).toEqual(['check', 'work', 'charge'])
+    expect(chargeEvent).toHaveBeenCalledWith('user-1', 'Game analysed', 11, { refuseBelowPrice: false, oneRowPerDay: false })
+  })
+
+  it('fails a call that sets a price that is not a positive whole number, and charges nothing', async () => {
+    const { run } = runServerHalf('startRun', GAMES, (context) => chargeOf(context).setPrice(0))
+    await expect(run).rejects.toThrow('A call\'s price must be a positive whole number, not 0')
+    expect(chargeEvent).not.toHaveBeenCalled()
+  })
+
+  it('says so when a call reads a charge its context does not have', () => {
+    expect(() => chargeOf({})).toThrow(/No charge in this call's context/)
   })
 
   it('passes a price marked one row a day on to the wallet', async () => {
     const { run } = runServerHalf('practise')
     await run
-    expect(takeCreditsUpTo).toHaveBeenCalledWith('user-1', 'Puzzles practised', 1, {
+    expect(chargeEvent).toHaveBeenCalledWith('user-1', 'Puzzles practised', 1, {
       refuseBelowPrice: false,
       oneRowPerDay: true,
     })
   })
 
-  it('lets a save through at zero, and sends the unchanged balance home', async () => {
+  it('lets a save through at zero, sends the unchanged balance home, and reports nothing', async () => {
     charge = { refused: false, taken: 0, credits: 0 }
     const { run } = runServerHalf('saveGame')
     const settled = await run
     expect(order).toEqual(['work', 'charge'])
     expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 0 } })
+    expect(logWithThrottledNotification).not.toHaveBeenCalled()
   })
 
   it('announces a balance that comes home to the page', async () => {

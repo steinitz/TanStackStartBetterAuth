@@ -165,16 +165,17 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
 }
 
 /**
- * Takes up to `price` credits for one thing she did, and stops at zero.
+ * Charges one thing she did: takes up to `price` credits, stopping at zero, and writes its ledger
+ * row. Named `takeCreditsUpTo` until 2026-10-19.
  *
  * A price is what an event costs, not what she must have: with 3 credits left, a save priced 5
  * takes the 3. The ledger records what was taken, so the row and the balance always agree.
  *
- * `refuseBelowPrice` marks the events that start new work — an analysis run, an AI comment. Those
- * are refused when the balance is below the price, so they are taken whole or not at all, and
- * their caller charges before doing the work so that the refusal arrives first. With 5 left, a run
- * priced 8 is refused and takes nothing. A save or a read is never refused: it runs, and pays what
- * it can.
+ * `refuseBelowPrice` refuses when the balance is below the price, taking nothing: with 5 left, a
+ * run priced 8 is refused. The charge middleware no longer asks for it. It checks a refusable
+ * event's balance before the work and charges after the work succeeds, never refusing then, since
+ * the work is done; see `server-call-charge.ts`. The option stays for a caller that charges up
+ * front.
  *
  * Nothing is taken and no row is written at zero. A row for nothing is not a record of anything,
  * and `assertPositiveWholeAmount` would refuse to write it anyway.
@@ -182,7 +183,7 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
  * `oneRowPerDay` gathers an event's charges into one ledger row for her local day. The charge is
  * still taken each time, so a closed tab loses nothing; only the row is shared.
  */
-export async function takeCreditsUpTo(
+export async function chargeEvent(
   userId: string,
   resourceType: string,
   price: number,

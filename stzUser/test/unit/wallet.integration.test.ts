@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, beforeAll, afterEach, inject, vi } from 'vitest'
 import { db } from '~stzUser/lib/database'
-import { getWalletStatusInternal, grantCreditsInternal, claimWelcomeGrantInternal, takeCreditsUpTo } from '~stzUser/lib/wallet.logic'
+import { getWalletStatusInternal, grantCreditsInternal, claimWelcomeGrantInternal, chargeEvent } from '~stzUser/lib/wallet.logic'
 import { removeCreditsInternal } from '~stzUser/lib/admin-credit.logic'
 import { auth } from '~stzUser/lib/auth'
 import { ensureAdditionalTables } from '~stzUser/lib/migrations'
@@ -42,7 +42,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
   // Her first act of a day may be a charged one, before anything has read her wallet. The charge
   // grants the day first, so it takes from today's credits rather than finding none.
   it('grants the day before taking, when a charge is the first thing she does', async () => {
-    const charge = await takeCreditsUpTo(testUserId, 'Game saved', 1, { refuseBelowPrice: true })
+    const charge = await chargeEvent(testUserId, 'Game saved', 1, { refuseBelowPrice: true })
 
     expect(charge).toMatchObject({ refused: false, taken: 1, credits: 99 })
   })
@@ -53,7 +53,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     it('takes the whole price when she can afford it, and records it', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
 
-      const charge = await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
+      const charge = await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
 
       expect(charge).toMatchObject({ refused: false, taken: 5, credits: before - 5 })
       const row = await db
@@ -67,9 +67,9 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
     it('takes what is left when the price is more than the balance', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, 'Game saved', before - 3, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, 'Game saved', before - 3, { refuseBelowPrice: false })
 
-      const charge = await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
+      const charge = await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
 
       // Three left and a price of five: she pays the three, and the row says three.
       expect(charge).toMatchObject({ refused: false, taken: 3, credits: 0 })
@@ -84,11 +84,11 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
     it('refuses new work below its price, takes nothing and writes no row', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, 'Game saved', before - 5, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, 'Game saved', before - 5, { refuseBelowPrice: false })
       const rowsAtFive = await db.selectFrom('transactions').select('id').where('user_id', '=', testUserId).execute()
 
       // Five left and a run priced eight: refused whole, and her five stay hers.
-      const run = await takeCreditsUpTo(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
+      const run = await chargeEvent(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
 
       expect(run).toMatchObject({ refused: true, taken: 0, credits: 5 })
       const rowsAfter = await db.selectFrom('transactions').select('id').where('user_id', '=', testUserId).execute()
@@ -98,24 +98,24 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
     it('takes new work priced exactly what she has', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, 'Game saved', before - 8, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, 'Game saved', before - 8, { refuseBelowPrice: false })
 
-      const run = await takeCreditsUpTo(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
+      const run = await chargeEvent(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
 
       expect(run).toMatchObject({ refused: false, taken: 8, credits: 0 })
     })
 
     it('refuses at zero only what is refusable, and writes no row either way', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, 'Game saved', before, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, 'Game saved', before, { refuseBelowPrice: false })
       const rowsAtZero = await db
         .selectFrom('transactions')
         .select('id')
         .where('user_id', '=', testUserId)
         .execute()
 
-      const run = await takeCreditsUpTo(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
-      const save = await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
+      const run = await chargeEvent(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
+      const save = await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
 
       expect(run).toMatchObject({ refused: true, taken: 0, credits: 0 })
       expect(save).toMatchObject({ refused: false, taken: 0, credits: 0 })
@@ -155,11 +155,11 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
     it('adds a second charge on her day to the first row, and moves its time to now', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
-      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      await chargeEvent(testUserId, PRACTISED, 1, gathered)
       // Stamped at the very start of her day, so the move to now shows.
       await restamp(startOfHerDay())
 
-      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      await chargeEvent(testUserId, PRACTISED, 1, gathered)
 
       const rows = await rowsOf(PRACTISED)
       expect(rows).toHaveLength(1)
@@ -170,19 +170,19 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     })
 
     it('starts a new row once her day has turned', async () => {
-      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      await chargeEvent(testUserId, PRACTISED, 1, gathered)
       await restamp(new Date(new Date(startOfHerDay()).getTime() - 1).toISOString())
 
-      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
+      await chargeEvent(testUserId, PRACTISED, 1, gathered)
 
       expect((await rowsOf(PRACTISED)).map((row) => row.amount)).toEqual([-1, -1])
     })
 
     it('keeps a row per charge for a price not marked, and apart for another label', async () => {
-      await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
-      await takeCreditsUpTo(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
-      await takeCreditsUpTo(testUserId, PRACTISED, 1, gathered)
-      await takeCreditsUpTo(testUserId, 'Lessons practised', 1, gathered)
+      await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, PRACTISED, 1, gathered)
+      await chargeEvent(testUserId, 'Lessons practised', 1, gathered)
 
       expect(await rowsOf('Game saved')).toHaveLength(2)
       expect(await rowsOf(PRACTISED)).toHaveLength(1)
@@ -201,7 +201,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
       vi.setSystemTime(new Date('2026-09-17T21:00:00Z')) // 7:00am, 18 Sep, in Sydney
       await getWalletStatusInternal(testUserId, SYDNEY)
       vi.setSystemTime(new Date('2026-09-18T00:30:00Z')) // 10:30am, same local day
-      await takeCreditsUpTo(testUserId, 'Game saved', 1, { refuseBelowPrice: false })
+      await chargeEvent(testUserId, 'Game saved', 1, { refuseBelowPrice: false })
 
       const grants = await db.selectFrom('transactions').select('id')
         .where('user_id', '=', testUserId).where('type', '=', 'daily_grant').execute()

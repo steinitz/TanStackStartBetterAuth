@@ -32,12 +32,17 @@ export type ServerFnPrice = {
    */
   label: string
   /**
-   * True for an event that starts new work, such as an analysis run. Those are refused when the
-   * balance is below the price, and charged the whole price before the work runs, so the refusal
-   * arrives instead of it. New work she cannot pay for in full is not given away.
+   * True for an event that starts new work, such as an analysis run. Her balance is checked before
+   * the work, and below the price she is refused, so the refusal arrives instead of the work. The
+   * charge comes after the work succeeds, so work that fails costs her nothing: checkout, not a
+   * toll at the door — Steve, 2026-10-19, "It might prevent a few support requests."
+   *
+   * The charge can come up short: two calls overlapped on a low balance, or the call set a price
+   * above what she had left. The work is done by then, so the charge takes what is left, and the
+   * shortfall is reported as `charge.short`. Accepted, as a shop accepts a little shoplifting.
    *
    * Left out for a save or a read, which are never refused: they run, and pay what is left. They
-   * are charged after the work succeeds, so a call that fails costs her nothing.
+   * too are charged after the work succeeds.
    */
   refusedBelowPrice?: boolean
   /**
@@ -54,6 +59,40 @@ export type ServerFnPriceTable = readonly ServerFnPrice[]
 export { NOT_ENOUGH_CREDITS, isNotEnoughCredits } from './wallet-contracts'
 
 const priceKey = (file: string, name: string) => `${file}#${name}`
+
+/**
+ * What a call may say about its own charge, handed to it in its context: read it with `chargeOf`.
+ *
+ * `setPrice` replaces the table's price with one the call worked out, charged when it succeeds.
+ * The coach's comment is one: a round of looks is inside the table's price and each further round,
+ * a dig, costs one more. A refusable event is still checked against the table's price, so set one
+ * no lower than it. Only a priced call is charged: a price set on an unpriced call is ignored.
+ */
+export type CallCharge = {
+  setPrice: (credits: number) => void
+}
+
+/** The charge the middleware handed this call, from the `context` its handler receives. */
+export function chargeOf(context: unknown): CallCharge {
+  const charge = (context as { charge?: CallCharge } | null | undefined)?.charge
+  if (!charge) throw new Error(`No charge in this call's context: is the charge middleware registered?`)
+  return charge
+}
+
+/** A call's charge, and the price it set, if it set one. */
+function callCharge() {
+  let set: number | undefined
+  const charge: CallCharge = {
+    setPrice: (credits) => {
+      // Checked here, inside the call, so a bad price fails the call rather than its charge.
+      if (!Number.isInteger(credits) || credits <= 0) {
+        throw new Error(`A call's price must be a positive whole number, not ${credits}`)
+      }
+      set = credits
+    },
+  }
+  return { charge, priceSet: () => set }
+}
 
 /**
  * What the server half sends home, always the same shape.
@@ -82,37 +121,61 @@ export function createServerCallCharge(table: ServerFnPriceTable) {
       return result
     })
     .server(async ({ next, serverFnMeta }) => {
+      // Every call gets a charge in its context, priced or not, so the context has one shape: the
+      // framework's types refuse a middleware whose branches pass different ones.
+      const { charge, priceSet } = callCharge()
       const price = prices.get(priceKey(serverFnMeta.filename, serverFnMeta.name))
-      if (!price) return next({ sendContext: sends(undefined) })
+      if (!price) return next({ context: { charge }, sendContext: sends(undefined) })
 
       const { getOptionalSessionUser } = await import('./server-auth')
       const user = await getOptionalSessionUser()
-      if (!user) return next({ sendContext: sends(undefined) })
+      if (!user) return next({ context: { charge }, sendContext: sends(undefined) })
 
-      if (price.refusedBelowPrice) {
-        return next({ sendContext: sends(await takeCredits(user.id, price)) })
-      }
+      if (price.refusedBelowPrice) await refuseBelowPrice(user.id, price)
 
       // Charged on the way out, so work that throws is never paid for. The balance still rides
       // home, because a middleware's own return value is what the server hands back — so the
       // charge writes into that object rather than building a new one.
-      const result = await next({ sendContext: sends(undefined) })
-      result.sendContext = { ...result.sendContext, balance: await takeCredits(user.id, price) }
+      const result = await next({ context: { charge }, sendContext: sends(undefined) })
+      result.sendContext = { ...result.sendContext, balance: await takeCredits(user.id, price, priceSet() ?? price.price) }
       return result
     })
 }
 
-/** Takes one event's price, and throws when a refusable event finds the balance below it. */
-async function takeCredits(userId: string, price: ServerFnPrice) {
-  const { takeCreditsUpTo } = await import('./wallet.logic')
-  const charge = await takeCreditsUpTo(userId, price.label, price.price, {
-    refuseBelowPrice: price.refusedBelowPrice === true,
+/**
+ * Refuses a refusable event, before its work, when her balance is below its price. Takes nothing.
+ * The wallet's read applies her daily grant first, as a charge does, so the first call of her day
+ * is judged with that day's credits.
+ */
+async function refuseBelowPrice(userId: string, price: ServerFnPrice) {
+  const { getWalletStatusInternal } = await import('./wallet.logic')
+  const { credits } = await getWalletStatusInternal(userId)
+  if (credits < price.price) {
+    throw new Error(
+      `${NOT_ENOUGH_CREDITS}: this costs ${price.price} and you have ${Math.max(credits, 0)}. Buy more on the Credits page.`,
+    )
+  }
+}
+
+/**
+ * Takes one event's price after its work succeeded, stopping at zero. Never refused here: the work
+ * is done. A refusable event that comes up short is reported, so we learn how often it happens:
+ * another call overlapped it on a low balance, or it set a price above what she had left.
+ */
+async function takeCredits(userId: string, price: ServerFnPrice, credits: number) {
+  const { chargeEvent } = await import('./wallet.logic')
+  const charge = await chargeEvent(userId, price.label, credits, {
+    refuseBelowPrice: false,
     oneRowPerDay: price.oneRowPerDay === true,
   })
-  if (charge.refused) {
-    throw new Error(
-      `${NOT_ENOUGH_CREDITS}: this costs ${price.price} and you have ${charge.credits}. Buy more on the Credits page.`,
-    )
+  if (price.refusedBelowPrice && charge.taken < credits) {
+    const { logWithThrottledNotification } = await import('./logToServer')
+    await logWithThrottledNotification({
+      level: 'warn',
+      source: 'Server',
+      message: 'charge.short',
+      context: { userId, label: price.label, price: credits, taken: charge.taken, credits: charge.credits },
+    })
   }
 
   const balance: AnnouncedBalance = { userId, credits: charge.credits }

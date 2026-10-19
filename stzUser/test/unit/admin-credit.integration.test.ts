@@ -15,7 +15,7 @@ import { ensureAdditionalTables } from '~stzUser/lib/migrations'
 import {
   getWalletStatusInternal,
   grantCreditsInternal,
-  takeCreditsUpTo,
+  chargeEvent,
 } from '~stzUser/lib/wallet.logic'
 import { testConstants } from '~stzUser/test/constants'
 
@@ -84,11 +84,11 @@ describe.sequential('admin credit accounting integration', () => {
 
     for (const price of [-1, 0, 1.5, NaN, Infinity, 1_000_001]) {
       await expect(
-        takeCreditsUpTo(user.id, 'analysis', price, { refuseBelowPrice: false }),
+        chargeEvent(user.id, 'analysis', price, { refuseBelowPrice: false }),
       ).rejects.toThrow(/positive whole number/)
     }
     await expect(
-      takeCreditsUpTo(user.id, ' ', 1, { refuseBelowPrice: false }),
+      chargeEvent(user.id, ' ', 1, { refuseBelowPrice: false }),
     ).rejects.toThrow(/resourceType/)
 
     expect(await storedCredits(user.id)).toBe(0)

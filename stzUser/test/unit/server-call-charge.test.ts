@@ -167,6 +167,31 @@ describe('server call charge', () => {
     expect(chargeEvent).not.toHaveBeenCalled()
   })
 
+  it('charges nothing for a call that waives its charge, and sends no balance home', async () => {
+    balance = 8
+    const { run } = runServerHalf('startRun', GAMES, (context) => chargeOf(context).waive())
+    const result = await run
+    expect(order).toEqual(['check', 'work'])
+    expect(chargeEvent).not.toHaveBeenCalled()
+    expect(result.sendContext).toEqual({ balance: undefined })
+  })
+
+  it('still refuses a call that would waive its charge, before the work, when she cannot pay', async () => {
+    balance = 3
+    const { run, next } = runServerHalf('startRun', GAMES, (context) => chargeOf(context).waive())
+    await expect(run).rejects.toThrow(NOT_ENOUGH_CREDITS)
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('charges by the last of a set price and a waiver', async () => {
+    await runServerHalf('startRun', GAMES, (context) => { chargeOf(context).waive(); chargeOf(context).setPrice(11) }).run
+    expect(chargeEvent).toHaveBeenCalledWith('user-1', 'Game analysed', 11, { refuseBelowPrice: false, oneRowPerDay: false })
+
+    vi.mocked(chargeEvent).mockClear()
+    await runServerHalf('startRun', GAMES, (context) => { chargeOf(context).setPrice(11); chargeOf(context).waive() }).run
+    expect(chargeEvent).not.toHaveBeenCalled()
+  })
+
   it('says so when a call reads a charge its context does not have', () => {
     expect(() => chargeOf({})).toThrow(/No charge in this call's context/)
   })

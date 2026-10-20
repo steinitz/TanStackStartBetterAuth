@@ -67,9 +67,15 @@ const priceKey = (file: string, name: string) => `${file}#${name}`
  * The coach's comment is one: a round of looks is inside the table's price and each further round,
  * a dig, costs one more. A refusable event is still checked against the table's price, so set one
  * no lower than it. Only a priced call is charged: a price set on an unpriced call is ignored.
+ *
+ * `waive` charges nothing this time, and writes no ledger row: a call that succeeds by handing out
+ * work still to do, which a later call finishes and is charged for. The coach's comment is one,
+ * when its rounds stop for her browser's engine. The door is unchanged: a refusable call is still
+ * refused below its price before its work. The last of `setPrice` and `waive` wins.
  */
 export type CallCharge = {
   setPrice: (credits: number) => void
+  waive: () => void
 }
 
 /** The charge the middleware handed this call, from the `context` its handler receives. */
@@ -79,9 +85,10 @@ export function chargeOf(context: unknown): CallCharge {
   return charge
 }
 
-/** A call's charge, and the price it set, if it set one. */
+/** A call's charge, the price it set, if it set one, and whether it waived its charge. */
 function callCharge() {
   let set: number | undefined
+  let waived = false
   const charge: CallCharge = {
     setPrice: (credits) => {
       // Checked here, inside the call, so a bad price fails the call rather than its charge.
@@ -89,9 +96,14 @@ function callCharge() {
         throw new Error(`A call's price must be a positive whole number, not ${credits}`)
       }
       set = credits
+      waived = false
+    },
+    waive: () => {
+      waived = true
+      set = undefined
     },
   }
-  return { charge, priceSet: () => set }
+  return { charge, priceSet: () => set, waived: () => waived }
 }
 
 /**
@@ -123,7 +135,7 @@ export function createServerCallCharge(table: ServerFnPriceTable) {
     .server(async ({ next, serverFnMeta }) => {
       // Every call gets a charge in its context, priced or not, so the context has one shape: the
       // framework's types refuse a middleware whose branches pass different ones.
-      const { charge, priceSet } = callCharge()
+      const { charge, priceSet, waived } = callCharge()
       const price = prices.get(priceKey(serverFnMeta.filename, serverFnMeta.name))
       if (!price) return next({ context: { charge }, sendContext: sends(undefined) })
 
@@ -137,6 +149,7 @@ export function createServerCallCharge(table: ServerFnPriceTable) {
       // home, because a middleware's own return value is what the server hands back — so the
       // charge writes into that object rather than building a new one.
       const result = await next({ context: { charge }, sendContext: sends(undefined) })
+      if (waived()) return result
       result.sendContext = { ...result.sendContext, balance: await takeCredits(user.id, price, priceSet() ?? price.price) }
       return result
     })

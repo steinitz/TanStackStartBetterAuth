@@ -48,7 +48,10 @@ export async function sendLogNotificationEmail(event: LogEvent): Promise<void> {
         // Device leads (the question we actually ask); the raw UA is demoted to a forensic line at
         // the bottom — it's the only carrier of browser+version, but no longer the device answer.
         `Message: ${event.message}`,
-        event.device ? `Device: ${event.device}` : null,
+        // Left out for now — Steve, 2026-10-20: a Mac's Chrome was reported as an iPad, and a wrong
+        // answer misleads more than none. Restore once getDeviceType is right; the User-Agent
+        // below still names the browser and its system.
+        // event.device ? `Device: ${event.device}` : null,
         `Level: ${event.level}`,
         `Source: ${source.label} (${source.url})`,
         event.context ? `Context: ${JSON.stringify(event.context)}` : null,

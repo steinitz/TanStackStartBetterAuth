@@ -5,7 +5,6 @@ import {
   getUpdateNote,
   isUpdateCompletePending,
   subscribeToUpdateNote,
-  UPDATE_REQUIRED,
   watchForUpdates,
 } from '~stzUser/lib/app-update'
 import { sendPendingReports } from '~stzUser/lib/pending-reports'
@@ -26,6 +25,8 @@ const subscribe = (onChange: () => void) => {
 /**
  * Rendered once at the root. Watches for a page from before a deploy, and after the reload says
  * "Update Complete" until she taps OK — no quick message that leaves before it is read, Steve.
+ * Nothing more, though a failed call began it: the update it called for has happened — Steve,
+ * 2026-10-20.
  * The server renders nothing here: the note lives in her browser.
  */
 export function AppUpdate() {
@@ -35,7 +36,6 @@ export function AppUpdate() {
     <Dialog isOpen={isUpdateCompletePending(note)}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <h3 style={{ margin: 0 }}>Update Complete</h3>
-        {note?.failed && <p style={{ margin: 0 }}>{UPDATE_REQUIRED}</p>}
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" onClick={acknowledgeUpdate}>OK</button>
         </div>

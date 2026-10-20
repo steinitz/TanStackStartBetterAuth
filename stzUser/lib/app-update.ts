@@ -5,7 +5,9 @@
  * calls may fail. Three things find out: the tab waking, a server call failing, and a route chunk
  * failing to load. Each asks `updateIfStale`, which compares the build this page runs with the one
  * the server names in `/version.json` — see build-version.ts — and reloads only when they differ.
- * She sees "Updating" while it reloads, then "Update Complete" until she taps OK.
+ * She sees "Updating ChessHurdles…", the app's name, while it reloads, then "Update Complete"
+ * until she taps OK: positive, and nothing more — Steve, 2026-10-20, replacing 2026-10-14's
+ * "Error: Update required", which was too small and quick to read and, after the reload, confusing.
  *
  * It cannot loop. It reloads only into a build the page does not run, and the note it keeps in
  * sessionStorage forbids reloading into the same build twice — so a browser that served the old
@@ -16,9 +18,6 @@
 import { BUILD_VERSION_FILE } from './build-version'
 import { clientEnv } from './env'
 import { queueReport, type PendingReport } from './pending-reports'
-
-/** Names no action: the page cannot say in her words what failed — Steve, 2026-10-14. */
-export const UPDATE_REQUIRED = 'Error: Update required'
 
 const NOTE_KEY = 'stz.appUpdate'
 
@@ -108,7 +107,16 @@ export async function isPageStale(): Promise<boolean | null> {
 }
 
 /**
- * Reloads the page when the server names a newer build. True when the reload is under way.
+ * A reload this page has begun. Several calls fail at once when a page goes stale, the home page's
+ * two for one, and each asks: the first reloads, and the rest are told it is under way, rather
+ * than "no", which read as a page that could not reload — found on the stale-test alias,
+ * 2026-10-20, as a false `app.update.refusedNoReload`.
+ */
+let reloading = false
+
+/**
+ * Reloads the page when the server names a newer build. True when the reload is under way, begun
+ * by this call or an earlier one.
  *
  * A report, when given, is sent by the new page: Steve is emailed once per page per build, since
  * this reloads into a build once. Sent from here it might not arrive, from a page that is going.
@@ -118,14 +126,18 @@ export async function updateIfStale(
 ): Promise<boolean> {
   const running = runningBuild()
   if (running === null) return false
+  if (reloading) return true
   const served = await fetchServedBuild()
+  // Another call may have begun the reload while this one waited for the build.
+  if (reloading) return true
   if (!shouldReload(running, served, getUpdateNote()) || served === null) return false
   if (!setUpdateNote({ build: served, reloadedAt: Date.now(), failed, acknowledged: false })) return false
   if (report) {
     queueReport({ ...report, context: { ...report.context, runningBuild: running, servedBuild: served, path: location.pathname } })
   }
 
-  showUpdatingDialog(failed)
+  reloading = true
+  showUpdatingDialog()
   // A task later, so whatever the app does on the failure, keeping a game it could not save, say,
   // finishes in the microtasks before the page goes.
   setTimeout(() => location.reload(), 0)
@@ -136,23 +148,18 @@ export async function updateIfStale(
  * Plain DOM, not React: it may be raised from a server call's middleware, outside any component.
  * Native and modal, so it sits in the top layer above every dialog the app has open.
  */
-function showUpdatingDialog(failed: boolean) {
+function showUpdatingDialog() {
   const dialog = document.createElement('dialog')
-  // The theme's colours: a native dialog's own are white, whatever the theme.
+  // The theme's colours: a native dialog's own are white, whatever the theme. Large, so the moment
+  // it shows is enough to read it.
   Object.assign(dialog.style, {
-    padding: '1.25rem',
+    padding: '1.5rem 2rem',
     backgroundColor: 'var(--color-bg)',
     color: 'var(--color-text)',
     border: '1px solid var(--color-text)',
+    fontSize: '1.5rem',
   })
-  const line = (text: string) => {
-    const span = document.createElement('span')
-    span.textContent = text
-    span.style.display = 'block'
-    dialog.append(span)
-  }
-  if (failed) line(UPDATE_REQUIRED)
-  line(`Updating ${clientEnv.APP_NAME}…`)
+  dialog.textContent = `Updating ${clientEnv.APP_NAME}…`
   // Escape would only uncover a page that is about to go.
   dialog.addEventListener('cancel', (event) => event.preventDefault())
   document.body.append(dialog)

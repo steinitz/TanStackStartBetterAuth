@@ -52,16 +52,26 @@ describe('updateIfStale', () => {
     document.body.innerHTML = ''
   })
 
-  it('reloads into the served build once, saying an update was required', async () => {
+  // Positive, and large enough to read in the moment it shows — Steve, 2026-10-20.
+  it('reloads into the served build once, saying only that it is updating', async () => {
     serve('b')
     const { updateIfStale, getUpdateNote } = await load()
 
     expect(await updateIfStale({ failed: true })).toBe(true)
     expect(getUpdateNote()).toMatchObject({ build: 'b', failed: true, acknowledged: false })
-    expect(document.body.textContent).toContain('Error: Update required')
+    expect(document.body.textContent).toMatch(/^Updating .+…$/)
+  })
 
-    // A second failure before the page goes finds the note and does nothing more.
-    expect(await updateIfStale({ failed: true })).toBe(false)
+  // The home page's two calls, refused together, once read as a page that could not reload.
+  it('tells a second ask that the reload is under way, and does nothing more', async () => {
+    serve('b')
+    const { updateIfStale } = await load()
+
+    const [first, second] = await Promise.all([updateIfStale({ failed: true }), updateIfStale({ failed: true })])
+    expect([first, second]).toEqual([true, true])
+    expect(await updateIfStale({ failed: true })).toBe(true)
+    expect(document.querySelectorAll('dialog')).toHaveLength(1)
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledTimes(1)
   })
 
   it('leaves its report for the new page, naming both builds', async () => {

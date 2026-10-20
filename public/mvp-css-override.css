@@ -70,7 +70,9 @@ table {
 }
 
 main {
-  padding-top: 0.5rem;
+  /* 5px, not 0.5rem: the 3px went to a play board as wide as a 12.9-inch iPad Pro in portrait,
+     whose browser leaves the page 1194px tall — Steve, 2026-10-21. */
+  padding-top: 5px;
   max-width: 1000px;
   /*margin: !*0*! auto;*/
 }

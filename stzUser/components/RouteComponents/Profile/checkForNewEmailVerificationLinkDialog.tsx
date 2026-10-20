@@ -29,7 +29,7 @@ export const CheckForNewEmailVerificationLinkDialog = ({
           type="submit"
           onClick={handleClick}
         >
-          Ok
+          OK
         </button>
       </div>
     </Dialog>

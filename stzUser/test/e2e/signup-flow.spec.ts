@@ -69,7 +69,7 @@ test.describe('Signup Flow', () => {
     await expect(page.getByText(accountCreatedText.instruction)).toBeVisible();
 
     // Verify the OK button is present
-    await expect(page.getByRole('button', { name: 'Ok' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'OK' })).toBeVisible();
 
     // Verify that the user's email is NOT verified (should require email confirmation)
     const emailVerified = await isEmailVerified(uniqueEmail);

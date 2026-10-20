@@ -234,7 +234,7 @@ export const SignUp = () => {
               type="button"
               onClick={() => navigate({ to: "/" })}
             >
-              Ok
+              OK
             </button>
           </div>
         </form>

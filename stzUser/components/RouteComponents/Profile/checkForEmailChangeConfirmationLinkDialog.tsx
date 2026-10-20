@@ -28,7 +28,7 @@ export const CheckForEmailChangeConfirmationLinkDialog = ({
           type="submit"
           onClick={handleClick}
         >
-          Ok
+          OK
         </button>
       </div>
     </Dialog>

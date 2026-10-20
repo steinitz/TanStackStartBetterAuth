@@ -16,7 +16,7 @@ export const requestPasswordResetStrings = {
   linkSentTitle: 'Password Reset Link Sent',
   linkSentMessage: 'We\'ve sent a password-reset link to',
   linkSentInstructions: 'Please check your email inbox and follow the instructions',
-  okButton: 'Ok',
+  okButton: 'OK',
 };
 
 // Test selectors for E2E testing

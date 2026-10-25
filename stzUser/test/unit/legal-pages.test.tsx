@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, cleanup } from '@testing-library/react'
 import React from 'react'
 
 // Mocking TanStack Start and Auth
@@ -49,6 +49,14 @@ describe('Legal Page Components', () => {
     const { getByText, getAllByText } = render(<Acknowledgements />)
     expect(getByText(/Technology Stack/i)).toBeDefined()
     expect(getAllByText(/React/i).length).toBeGreaterThan(0)
+  })
+
+  it('credits the starter icon unless the app brings its own acknowledgements', () => {
+    expect(render(<Acknowledgements />).queryByText(/Ecology icon/i)).not.toBeNull()
+    cleanup()
+    const { queryByText } = render(<Acknowledgements><p>Our own thanks</p></Acknowledgements>)
+    expect(queryByText(/Our own thanks/i)).not.toBeNull()
+    expect(queryByText(/Ecology icon/i)).toBeNull()
   })
 
   it('should render Refunds page', () => {

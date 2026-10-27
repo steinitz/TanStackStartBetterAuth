@@ -12,6 +12,7 @@ import { createClient } from "@libsql/client";
 import { Kysely } from "kysely";
 import { LibsqlDialect } from "kysely-libsql";
 import type { AdminSource } from './admin-identity';
+import { libsqlFetch } from './libsql-fetch';
 
 // Initialize LibSQL client
 const url = process.env.DATABASE_URL;
@@ -30,9 +31,13 @@ if (!url) {
   );
 }
 
+// Node's own fetch, not the client's default: that one reuses connections Turso has closed while
+// a Netlify function slept, and the call fails with "socket hang up". See libsql-fetch.ts. A
+// file: URL makes no HTTP requests and never calls it.
 export const libsqlClient = createClient({
   url,
   authToken: authToken,
+  fetch: libsqlFetch,
 });
 
 /**

@@ -33,7 +33,7 @@ export function AppUpdate() {
   const note = useSyncExternalStore(subscribe, getUpdateNote, () => null)
 
   return (
-    <Dialog isOpen={isUpdateCompletePending(note)}>
+    <Dialog isOpen={isUpdateCompletePending(note)} onCancel={acknowledgeUpdate}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <h3 style={{ margin: 0 }}>Update Complete</h3>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

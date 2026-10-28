@@ -34,7 +34,7 @@ export function LowCreditsDialog({ threshold }: { threshold: number }) {
   }
 
   return (
-    <Dialog isOpen={isOpen}>
+    <Dialog isOpen={isOpen} onCancel={() => setIsOpen(false)}>
       {/* A reading width. Its sentence is long, and without one the dialog stretched nearly edge
           to edge on an iPad — Steve, 2026-09-30. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '500px' }}>

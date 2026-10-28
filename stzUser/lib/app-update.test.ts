@@ -131,7 +131,7 @@ describe('updateIfStale', () => {
     setItem.mockRestore()
   })
 
-  it('shows Update Complete after the reload until she taps OK', async () => {
+  it('shows Update Complete after the reload until the user taps OK', async () => {
     sessionStorage.setItem('stz.appUpdate', JSON.stringify(noteFor('a')))
     const { getUpdateNote, isUpdateCompletePending, acknowledgeUpdate } = await load()
 

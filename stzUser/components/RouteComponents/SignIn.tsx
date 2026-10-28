@@ -101,7 +101,7 @@ export const SignIn = () => {
       }
     )
     console.log({ data, error })
-    // Whether she got in. The caller cannot find this out any other way: signIn.email
+    // Whether the user got in. The caller cannot find this out any other way: signIn.email
     // resolves rather than throwing on a bad password, so an awaited call looks identical
     // on both paths. What the caller does with it is the caller's business — this function
     // signs in and knows nothing about any button.
@@ -156,7 +156,7 @@ export const SignIn = () => {
     // new document takes the spinner with the rest of the old page.
     if (signedIn) return
 
-    // Every failure leaves her here, looking at the form, needing to press it again.
+    // Every failure leaves the user here, looking at the form, needing to press it again.
     clearTimeout(slowSignIn)
     signInInFlight.current = false
     setIsSigningIn(false)

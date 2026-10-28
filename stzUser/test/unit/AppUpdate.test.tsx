@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 vi.mock('~stzUser/lib/pending-reports', () => ({ sendPendingReports: vi.fn(async () => {}) }))
 
 /**
- * After an update's reload, the new page says so until she taps OK: "Update Complete", and nothing
+ * After an update's reload, the new page says so until the user taps OK: "Update Complete", and nothing
  * more, though a failed call began it — Steve, 2026-10-20. See planning doc pd-3e5lmh.
  */
 describe('AppUpdate', () => {

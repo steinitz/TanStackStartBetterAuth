@@ -67,7 +67,7 @@ describe('UserBlock & WalletWidget', () => {
     expect(getByText(/50 Credits/i)).toBeDefined()
   })
 
-  // The app's warning before she runs out: the trigger she always sees, and the readout inside.
+  // The app's warning before the user runs out: the trigger she always sees, and the readout inside.
   describe('running low', () => {
     const renderWithCredits = (credits: number, lowCreditsWarning?: number) => {
       vi.mocked(useSession).mockReturnValue({

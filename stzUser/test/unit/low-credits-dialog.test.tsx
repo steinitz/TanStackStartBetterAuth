@@ -29,7 +29,7 @@ function balances(...sequence: (number | null)[]) {
 describe('LowCreditsDialog', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('opens when the balance falls below the line, and says what she has and what comes free', () => {
+  it('opens when the balance falls below the line, and says what the user has and what comes free', () => {
     balances(40, 31)
 
     expect(heading()).not.toBeNull()
@@ -41,7 +41,7 @@ describe('LowCreditsDialog', () => {
     expect(heading()).toBeNull()
   })
 
-  it('opens nothing while she stays below, or lands exactly on the line', () => {
+  it('opens nothing while the user stays below, or lands exactly on the line', () => {
     balances(30, 25)
     expect(heading()).toBeNull()
 
@@ -49,7 +49,7 @@ describe('LowCreditsDialog', () => {
     expect(heading()).toBeNull()
   })
 
-  it('closes on Close, and does not reopen until she has been back above the line', () => {
+  it('closes on Close, and does not reopen until the user has been back above the line', () => {
     const view = balances(40, 31)
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(heading()).toBeNull()
@@ -65,7 +65,7 @@ describe('LowCreditsDialog', () => {
     expect(heading()).not.toBeNull()
   })
 
-  it('takes her to the Credits page on Get More Credits', () => {
+  it('takes the user to the Credits page on Get More Credits', () => {
     balances(40, 31)
     fireEvent.click(screen.getByRole('button', { name: 'Get More Credits' }))
 

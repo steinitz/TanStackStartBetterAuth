@@ -81,7 +81,7 @@ const menuDirection: 'column' | 'row' = 'column'
 
 type UserBlockProps = {
   /**
-   * The balance below which she is warned: the account icon becomes a fuel pump in the warning
+   * The balance below which the user is warned: the account icon becomes a fuel pump in the warning
    * orange, and the credits readout in its menu turns the same orange. The app's number, since
    * only the app knows what its things cost; left out, nothing warns.
    *

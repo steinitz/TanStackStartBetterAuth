@@ -116,7 +116,7 @@ describe('server call charge', () => {
     expect(settled.sendContext).toEqual({ balance: { userId: 'user-1', credits: 41 } })
   })
 
-  it('refuses a run she cannot pay for in full, before the work runs, taking nothing, and says what she has', async () => {
+  it('refuses a run the user cannot pay for in full, before the work runs, taking nothing, and says what she has', async () => {
     balance = 5
     const { next, run } = runServerHalf('startRun')
     await expect(run).rejects.toThrow(new RegExp(`^${NOT_ENOUGH_CREDITS}: this costs 8 and you have 5`))
@@ -176,7 +176,7 @@ describe('server call charge', () => {
     expect(result.sendContext).toEqual({ balance: undefined })
   })
 
-  it('still refuses a call that would waive its charge, before the work, when she cannot pay', async () => {
+  it('still refuses a call that would waive its charge, before the work, when the user cannot pay', async () => {
     balance = 3
     const { run, next } = runServerHalf('startRun', GAMES, (context) => chargeOf(context).waive())
     await expect(run).rejects.toThrow(NOT_ENOUGH_CREDITS)

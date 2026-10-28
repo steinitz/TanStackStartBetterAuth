@@ -6,7 +6,7 @@ import { useWallet } from '~stzUser/lib/wallet-queries'
 import { clientEnv } from '~stzUser/lib/env'
 
 /**
- * Says once, as it happens, that her balance has fallen below the app's warning line. The account
+ * Says once, as it happens, that the user's balance has fallen below the app's warning line. The account
  * icon says so for as long as it lasts — see UserBlock's lowCreditsWarning — and this says it at
  * the moment it happens, where a changed icon alone might go unseen. Steve, 2026-09-30.
  *

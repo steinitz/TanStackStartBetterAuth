@@ -24,7 +24,7 @@ const subscribe = (onChange: () => void) => {
 
 /**
  * Rendered once at the root. Watches for a page from before a deploy, and after the reload says
- * "Update Complete" until she taps OK — no quick message that leaves before it is read, Steve.
+ * "Update Complete" until the user taps OK — no quick message that leaves before it is read, Steve.
  * Nothing more, though a failed call began it: the update it called for has happened — Steve,
  * 2026-10-20.
  * The server renders nothing here: the note lives in her browser.

@@ -1,5 +1,5 @@
 /**
- * Charges credits for the things she does, from a price table the app supplies.
+ * Charges credits for the things the user does, from a price table the app supplies.
  *
  * A price belongs to an event — saving a game, an analysis run — not to a server call, because
  * what a call costs then depends on how many round trips its implementation happens to make, and
@@ -23,16 +23,16 @@ export type ServerFnPrice = {
   name: string
   /**
    * Credits. For a save or a read the balance stops at zero, so the price is what the event costs,
-   * not a toll she must afford. For an event refused below its price, it is both.
+   * not a toll the user must afford. For an event refused below its price, it is both.
    */
   price: number
   /**
-   * What her Credits page calls this: the ledger row's whole description, since the row's amount
+   * What the user's Credits page calls this: the ledger row's whole description, since the row's amount
    * already says what was taken. Plain words, as she would say them — "Game saved".
    */
   label: string
   /**
-   * True for an event that starts new work, such as an analysis run. Her balance is checked before
+   * True for an event that starts new work, such as an analysis run. The user's balance is checked before
    * the work, and below the price she is refused, so the refusal arrives instead of the work. The
    * charge comes after the work succeeds, so work that fails costs her nothing: checkout, not a
    * toll at the door — Steve, 2026-10-19, "It might prevent a few support requests."
@@ -46,7 +46,7 @@ export type ServerFnPrice = {
    */
   refusedBelowPrice?: boolean
   /**
-   * True for an event she may do dozens of times a day, such as practising, so that her history
+   * True for an event the user may do dozens of times a day, such as practising, so that her history
    * keeps one line for the day rather than dozens. Each charge still happens, and adds to that
    * day's row. The day is hers, as the daily grant counts it.
    */
@@ -70,7 +70,7 @@ const priceKey = (file: string, name: string) => `${file}#${name}`
  *
  * `waive` charges nothing this time, and writes no ledger row: a call that succeeds by handing out
  * work still to do, which a later call finishes and is charged for. The coach's comment is one,
- * when its rounds stop for her browser's engine. The door is unchanged: a refusable call is still
+ * when its rounds stop for the user's browser's engine. The door is unchanged: a refusable call is still
  * refused below its price before its work. The last of `setPrice` and `waive` wins.
  */
 export type CallCharge = {
@@ -156,7 +156,7 @@ export function createServerCallCharge(table: ServerFnPriceTable) {
 }
 
 /**
- * Refuses a refusable event, before its work, when her balance is below its price. Takes nothing.
+ * Refuses a refusable event, before its work, when the user's balance is below its price. Takes nothing.
  * The wallet's read applies her daily grant first, as a charge does, so the first call of her day
  * is judged with that day's credits.
  */
@@ -173,7 +173,7 @@ async function refuseBelowPrice(userId: string, price: ServerFnPrice) {
 /**
  * Takes one event's price after its work succeeded, stopping at zero. Never refused here: the work
  * is done. A refusable event that comes up short is reported, so we learn how often it happens:
- * another call overlapped it on a low balance, or it set a price above what she had left.
+ * another call overlapped it on a low balance, or it set a price above what the user had left.
  */
 async function takeCredits(userId: string, price: ServerFnPrice, credits: number) {
   const { chargeEvent } = await import('./wallet.logic')

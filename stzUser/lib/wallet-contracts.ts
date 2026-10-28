@@ -5,7 +5,7 @@ export const MAX_RESOURCE_TYPE_LENGTH = 100
 
 /**
  * How a refused call's error message begins. A refusal is not a failure: the event costs more
- * than she has, which may be more than nothing — 5 left for something priced 8.
+ * than the user has, which may be more than nothing — 5 left for something priced 8.
  *
  * Here rather than beside the charge that throws it, because the callers are browser components:
  * importing them into the same module as the middleware would ask the compiler to strip a server
@@ -14,7 +14,7 @@ export const MAX_RESOURCE_TYPE_LENGTH = 100
 export const NOT_ENOUGH_CREDITS = 'Not enough credits'
 
 /**
- * Whether an error is the charge refusing her for want of credits, so a caller can say so in its
+ * Whether an error is the charge refusing the user for want of credits, so a caller can say so in its
  * own words rather than call it a failure. Every caller asks this one question, so the marker can
  * change in one place.
  */

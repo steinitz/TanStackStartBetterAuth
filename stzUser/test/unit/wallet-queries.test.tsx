@@ -97,7 +97,7 @@ describe('wallet queries', () => {
     expect(getWalletStatus).toHaveBeenCalledTimes(1)
   })
 
-  it('knows she is out of credits once a charge announces a zero', async () => {
+  it('knows the user is out of credits once a charge announces a zero', async () => {
     vi.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-1' } } } as any)
     vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
     const queryClient = createQueryClient()
@@ -110,7 +110,7 @@ describe('wallet queries', () => {
     expect(result.current.isOutOfCredits()).toBe(true)
   })
 
-  it('knows what she cannot afford once a charge announces her balance', async () => {
+  it('knows what the user cannot afford once a charge announces her balance', async () => {
     vi.mocked(useSession).mockReturnValue({ data: { user: { id: 'user-1' } } } as any)
     vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0)
     const queryClient = createQueryClient()
@@ -334,7 +334,7 @@ describe('wallet queries', () => {
 })
 
 describe('isKnownShortOf', () => {
-  // Local times, so the start of her day is the same whatever zone the suite runs in.
+  // Local times, so the start of the user's day is the same whatever zone the suite runs in.
   const morning = new Date(2026, 8, 22, 9, 0).getTime()
   const earlierToday = new Date(2026, 8, 22, 0, 5).getTime()
   const lateLastNight = new Date(2026, 8, 21, 23, 55).getTime()
@@ -344,7 +344,7 @@ describe('isKnownShortOf', () => {
     expect(isKnownShortOf(8, 5, earlierToday, morning)).toBe(true)
   })
 
-  it('does not trust a balance learned before her day began, because today\'s grant is owed', () => {
+  it('does not trust a balance learned before the user\'s day began, because today\'s grant is owed', () => {
     expect(isKnownShortOf(1, 0, lateLastNight, morning)).toBe(false)
     expect(isKnownShortOf(8, 5, lateLastNight, morning)).toBe(false)
   })

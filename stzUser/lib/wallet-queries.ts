@@ -125,7 +125,7 @@ export function applyAnnouncedBalance(queryClient: QueryClient, { userId, credit
 }
 
 /**
- * Whether the balance she was last told is known to be below a price, for a refusal that makes no
+ * Whether the balance the user was last told is known to be below a price, for a refusal that makes no
  * server call of its own. The same rule the charge refuses by, asked before the call so nothing is
  * spent finding out.
  *
@@ -181,7 +181,7 @@ export function useWallet() {
     ...query,
     wallet: query.data ?? null,
     credits: query.data?.credits ?? null,
-    // Functions, read when she acts rather than when the page rendered: the page can sit open
+    // Functions, read when the user acts rather than when the page rendered: the page can sit open
     // across her midnight. cannotAfford is for something with a price; isOutOfCredits for what
     // has none of its own but should not start from nothing, such as a new game.
     cannotAfford: (price: number) =>

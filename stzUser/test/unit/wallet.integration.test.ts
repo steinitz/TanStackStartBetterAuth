@@ -39,9 +39,9 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     expect(status.credits).toBe(100)
   })
 
-  // Her first act of a day may be a charged one, before anything has read her wallet. The charge
+  // The user's first act of a day may be a charged one, before anything has read her wallet. The charge
   // grants the day first, so it takes from today's credits rather than finding none.
-  it('grants the day before taking, when a charge is the first thing she does', async () => {
+  it('grants the day before taking, when a charge is the first thing the user does', async () => {
     const charge = await chargeEvent(testUserId, 'Game saved', 1, { refuseBelowPrice: true })
 
     expect(charge).toMatchObject({ refused: false, taken: 1, credits: 99 })
@@ -50,7 +50,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
   // What an event costs, taken from whatever is left. The middleware charges through this, so
   // these three cases are the whole of "the balance stops at zero".
   describe('taking an event price', () => {
-    it('takes the whole price when she can afford it, and records it', async () => {
+    it('takes the whole price when the user can afford it, and records it', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
 
       const charge = await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
@@ -71,7 +71,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
 
       const charge = await chargeEvent(testUserId, 'Game saved', 5, { refuseBelowPrice: false })
 
-      // Three left and a price of five: she pays the three, and the row says three.
+      // Three left and a price of five: the user pays the three, and the row says three.
       expect(charge).toMatchObject({ refused: false, taken: 3, credits: 0 })
       const row = await db
         .selectFrom('transactions')
@@ -87,7 +87,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
       await chargeEvent(testUserId, 'Game saved', before - 5, { refuseBelowPrice: false })
       const rowsAtFive = await db.selectFrom('transactions').select('id').where('user_id', '=', testUserId).execute()
 
-      // Five left and a run priced eight: refused whole, and her five stay hers.
+      // Five left and a run priced eight: refused whole, and the user's five stay hers.
       const run = await chargeEvent(testUserId, 'Game analysed', 8, { refuseBelowPrice: true })
 
       expect(run).toMatchObject({ refused: true, taken: 0, credits: 5 })
@@ -96,7 +96,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
       expect((await getWalletStatusInternal(testUserId)).credits).toBe(5)
     })
 
-    it('takes new work priced exactly what she has', async () => {
+    it('takes new work priced exactly what the user has', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
       await chargeEvent(testUserId, 'Game saved', before - 8, { refuseBelowPrice: false })
 
@@ -128,13 +128,13 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     })
   })
 
-  // An event she may do dozens of times a day: each charge is taken, and her history keeps one
+  // An event the user may do dozens of times a day: each charge is taken, and her history keeps one
   // row for the day.
   describe('gathering a day of charges into one row', () => {
     const PRACTISED = 'Puzzles practised'
     const gathered = { refuseBelowPrice: false, oneRowPerDay: true }
 
-    // Her day by her offset, which for a new test user is none, so it began at UTC midnight.
+    // The user's day by her offset, which for a new test user is none, so it began at UTC midnight.
     const startOfHerDay = () => new Date(new Date().toISOString().split('T')[0]).toISOString()
 
     const rowsOf = (description: string) =>
@@ -153,10 +153,10 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
         .where('description', '=', PRACTISED)
         .execute()
 
-    it('adds a second charge on her day to the first row, and moves its time to now', async () => {
+    it('adds a second charge on the user\'s day to the first row, and moves its time to now', async () => {
       const { credits: before } = await getWalletStatusInternal(testUserId)
       await chargeEvent(testUserId, PRACTISED, 1, gathered)
-      // Stamped at the very start of her day, so the move to now shows.
+      // Stamped at the very start of the user's day, so the move to now shows.
       await restamp(startOfHerDay())
 
       await chargeEvent(testUserId, PRACTISED, 1, gathered)
@@ -169,7 +169,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
       expect((await getWalletStatusInternal(testUserId)).credits).toBe(before - 2)
     })
 
-    it('starts a new row once her day has turned', async () => {
+    it('starts a new row once the user\'s day has turned', async () => {
       await chargeEvent(testUserId, PRACTISED, 1, gathered)
       await restamp(new Date(new Date(startOfHerDay()).getTime() - 1).toISOString())
 
@@ -190,7 +190,7 @@ describe.skipIf(inject('dbLocked')).sequential('Wallet Ledger Integration', () =
     })
   })
 
-  // Her day is her local day, and a charge must agree with the wallet read about which day it is.
+  // The user's day is her local day, and a charge must agree with the wallet read about which day it is.
   // The charge used the UTC day, so a Sydney player on either side of 10am local got two grants.
   describe('one daily grant per local day', () => {
     afterEach(() => { vi.useRealTimers() })

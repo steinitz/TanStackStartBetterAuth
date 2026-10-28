@@ -49,7 +49,7 @@ export const BankTransferRequestSchema = v.strictObject({
 })
 
 // A real offset from UTC, in milliseconds. It is remembered, and every charge dates the daily grant
-// by it, so a value no clock could produce would break every charged call she makes.
+// by it, so a value no clock could produce would break every charged call the user makes.
 const MAX_TIMEZONE_OFFSET_MS = 14 * 3_600_000
 
 export const TimezoneOffsetSchema = v.optional(
@@ -75,7 +75,7 @@ export const getWalletStatus = createServerFn({
     const user = await requireSessionUser()
 
     // The browser always sends its offset, and it is remembered for the charge. Without one, the
-    // offset she last reported is used.
+    // offset the user last reported is used.
     return getWalletStatusInternal(user.id, timezoneOffset)
   })
 

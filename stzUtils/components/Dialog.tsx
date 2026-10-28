@@ -94,7 +94,7 @@ function OpenDialog({children, onBrowserClose}: {children: ReactNode; onBrowserC
     // Escape closes the element natively, and this tells React. The cancel event is
     // deliberately left alone: Chrome lets a page refuse Escape only twice before it
     // closes the dialog regardless, so refusing would only delay this. A close while
-    // the element is open again is not hers — StrictMode's mount, unmount, mount
+    // the element is open again is not the user's — StrictMode's mount, unmount, mount
     // closes it in the cleanup below and opens it again before the event arrives.
     const handleClose = () => {
       if (!dialog.open) onBrowserCloseRef.current();
@@ -109,7 +109,7 @@ function OpenDialog({children, onBrowserClose}: {children: ReactNode; onBrowserC
     dialog.addEventListener('keydown', swallowKeys);
 
     return () => {
-      // Removed before close(), so the component's own close is never reported as hers.
+      // Removed before close(), so the component's own close is never reported as the user's.
       dialog.removeEventListener('close', handleClose);
       dialog.removeEventListener('keydown', swallowKeys);
       if (dialog.open) dialog.close();

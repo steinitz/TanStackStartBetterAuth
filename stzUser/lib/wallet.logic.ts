@@ -102,7 +102,7 @@ export async function getWalletStatusInternal(userId: string, timezoneOffset?: n
     welcomeClaimed: Boolean(user?.welcome_claimed),
   }
 }
-/** Her offset from UTC in ms, as her browser last reported it; 0 before the first report. */
+/** The user's offset from UTC in ms, as her browser last reported it; 0 before the first report. */
 async function readTimezoneOffset(userId: string): Promise<number> {
   const user = await db
     .selectFrom('user')
@@ -113,7 +113,7 @@ async function readTimezoneOffset(userId: string): Promise<number> {
 }
 
 /**
- * Her local day: its date, and the moment it began in UTC, as an ISO string that compares with
+ * The user's local day: its date, and the moment it began in UTC, as an ISO string that compares with
  * `created_at`. The daily grant and a charge gathered into one row a day both count by it.
  *
  * @param timezoneOffset - Offset in milliseconds from UTC (e.g. +11h = +39600000)
@@ -165,7 +165,7 @@ export async function applyDailyGrant(userId: string, timezoneOffset: number = 0
 }
 
 /**
- * Charges one thing she did: takes up to `price` credits, stopping at zero, and writes its ledger
+ * Charges one thing the user did: takes up to `price` credits, stopping at zero, and writes its ledger
  * row. Named `takeCreditsUpTo` until 2026-10-19.
  *
  * A price is what an event costs, not what she must have: with 3 credits left, a save priced 5
@@ -193,7 +193,7 @@ export async function chargeEvent(
   assertPositiveWholeAmount(price, MAX_RESOURCE_CONSUMPTION, 'Price')
   assertResourceType(resourceType)
 
-  // Today by her local day, as the wallet read decides it. The UTC day disagreed with it across
+  // Today by the user's local day, as the wallet read decides it. The UTC day disagreed with it across
   // UTC midnight, and each disagreement was a second grant.
   const timezoneOffset = await readTimezoneOffset(userId)
   await applyDailyGrant(userId, timezoneOffset)
@@ -210,7 +210,7 @@ export async function chargeEvent(
         (await trx.selectFrom('user').select('credits').where('id', '=', userId).executeTakeFirst())
           ?.credits ?? 0,
       )
-      // Refused with her balance as it stands, so the refusal can say what she has.
+      // Refused with the user's balance as it stands, so the refusal can say what she has.
       if (refuseBelowPrice && before < price) return { refused: true, taken: 0, credits: Math.max(before, 0) }
       if (before <= 0) return { refused: false, taken: 0, credits: 0 }
 
@@ -239,7 +239,7 @@ export async function chargeEvent(
         : undefined
 
       if (todaysRow) {
-        // Its time moves to this charge: her history is newest first, and a row still stamped
+        // Its time moves to this charge: the user's history is newest first, and a row still stamped
         // with the morning's first charge would sit below everything she did since.
         await trx
           .updateTable('transactions')
@@ -267,7 +267,7 @@ export async function chargeEvent(
   }
 
   // Three attempts all lost the race, which takes three charges landing between this one's read
-  // and its write. Let the work through free rather than refuse her for our own contention.
+  // and its write. Let the work through free rather than refuse the user for our own contention.
   const user = await db.selectFrom('user').select('credits').where('id', '=', userId).executeTakeFirst()
   return { refused: false, taken: 0, credits: Number(user?.credits ?? 0) }
 }

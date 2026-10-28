@@ -33,7 +33,7 @@ const markerReset = `
 }
 `;
 
-/** Under the summary: the usual place, close to what she tapped. */
+/** Under the summary: the usual place, close to what the user tapped. */
 const belowPanel: CSSProperties = {
   position: 'absolute',
   top: '100%',
@@ -42,7 +42,7 @@ const belowPanel: CSSProperties = {
 };
 
 /**
- * In the middle of the screen, whatever she has scrolled to. Fixed, so it centres on the
+ * In the middle of the screen, whatever the user has scrolled to. Fixed, so it centres on the
  * screen only while no ancestor has a transform, a filter or containment: any of those
  * captures a fixed element and centres it on that ancestor instead.
  */
@@ -96,7 +96,7 @@ type DisclosureProps = {
   /**
    * Where the panel opens. `below` is the default. `center` is for a panel that must be
    * readable from anywhere on the page: below its summary it can open under the fold, and
-   * above it, off the top of a page she has scrolled down. ChessHurdles' hurdle comment was
+   * above it, off the top of a page the user has scrolled down. ChessHurdles' hurdle comment was
    * the first, with its summary just under a board that fills a portrait iPad.
    */
   placement?: 'below' | 'center';

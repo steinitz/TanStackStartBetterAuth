@@ -1,5 +1,5 @@
 /**
- * Brings a page from before a deploy up to date, by reloading it for her.
+ * Brings a page from before a deploy up to date, by reloading it for the user.
  *
  * A page keeps the code it was loaded with, while a deploy replaces the server's, so an old page's
  * calls may fail. Three things find out: the tab waking, a server call failing, and a route chunk
@@ -28,7 +28,7 @@ export type UpdateNote = {
   reloadedAt: number
   /** True when a failed call or a missing chunk found the page stale, rather than a waking tab. */
   failed: boolean
-  /** True once she has tapped OK. The note is kept, so this build is never reloaded into twice. */
+  /** True once the user has tapped OK. The note is kept, so this build is never reloaded into twice. */
   acknowledged: boolean
 }
 
@@ -40,7 +40,7 @@ export function shouldReload(running: string | null, served: string | null, note
   return running !== null && served !== null && served !== running && note?.build !== served
 }
 
-/** The reload just happened and she has not yet said OK. */
+/** The reload just happened and the user has not yet said OK. */
 export function isUpdateCompletePending(note: UpdateNote | null) {
   return note !== null && !note.acknowledged && note.build === runningBuild()
 }
@@ -73,7 +73,7 @@ function setUpdateNote(next: UpdateNote): boolean {
   return true
 }
 
-/** Told whenever the note changes: when it is written before a reload, and when she taps OK. */
+/** Told whenever the note changes: when it is written before a reload, and when the user taps OK. */
 export function subscribeToUpdateNote(listener: () => void) {
   listeners.add(listener)
   return () => {

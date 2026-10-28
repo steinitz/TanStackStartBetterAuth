@@ -67,6 +67,9 @@ test.describe('Wallet Visibility and Reactivity', () => {
     )
     await page.getByRole('button', { name: 'Purge ledger' }).click()
     await expect(page.getByText(/Cached balance is zero/)).toBeVisible()
+    // Falling to zero crosses the low-credits line, and its dialog is modal: the page behind,
+    // the account menu included, takes no clicks until it is closed.
+    await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click()
     await expectWalletCredits(page, '0 Credits')
 
     // A later ordinary wallet read legitimately creates a fresh daily grant because purge

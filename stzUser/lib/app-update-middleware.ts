@@ -52,9 +52,9 @@ export function createAppUpdateCheck() {
     const updateIfStaleAfter = (error: string) => {
       if (!inBrowser) return
       void updateIfStale({ failed: true, report: { message: 'app.update.staleCall', context: { fn, error } } }).then((reloading) => {
-        // Refused as stale, yet no newer build to reload into: the server's build and this page's
-        // differ within one deploy, which their one stamp should make impossible. Loud, since
-        // every call this page makes would now be refused.
+        // Refused as stale, yet no reload: the reload this tab made already brought this page, and
+        // it still runs the old build, or the served build could not be read. Loud, since every
+        // call this page makes would now be refused. See app-update.ts's header.
         if (!reloading && error.startsWith(STALE_PAGE_CALL)) {
           void logToServer({ data: { level: 'error', message: 'app.update.refusedNoReload', context: { fn, error }, notify: true } }).catch(() => {})
         }

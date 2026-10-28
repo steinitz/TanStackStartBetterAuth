@@ -10,8 +10,15 @@
  * "Error: Update required", which was too small and quick to read and, after the reload, confusing.
  *
  * It cannot loop. It reloads only into a build the page does not run, and the note it keeps in
- * sessionStorage forbids reloading into the same build twice — so a browser that served the old
- * page again would stay put rather than spin. A note that cannot be written means no reload.
+ * sessionStorage forbids reloading into the same build twice from the page that reload brought —
+ * so a browser that served the old page again would stay put rather than spin. A note that cannot
+ * be written means no reload.
+ *
+ * The note speaks only for the page its reload brought. Back, or a tab Chrome restores after a
+ * restart, takes the old page from the browser's cache, though it was sent no-cache, and that page
+ * reads the same note: it once stayed put, every call refused, until a reload by hand — two
+ * `app.update.refusedNoReload` emails, 2026-10-28. Such a page says it arrived `back_forward`,
+ * measured in Steve's Chrome after a restart, so it may reload again.
  *
  * See planning doc pd-3e5lmh, a page from before a deploy.
  */
@@ -28,16 +35,35 @@ export type UpdateNote = {
   reloadedAt: number
   /** True when a failed call or a missing chunk found the page stale, rather than a waking tab. */
   failed: boolean
-  /** True once the user has tapped OK. The note is kept, so this build is never reloaded into twice. */
+  /** True once the user has tapped OK. The note is kept, so the reload's page never reloads into this build again. */
   acknowledged: boolean
 }
 
 /** The build this page runs; null on the dev server, which turns the whole check off. */
 export const runningBuild = (): string | null => import.meta.env.VITE_BUILD_VERSION ?? null
 
-/** Reload only into a build the page does not run, and never twice into the same one. */
-export function shouldReload(running: string | null, served: string | null, note: UpdateNote | null) {
-  return running !== null && served !== null && served !== running && note?.build !== served
+/**
+ * How the browser brought this page: `reload`, `back_forward` (Back, or a tab restored after a
+ * restart), `navigate` (a new visit), or null where it does not say.
+ */
+export function pageArrival(): string | null {
+  try {
+    const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+    return entry?.type ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Reload only into a build the page does not run, and never twice into the same one from the page
+ * that reload brought. A page that says it came by Back, a restore or a new visit was not brought
+ * by the reload, so the note does not hold it; an arrival the browser does not name keeps the guard.
+ */
+export function shouldReload(running: string | null, served: string | null, note: UpdateNote | null, arrival: string | null) {
+  const reloadedIntoServed = note?.build === served
+  const arrivedOtherwise = arrival === 'back_forward' || arrival === 'navigate'
+  return running !== null && served !== null && served !== running && (!reloadedIntoServed || arrivedOtherwise)
 }
 
 /** The reload just happened and the user has not yet said OK. */
@@ -130,7 +156,7 @@ export async function updateIfStale(
   const served = await fetchServedBuild()
   // Another call may have begun the reload while this one waited for the build.
   if (reloading) return true
-  if (!shouldReload(running, served, getUpdateNote()) || served === null) return false
+  if (!shouldReload(running, served, getUpdateNote(), pageArrival()) || served === null) return false
   if (!setUpdateNote({ build: served, reloadedAt: Date.now(), failed, acknowledged: false })) return false
   if (report) {
     queueReport({ ...report, context: { ...report.context, runningBuild: running, servedBuild: served, path: location.pathname } })

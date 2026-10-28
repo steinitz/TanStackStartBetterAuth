@@ -1,30 +1,42 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { shouldReload, type UpdateNote } from './app-update'
 
+// How a page arrived, as performance's navigation entry names it.
+const byReload = 'reload'
+const byBack = 'back_forward'
+
 const noteFor = (build: string, acknowledged = false): UpdateNote =>
   ({ build, reloadedAt: 1, failed: false, acknowledged })
 
 describe('shouldReload', () => {
   it('reloads into a build the page does not run', () => {
-    expect(shouldReload('a', 'b', null)).toBe(true)
+    expect(shouldReload('a', 'b', null, byReload)).toBe(true)
   })
 
   it('stays when the server serves the build the page runs', () => {
-    expect(shouldReload('a', 'a', null)).toBe(false)
+    expect(shouldReload('a', 'a', null, byReload)).toBe(false)
   })
 
-  it('never reloads twice into the same build, so a stale cached page cannot loop', () => {
-    expect(shouldReload('a', 'b', noteFor('b'))).toBe(false)
-    expect(shouldReload('a', 'b', noteFor('b', true))).toBe(false)
+  it('never reloads twice into the same build from the page its reload brought, so a stale cached page cannot loop', () => {
+    expect(shouldReload('a', 'b', noteFor('b'), byReload)).toBe(false)
+    expect(shouldReload('a', 'b', noteFor('b', true), byReload)).toBe(false)
+    // An arrival the browser does not name keeps the guard.
+    expect(shouldReload('a', 'b', noteFor('b'), null)).toBe(false)
+  })
+
+  // Back, or a tab restored after a restart, brings the old page from the cache — 2026-10-28.
+  it('reloads again into that build from a page that came by Back, a restore or a new visit', () => {
+    expect(shouldReload('a', 'b', noteFor('b', true), byBack)).toBe(true)
+    expect(shouldReload('a', 'b', noteFor('b', true), 'navigate')).toBe(true)
   })
 
   it('reloads into a newer build after an earlier update', () => {
-    expect(shouldReload('b', 'c', noteFor('b', true))).toBe(true)
+    expect(shouldReload('b', 'c', noteFor('b', true), byReload)).toBe(true)
   })
 
   it('stays when either build is unknown: the dev server, or offline', () => {
-    expect(shouldReload(null, 'b', null)).toBe(false)
-    expect(shouldReload('a', null, null)).toBe(false)
+    expect(shouldReload(null, 'b', null, byReload)).toBe(false)
+    expect(shouldReload('a', null, null, byReload)).toBe(false)
   })
 })
 
@@ -47,6 +59,7 @@ describe('updateIfStale', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
     document.body.innerHTML = ''
@@ -117,6 +130,26 @@ describe('updateIfStale', () => {
 
     expect(await updateIfStale({ failed: true })).toBe(false)
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  // The page from 2026-10-28's emails: its tab had reloaded into 'b', then the old page came back.
+  it('reloads a page that came back by Back after its tab had already reloaded into that build', async () => {
+    serve('b')
+    sessionStorage.setItem('stz.appUpdate', JSON.stringify(noteFor('b', true)))
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ type: byBack }] as unknown as PerformanceEntryList)
+    const { updateIfStale } = await load()
+
+    expect(await updateIfStale({ failed: true })).toBe(true)
+  })
+
+  it('stays put on the page its own reload brought, when that page still runs the old build', async () => {
+    serve('b')
+    sessionStorage.setItem('stz.appUpdate', JSON.stringify(noteFor('b')))
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ type: byReload }] as unknown as PerformanceEntryList)
+    const { updateIfStale } = await load()
+
+    expect(await updateIfStale({ failed: true })).toBe(false)
+    expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled()
   })
 
   it('does not reload when the note cannot be kept, which would let it loop', async () => {

@@ -60,6 +60,18 @@ describe('Dialog', () => {
     expect(view.container.querySelector('dialog')).toBeNull()
   })
 
+  it('focuses the button its caller marked as the default', () => {
+    const view = render(
+      <Dialog isOpen onCancel={() => {}}>
+        <input type="checkbox" />
+        <button>Cancel</button>
+        <button data-autofocus>Ask</button>
+      </Dialog>,
+    )
+
+    expect(view.getByText('Ask')).toHaveFocus()
+  })
+
   it('keeps key presses from reaching the page behind', () => {
     const onWindowKey = vi.fn()
     window.addEventListener('keydown', onWindowKey)

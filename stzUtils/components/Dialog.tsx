@@ -87,6 +87,9 @@ function OpenDialog({children, onBrowserClose}: {children: ReactNode; onBrowserC
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (!dialog.open) dialog.showModal();
+    // A button its caller marked as the default takes the focus, so Return presses it.
+    // Without one, showModal() has already focused the first control, the browser's choice.
+    dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
 
     // Escape closes the element natively, and this tells React. The cancel event is
     // deliberately left alone: Chrome lets a page refuse Escape only twice before it

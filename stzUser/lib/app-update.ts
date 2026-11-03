@@ -24,6 +24,7 @@
  */
 import { BUILD_VERSION_FILE } from './build-version'
 import { clientEnv } from './env'
+import { APP_STARTED_FLAG } from './entry-load-guard'
 import { queueReport, type PendingReport } from './pending-reports'
 
 const NOTE_KEY = 'stz.appUpdate'
@@ -194,6 +195,8 @@ function showUpdatingDialog() {
 
 /** Watches for the two signs a page may be stale that are not server calls. Returns the cleanup. */
 export function watchForUpdates() {
+  // The app is running, so the inline check for a missing entry file stands down.
+  ;(window as unknown as Record<string, unknown>)[APP_STARTED_FLAG] = true
   const onVisibilityChange = () => {
     if (document.visibilityState === 'visible') void updateIfStale({ failed: false })
   }

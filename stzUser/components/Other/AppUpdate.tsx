@@ -7,6 +7,7 @@ import {
   subscribeToUpdateNote,
   watchForUpdates,
 } from '~stzUser/lib/app-update'
+import { ENTRY_LOAD_GUARD } from '~stzUser/lib/entry-load-guard'
 import { sendPendingReports } from '~stzUser/lib/pending-reports'
 
 // Subscribing is also when the watch starts: after hydration, in the browser only, and once,
@@ -27,19 +28,23 @@ const subscribe = (onChange: () => void) => {
  * "Update Complete" until the user taps OK — no quick message that leaves before it is read, Steve.
  * Nothing more, though a failed call began it: the update it called for has happened — Steve,
  * 2026-10-20.
- * The server renders nothing here: the note lives in her browser.
+ * The server renders only the inline check for a missing entry file, which must run before the
+ * bundle, so it comes from here, ahead of the root's scripts. The note lives in her browser.
  */
 export function AppUpdate() {
   const note = useSyncExternalStore(subscribe, getUpdateNote, () => null)
 
   return (
-    <Dialog isOpen={isUpdateCompletePending(note)} onCancel={acknowledgeUpdate}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>Update Complete</h3>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="button" onClick={acknowledgeUpdate}>OK</button>
+    <>
+      <script dangerouslySetInnerHTML={{ __html: ENTRY_LOAD_GUARD }} />
+      <Dialog isOpen={isUpdateCompletePending(note)} onCancel={acknowledgeUpdate}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <h3 style={{ margin: 0 }}>Update Complete</h3>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button type="button" onClick={acknowledgeUpdate}>OK</button>
+          </div>
         </div>
-      </div>
-    </Dialog>
+      </Dialog>
+    </>
   )
 }

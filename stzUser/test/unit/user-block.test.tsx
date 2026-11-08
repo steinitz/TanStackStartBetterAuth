@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
 import React from 'react'
-import { UserBlock, signOutTimeoutMs } from '../../components/Other/userBlock'
+import { UserBlock, signOutTimeoutMs, signedOutMenuName } from '../../components/Other/userBlock'
 
 const { navigate } = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -105,13 +105,18 @@ describe('UserBlock & WalletWidget', () => {
     })
   })
 
-  it('should render Sign In link when logged out', () => {
+  // Signed out, a user struck through, in the account icon's slot, its panel holding Sign In and
+  // Sign Up — Steve, 2026-11-08, so the words Sign In stop taking a phone header's width.
+  it('offers Sign In and Sign Up behind a struck-through user when logged out', () => {
     vi.mocked(useSession).mockReturnValue({ data: null } as any)
     vi.mocked(useWallet).mockReturnValue({ wallet: null } as any)
 
-    const { getByText } = render(<UserBlock />)
+    const { container, getByLabelText, getByText } = render(<UserBlock />)
 
-    expect(getByText(/Sign In/i)).toBeDefined()
+    expect(container.querySelector('summary i')?.className).toContain('fa-user-slash')
+    expect(getByLabelText(signedOutMenuName).tagName).toBe('SUMMARY')
+    expect(getByText('Sign In').getAttribute('href')).toBe('/auth/signin')
+    expect(getByText('Sign Up').getAttribute('href')).toBe('/auth/signup')
   })
 
   it('prevents link navigation and waits for confirmed sign-out before navigating', async () => {

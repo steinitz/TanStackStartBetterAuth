@@ -31,6 +31,9 @@ export const navLinkStyle = {
 }
 
 export const signOutTimeoutMs = 10_000
+
+/** The signed-out visitor's icon's name, its tooltip and what a screen reader says. */
+export const signedOutMenuName = 'Sign in or sign up'
 const signOutFailureMessage = 'Sign-out could not be confirmed. Please try again.'
 
 /**
@@ -78,6 +81,36 @@ const userIconSlotStyle = {
  * actually wanted.
  */
 const menuDirection: 'column' | 'row' = 'column'
+
+/**
+ * The panel under either icon, the account's or the signed-out visitor's: anchored at the icon's
+ * trailing edge, its items laid out in `direction`.
+ */
+const menuPanelStyle = (direction: 'column' | 'row') => ({
+  // Anchored to the trailing edge, not the leading one. The control sits at the
+  // right of the header, so a panel opening leftward from it would run off the
+  // page — this is the one place Disclosure's left: 0 default is wrong.
+  left: 'auto',
+  right: 0,
+  display: 'flex',
+  flexDirection: direction,
+  alignItems: direction === 'column' ? 'flex-start' : 'center',
+  gap: '0.75rem',
+  // A ceiling, so the panel cannot overflow at ANY width rather than at the
+  // ones we happened to test. The play panel carries the same guard for the
+  // mirror-image reason — it is pinned to left: 0, so a long item runs off the
+  // right. This one is pinned right and ran off the left.
+  maxWidth: '90vw',
+  // An email address is one long unbreakable token, and the panel is narrow on
+  // a phone. HelpDisclosure does exactly this, for exactly this case. Both
+  // properties inherit, so the <p> inside is covered without touching it.
+  whiteSpace: 'normal',
+  overflowWrap: 'break-word',
+  padding: '1rem',
+  borderRadius: 'var(--border-radius)',
+  border: '1px solid var(--color-bg-secondary)',
+  backgroundColor: 'var(--color-bg)',
+}) as const
 
 type UserBlockProps = {
   /**
@@ -177,14 +210,29 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
 
   // Signed out, everything the signed-in block holds is either meaningless or
   // invisible: the email is undefined, the wallet returns null, and Profile leads to
-  // a page that can only offer you a sign-in form. What used to remain was an empty
-  // <p> and its margin holding width open for nothing. So this is the whole block,
-  // and it is never collapsed — hiding the one thing a signed-out visitor might want
-  // behind an icon would be a poor trade for a link this narrow.
+  // a page that can only offer you a sign-in form. So the visitor gets an icon of their
+  // own, a user struck through, whose panel holds Sign In and Sign Up.
+  //
+  // An icon, though this once held that hiding Sign In behind one was a poor trade for a
+  // link this narrow. Steve, 2026-11-08: on an iPhone Xs the words Sign In were what kept an
+  // app's header from holding one more link — ChessHurdles' Games — and the app asks a
+  // visitor to sign up in its own words, elsewhere, so the header need not. The two icons
+  // take the same slot, so signing in moves nothing in the row.
   if (!session?.user) {
     return (
       <div style={containerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Disclosure
+          summary={
+            <span style={{ ...userIconSlotStyle, color: 'var(--color-link)' }}>
+              <i className="fa-solid fa-user-slash" />
+            </span>
+          }
+          title={signedOutMenuName}
+          showClose={false}
+          // Both items navigate; see the account panel's note below.
+          closeOnPanelClick
+          panelStyle={menuPanelStyle(menuDirection)}
+        >
           <Link
             to={routeStrings.signin}
             style={navLinkStyle}
@@ -194,7 +242,16 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
           >
             Sign In
           </Link>
-        </div>
+          <Link
+            to={routeStrings.signup}
+            style={navLinkStyle}
+            activeProps={{
+              style: { ...navLinkStyle, ...activeLinkStyle }
+            }}
+          >
+            Sign Up
+          </Link>
+        </Disclosure>
       </div>
     )
   }
@@ -301,31 +358,7 @@ export function UserBlock({ lowCreditsWarning }: UserBlockProps = {}) {
         // next tap. Measured, not guessed: a probe drove the real app and found the
         // details still open on /auth/profile with the backdrop still in the DOM.
         closeOnPanelClick
-        panelStyle={{
-          // Anchored to the trailing edge, not the leading one. The control sits at the
-          // right of the header, so a panel opening leftward from it would run off the
-          // page — this is the one place Disclosure's left: 0 default is wrong.
-          left: 'auto',
-          right: 0,
-          display: 'flex',
-          flexDirection: blockDirection,
-          alignItems: blockDirection === 'column' ? 'flex-start' : 'center',
-          gap: '0.75rem',
-          // A ceiling, so the panel cannot overflow at ANY width rather than at the
-          // ones we happened to test. The play panel carries the same guard for the
-          // mirror-image reason — it is pinned to left: 0, so a long item runs off the
-          // right. This one is pinned right and ran off the left.
-          maxWidth: '90vw',
-          // An email address is one long unbreakable token, and the panel is narrow on
-          // a phone. HelpDisclosure does exactly this, for exactly this case. Both
-          // properties inherit, so the <p> inside is covered without touching it.
-          whiteSpace: 'normal',
-          overflowWrap: 'break-word',
-          padding: '1rem',
-          borderRadius: 'var(--border-radius)',
-          border: '1px solid var(--color-bg-secondary)',
-          backgroundColor: 'var(--color-bg)',
-        }}
+        panelStyle={menuPanelStyle(blockDirection)}
       >
         {signedInBlock}
       </Disclosure>

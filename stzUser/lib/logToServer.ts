@@ -17,14 +17,20 @@ import * as v from 'valibot';
 // coming from getEmailEnvironmentVars with the rest of the email's configuration.
 import { getDeviceType } from '~stzUtils/lib/getDeviceType';
 
-// Throttle constants — tune by editing.
-const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes per-key cooldown
-const MAX_PER_HOUR = 20;             // global ceiling
-const HOUR_MS = 60 * 60 * 1000;
+// Two sliding windows over every alert email, whatever its message: 2 a minute stops a burst, 8 per
+// 13 minutes caps a long storm — Steve, 2026-11-19. They replaced a 15-minute cooldown per message
+// and 20 an hour: the cooldown let one failure stand for every later one of its kind, and so hid two
+// of a run's three failed coach comments. Every email is counted together, so a noisy message can
+// crowd out others; that is a bug in the noisy message, and the log keeps what the email holds back.
+// `halt` is the notice's wording for the email that fills the window. Tune by editing.
+export const THROTTLE_WINDOWS = [
+  { limit: 2, ms: 60 * 1000, halt: 'a minute' },
+  { limit: 8, ms: 13 * 60 * 1000, halt: '13 minutes' },
+] as const;
 
-// In-memory throttle state (resets on deploy — best-effort alerts).
-const notifyCooldowns = new Map<string, number>();
-const hourlyEmailTimestamps: number[] = [];
+// In-memory throttle state, one server instance's: it resets on deploy and whenever the host starts
+// a fresh instance, as Netlify does freely. Best-effort alerts.
+const sentEmailTimestamps: number[] = [];
 
 // The client door's input. `notify` stays opt-IN here — the ~20 browser callers are quiet by default
 // and only a few ask to be emailed — and the door inverts it into the core's opt-OUT
@@ -59,34 +65,49 @@ export type LogEvent = {
   device?: string;
 };
 
-/** Check whether a message passes both throttle layers. Returns true if the email should be sent. */
-export function checkThrottle(message: string, now?: number): boolean {
-  const t = now ?? Date.now();
+const LONGEST_WINDOW_MS = Math.max(...THROTTLE_WINDOWS.map((window) => window.ms));
 
-  // Per-key cooldown check.
-  const lastSent = notifyCooldowns.get(message);
-  if (lastSent !== undefined && t - lastSent < COOLDOWN_MS) return false;
-
-  // Global ceiling: filter stale entries then count.
-  const recentTimestamps = hourlyEmailTimestamps.filter(ts => t - ts < HOUR_MS);
-  hourlyEmailTimestamps.length = 0;
-  hourlyEmailTimestamps.push(...recentTimestamps);
-  if (recentTimestamps.length >= MAX_PER_HOUR) return false;
-
-  return true;
+/** How many emails went out within each window, ending at t. Forgets those older than every window. */
+function sentWithin(t: number): number[] {
+  const recent = sentEmailTimestamps.filter((ts) => t - ts < LONGEST_WINDOW_MS);
+  sentEmailTimestamps.length = 0;
+  sentEmailTimestamps.push(...recent);
+  return THROTTLE_WINDOWS.map((window) => recent.filter((ts) => t - ts < window.ms).length);
 }
 
-/** Record that a notify email was sent for the given message. */
-export function recordNotifySent(message: string, now?: number): void {
+/** Whether every window has room for one more email. Records nothing: recordNotifySent does. */
+export function checkThrottle(now?: number): boolean {
+  const counts = sentWithin(now ?? Date.now());
+  return THROTTLE_WINDOWS.every((window, i) => counts[i] < window.limit);
+}
+
+/**
+ * The notice for an email that fills a window, in Steve's words, 2026-11-19, with the command that
+ * reads what the halt held back. An email that fills both names the longer halt, the one to act on.
+ * "Triggers" is loose, kept for its brevity. Undefined while every window keeps room after it.
+ */
+export function throttleNotice(now?: number): string | undefined {
   const t = now ?? Date.now();
-  notifyCooldowns.set(message, t);
-  hourlyEmailTimestamps.push(t);
+  const counts = sentWithin(t);
+  const filled = THROTTLE_WINDOWS.filter((window, i) => counts[i] + 1 >= window.limit);
+  if (filled.length === 0) return undefined;
+  const longest = filled.reduce((a, b) => (b.ms > a.ms ? b : a));
+  const since = new Date(t).toISOString();
+  const until = new Date(t + longest.ms).toISOString();
+  return [
+    `This message triggers an email throttle which will halt emails for ${longest.halt}. Look in the server logs for any un-mailed messages.`,
+    `netlify logs --source functions --since ${since} --until ${until}`,
+  ].join('\n');
+}
+
+/** Record that a notify email was sent. */
+export function recordNotifySent(now?: number): void {
+  sentEmailTimestamps.push(now ?? Date.now());
 }
 
 /** Reset throttle state — useful for tests. */
 export function resetThrottleState(): void {
-  notifyCooldowns.clear();
-  hourlyEmailTimestamps.length = 0;
+  sentEmailTimestamps.length = 0;
 }
 
 /**
@@ -102,11 +123,11 @@ export function resetThrottleState(): void {
  * nodemailer is never written to the public directory. An `isServer()` check reads the same but
  * is a runtime call, so the bundler still has to emit the import behind it.
  */
-async function sendNotifyEmail(event: LogEvent): Promise<void> {
+async function sendNotifyEmail(event: LogEvent, notice?: string): Promise<void> {
   if (!import.meta.env.SSR) return;
 
   const { sendLogNotificationEmail } = await import('~stzUser/lib/notifyEmail.server');
-  await sendLogNotificationEmail(event);
+  await sendLogNotificationEmail(event, notice);
 }
 
 /**
@@ -127,11 +148,11 @@ export async function logWithThrottledNotification(event: LogEvent): Promise<voi
   if (event.suppressNotification) return;
 
   const now = Date.now();
-  if (!checkThrottle(event.message, now)) return;
+  if (!checkThrottle(now)) return;
 
   try {
-    await sendNotifyEmail(event);
-    recordNotifySent(event.message, now);
+    await sendNotifyEmail(event, throttleNotice(now));
+    recordNotifySent(now);
   } catch (error) {
     console.warn(`[logWithThrottledNotification] Failed to send notify email for "${event.message}":`, error);
   }

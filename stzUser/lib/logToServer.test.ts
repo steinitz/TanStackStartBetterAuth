@@ -1,77 +1,91 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { checkThrottle, recordNotifySent, resetThrottleState } from 'stzUser/lib/logToServer';
+import { THROTTLE_WINDOWS, checkThrottle, recordNotifySent, resetThrottleState, throttleNotice } from 'stzUser/lib/logToServer';
 
-const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
-const HOUR_MS = 60 * 60 * 1000;     // 1 hour
+const [BURST, STORM] = THROTTLE_WINDOWS;
+
+/** Sends `count` emails `gapMs` apart from `start`, as the core does: check, then record. */
+function send(count: number, start: number, gapMs: number): number {
+  let t = start;
+  for (let i = 0; i < count; i++) {
+    expect(checkThrottle(t)).toBe(true);
+    recordNotifySent(t);
+    t += gapMs;
+  }
+  return t - gapMs;
+}
 
 describe('checkThrottle', () => {
   beforeEach(() => {
     resetThrottleState();
   });
 
-  it('allows first fire for a new key', () => {
-    expect(checkThrottle('new.key', 1000)).toBe(true);
+  it('allows the first email', () => {
+    expect(checkThrottle(1000)).toBe(true);
   });
 
-  it('blocks same key within cooldown', () => {
-    const now = 1000;
-    recordNotifySent('key.a', now);
-
-    // Still within cooldown (14 min later).
-    expect(checkThrottle('key.a', now + 14 * 60 * 1000)).toBe(false);
+  it('allows the same message again at once: there is no cooldown per message', () => {
+    // The 2026-11-18 case: three failed coach comments, minutes apart, all of one message.
+    send(1, 0, 0);
+    expect(checkThrottle(9 * 60 * 1000)).toBe(true);
   });
 
-  it('allows same key after cooldown expires', () => {
-    const now = 1000;
-    recordNotifySent('key.a', now);
-
-    // Just past cooldown (15 min + 1ms).
-    expect(checkThrottle('key.a', now + COOLDOWN_MS + 1)).toBe(true);
+  it('holds the burst window full until its first email ages out', () => {
+    const last = send(BURST.limit, 0, 1000);
+    expect(checkThrottle(last + 1)).toBe(false);
+    expect(checkThrottle(BURST.ms - 1)).toBe(false);
+    expect(checkThrottle(BURST.ms)).toBe(true);
   });
 
-  it('allows different keys independently', () => {
-    const now = 1000;
-    recordNotifySent('key.a', now);
-
-    // key.b is unaffected by key.a's cooldown.
-    expect(checkThrottle('key.b', now)).toBe(true);
+  it('holds the storm window full until its first email ages out', () => {
+    // Spaced past the burst window, so only the storm window can fill.
+    const gap = BURST.ms;
+    const last = send(STORM.limit, 0, gap);
+    expect(checkThrottle(last + gap)).toBe(false);
+    expect(checkThrottle(STORM.ms - 1)).toBe(false);
+    expect(checkThrottle(STORM.ms)).toBe(true);
   });
 
-  it('enforces global ceiling of 20 per hour', () => {
-    const now = 1000;
-
-    // Send 20 emails with distinct keys — all should pass.
-    for (let i = 0; i < 20; i++) {
-      expect(checkThrottle(`ceiling.key.${i}`, now)).toBe(true);
-      recordNotifySent(`ceiling.key.${i}`, now);
-    }
-
-    // 21st email should be blocked by global ceiling.
-    expect(checkThrottle('ceiling.key.overflow', now)).toBe(false);
+  it('records nothing by itself: only recordNotifySent does', () => {
+    for (let i = 0; i <= STORM.limit; i++) expect(checkThrottle(i)).toBe(true);
   });
 
-  it('resets global ceiling after one hour', () => {
-    const now = 1000;
+  it('starts empty after a reset', () => {
+    send(BURST.limit, 0, 0);
+    resetThrottleState();
+    expect(checkThrottle(1)).toBe(true);
+  });
+});
 
-    // Fill the ceiling.
-    for (let i = 0; i < 20; i++) {
-      recordNotifySent(`reset.key.${i}`, now);
-    }
-
-    // Blocked at capacity.
-    expect(checkThrottle('reset.blocked', now)).toBe(false);
-
-    // One hour later, stale entries are pruned and ceiling resets.
-    const afterHour = now + HOUR_MS + 1;
-    expect(checkThrottle('reset.after.hour', afterHour)).toBe(true);
+describe('throttleNotice', () => {
+  beforeEach(() => {
+    resetThrottleState();
   });
 
-  it('does not update throttle state on blocked calls', () => {
-    // checkThrottle alone should not record anything — only recordNotifySent does.
-    const now = 1000;
+  it('says nothing while the email leaves room in every window', () => {
+    expect(throttleNotice(0)).toBeUndefined();
+  });
 
-    expect(checkThrottle('no.record', now)).toBe(true);
-    // Without calling recordNotifySent, the key is still fresh.
-    expect(checkThrottle('no.record', now + 1)).toBe(true);
+  it('names a minute on the email that fills the burst window, with the logs for that minute', () => {
+    send(BURST.limit - 1, 0, 0);
+    const t = Date.UTC(1970, 0, 1, 0, 0, 1);
+    expect(throttleNotice(t)).toBe(
+      `This message triggers an email throttle which will halt emails for ${BURST.halt}. Look in the server logs for any un-mailed messages.\n` +
+      `netlify logs --source functions --since ${new Date(t).toISOString()} --until ${new Date(t + BURST.ms).toISOString()}`,
+    );
+    expect(BURST.halt).toBe('a minute');
+  });
+
+  it('names 13 minutes on the email that fills the storm window alone', () => {
+    const last = send(STORM.limit - 1, 0, BURST.ms);
+    const notice = throttleNotice(last + BURST.ms);
+    expect(notice).toContain(`halt emails for ${STORM.halt}.`);
+    expect(STORM.halt).toBe('13 minutes');
+  });
+
+  it('names the longer halt on an email that fills both windows at once', () => {
+    // Seven spaced out, then one just before this: this email is the 2nd in a minute and the 8th in 13.
+    const last = send(STORM.limit - 2, 0, BURST.ms);
+    send(1, last + BURST.ms, 0);
+    expect(throttleNotice(last + BURST.ms + 1000)).toContain(`halt emails for ${STORM.halt}.`);
   });
 });

@@ -35,8 +35,11 @@ export function deploymentSource(): { label: string; url: string } {
   return { label, url };
 }
 
-/** Send a plain-text notify email. Server-only, like sendEmail itself. */
-export async function sendLogNotificationEmail(event: LogEvent): Promise<void> {
+/**
+ * Send a plain-text notify email. Server-only, like sendEmail itself. The notice, when this email
+ * fills a throttle window, closes it: see throttleNotice.
+ */
+export async function sendLogNotificationEmail(event: LogEvent, notice?: string): Promise<void> {
   const env = getEmailEnvironmentVars();
   const source = deploymentSource();
   await sendEmail({
@@ -57,6 +60,7 @@ export async function sendLogNotificationEmail(event: LogEvent): Promise<void> {
         event.context ? `Context: ${JSON.stringify(event.context)}` : null,
         event.userAgent ? `User-Agent: ${event.userAgent}` : null,
         `Timestamp: ${new Date().toISOString()}`,
+        notice ? `\n${notice}` : null,
       ].filter(Boolean).join('\n'),
     });
 }

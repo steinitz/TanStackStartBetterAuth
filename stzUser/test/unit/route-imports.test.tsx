@@ -12,10 +12,6 @@ vi.mock('~stzUser/lib/users-client', () => ({
   },
 }))
 
-vi.mock('~/lib/count', () => ({
-  getCount: vi.fn(() => Promise.resolve(42)),
-}))
-
 vi.mock('~stzUser/components/RouteComponents/SignIn', () => ({
   SignIn: () => React.createElement('div', { 'data-testid': 'signin-mock' }, 'SignIn Mock'),
 }))
@@ -72,6 +68,13 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: any) => React.createElement('a', {}, children),
   useSearch: vi.fn(() => ({})),
   useParams: vi.fn(() => ({})),
+  // For an app whose header asks whether a navigation it started is still loading, as
+  // ChessHurdles' HashLink does. Nothing in this harness navigates, so the honest answers
+  // are "nothing pending" and "we are where we started".
+  useMatchRoute: vi.fn(() => () => false),
+  useRouterState: vi.fn(({ select }: { select: (state: any) => unknown }) =>
+    select({ resolvedLocation: { href: '/' } }),
+  ),
 }))
 
 describe('Route Import Tests', () => {
@@ -127,25 +130,6 @@ describe('Route Import Tests', () => {
     if (Component) {
       expect(() => {
         render(React.createElement(Component))
-      }).not.toThrow()
-    }
-  })
-
-  it('should handle loader function in index route', async () => {
-    const indexModule = await import('~/routes/index')
-    const RouteConfig = indexModule.Route
-
-    // Verify the loader exists
-    expect(RouteConfig.options?.loader).toBeDefined()
-
-    // Loader may be a function or a RouteLoaderObject in newer TanStack Router versions
-    const loader = RouteConfig.options?.loader
-    const loaderFn = typeof loader === 'function' ? loader : (loader as any)?.fn
-    if (loaderFn) {
-      expect(async () => {
-        // Mock loader context - TanStack Router loaders expect a context parameter
-        const mockContext = {} as any
-        await loaderFn(mockContext)
       }).not.toThrow()
     }
   })

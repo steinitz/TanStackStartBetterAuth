@@ -9,11 +9,6 @@ vi.mock('~stzUser/lib/users-client', () => ({
   useDeleteUserById: vi.fn(),
 }))
 
-// Mock the count function
-vi.mock('~/lib/count', () => ({
-  getCount: vi.fn(() => Promise.resolve(0)),
-}))
-
 // Mock the auth components
 vi.mock('~stzUser/components/RouteComponents/SignIn', () => ({
   SignIn: () => <div data-testid="signin-component">Sign In Component</div>,
